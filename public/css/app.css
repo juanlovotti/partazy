@@ -1122,11 +1122,11 @@
   .loader{padding-top:env(safe-area-inset-top, 0px);}
 
 /* =========================================================
-   "¿Qué querés hacer HOY?": la palabra "hoy" pasa por los colores de la app
+   "¿Qué querés hacer HOY?": la palabra "hoy" pasa por los colores de la marca (naranja, amarillo, verde)
    y tiene las rayas de la marca debajo, que se dibujan al entrar
    ========================================================= */
 .hoy-vivo{position:relative; display:inline-block; font-weight:800; padding:0 .04em;
-  background:linear-gradient(90deg, var(--rojo), var(--amarillo), var(--verde), #8B5CF6, var(--rojo)); background-size:400% 100%;
+  background:linear-gradient(90deg, var(--rojo), var(--amarillo), var(--verde), var(--amarillo), var(--rojo)); background-size:400% 100%;
   -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:var(--rojo);
   animation:hoy-colores 9s linear infinite;}
 .hoy-vivo::after{content:''; position:absolute; left:.02em; right:.02em; bottom:-.06em; height:.14em; transform:skewX(-14deg); transform-origin:left;
