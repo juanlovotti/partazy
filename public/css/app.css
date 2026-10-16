@@ -1223,3 +1223,43 @@
 .amigos-van-yo svg{width:14px; height:14px; color:var(--rojo); flex:none;}
 .nota-propia{border-color:rgba(242,106,27,.35);}
 .bloque-amigos-van{flex-wrap:wrap;} .bloque-amigos-van .nota-amigo{flex:1 1 100%; margin-top:0;}
+
+/* =========================================================
+   DETALLE DEL EVENTO: más aire y menos ruido (pensado primero para celular)
+   - Cada bloque respira más y los separadores son más suaves
+   - "Detalles" es una lista con íconos (antes eran 4 cajas)
+   - La barra de lugares va con su texto y cambia de color según cuánto falta
+   ========================================================= */
+#pantalla-detalle .bloque{padding:24px 20px; border-bottom-color:rgba(54,48,50,.55);}
+#pantalla-detalle h3.titulo-bloque{font-size:17px; letter-spacing:.6px; margin-bottom:14px; color:var(--hueso);}
+#pantalla-detalle .bloque-pie-det{display:flex; flex-wrap:wrap; justify-content:space-between; gap:6px 16px; padding-top:14px; padding-bottom:18px; border-bottom:none;}
+#pantalla-detalle .bloque-pie-det .link-denuncia{padding:6px 0;}
+#pantalla-detalle .bloque-pie-det:empty{display:none;}
+.info-lista{display:flex; flex-direction:column;}
+.info-item{display:flex; align-items:flex-start; gap:14px; padding:13px 0; border-bottom:1px solid rgba(54,48,50,.55);}
+.info-item:first-child{padding-top:2px;}
+.info-item:last-child{border-bottom:none; padding-bottom:4px;}
+.ii-ico{width:36px; height:36px; flex:none; border-radius:11px; background:var(--negro-2); border:1px solid var(--gris-linea); display:flex; align-items:center; justify-content:center; color:var(--rojo);}
+.ii-ico svg{width:18px; height:18px;}
+.ii-txt{flex:1; min-width:0; display:flex; flex-direction:column; gap:2px;}
+.ii-txt small{font-family:var(--font-mono); font-size:9.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gris);}
+.ii-txt b{font-size:14.5px; font-weight:700; color:var(--blanco); overflow-wrap:anywhere; line-height:1.35;}
+.ii-sub{font-size:12px; color:var(--gris); line-height:1.4;}
+.ii-accion{flex:none; align-self:center;}
+.ii-accion .link-ext{display:inline-flex; align-items:center; gap:4px; padding:7px 12px; border-radius:999px; background:rgba(242,106,27,.1); border:1px solid rgba(242,106,27,.35); font-size:12px; font-weight:700; text-decoration:none; white-space:nowrap;}
+.info-item .barra-cupo{margin-top:8px; height:6px;}
+.barra-cupo.nivel-verde .fill{background:linear-gradient(90deg, #2c6e28, var(--verde));}
+.barra-cupo.nivel-amarillo .fill{background:linear-gradient(90deg, #8a6a0a, var(--amarillo));}
+.barra-cupo.nivel-rojo .fill{background:linear-gradient(90deg, var(--rojo-fuerte), #ff4d4d);}
+#pantalla-detalle .tags{margin-top:16px;}
+#pantalla-detalle .ya-compre{margin-top:14px;}
+#pantalla-detalle .acciones-evento{margin-top:2px;}
+#pantalla-detalle p.texto-desc{font-size:14px; line-height:1.65;}
+/* Comentarios sin comillas: se distinguen por la burbuja */
+.nota-amigo .nota-txt, .item-simple .nota-mia, .mi-nota-txt, .tm-nota{font-style:normal;}
+@media (min-width:900px){
+  #pantalla-detalle .bloque{padding:26px 24px;}
+  .info-lista{display:grid; grid-template-columns:1fr 1fr; column-gap:28px;}
+  .info-item:last-child{border-bottom:1px solid rgba(54,48,50,.55);}
+  .info-item:nth-last-child(-n+2){border-bottom:none;}
+}

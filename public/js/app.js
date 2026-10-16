@@ -2170,7 +2170,7 @@ const TIPOS_NOTIF = {
   mensaje_aceptado:       { icono: '💬', texto: n => `${n.deNombre} aceptó tu solicitud de mensaje`, ir: n => abrirDM(n.de) },
   amigo_evento:           { icono: '🎉', texto: n => `${n.deNombre} publicó ${n.objetoNombre}. ¿Vas?`, ir: n => abrirDetalle(n.objetoId) },
   evento_compartido:      { icono: '🔁', texto: n => `${n.deNombre} compartió ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
-  mencion:                { icono: '👉', texto: n => `${n.deNombre} te mencionó en ${n.objetoNombre}${n.texto ? ': “' + n.texto + '”' : ''}`, ir: n => abrirDetalle(n.objetoId) },
+  mencion:                { icono: '👉', texto: n => `${n.deNombre} te mencionó en ${n.objetoNombre}${n.texto ? ': ' + n.texto : ''}`, ir: n => abrirDetalle(n.objetoId) },
   nuevo_evento:           { icono: '📣', texto: n => `${n.deNombre} publicó una fecha nueva: ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
   acreditacion_solicitud: { icono: '📰', texto: n => `${n.deNombre}${n.texto ? ' (' + n.texto + ')' : ''} pidió acreditación de prensa para ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
   acreditacion_aprobada:  { icono: '✅', texto: n => `Aprobaron tu acreditación de prensa para ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
@@ -2988,6 +2988,15 @@ function pintarMailContacto(){
 function volverLegal(){ if(state.invitado) return volver('home'); ir(state.perfil ? 'perfil' : 'bienvenida'); }
 
 // Etiqueta de cupo ("Últimos lugares", "Lleno"...).
+// Íconos de la lista de detalles del evento.
+const II = {
+  cuando: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
+  donde: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg>',
+  edad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="11" r="2"/><path d="M6 16c.6-1.4 1.7-2 3-2s2.4.6 3 2M14 10h4M14 13h3"/></svg>',
+  gente: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg>'
+};
+// Color de la barra de lugares: verde (hay lugar), amarillo (se llena), rojo (casi lleno).
+function nivelCupo(cupo, cap){ const r = cupo / Math.max(1, cap); return r >= 0.85 ? 'nivel-rojo' : r >= 0.5 ? 'nivel-amarillo' : 'nivel-verde'; }
 function pillCupoHTML(ev){ const c = estadoCupo(ev); return c ? `<span class="pill-cupo ${c.clase}">${c.texto}</span>` : ''; }
 
 // =========================================================
@@ -4296,7 +4305,7 @@ function pasosTutorial(){
       dibujo: `<div class="tm tm-amigos">
         <div class="tm-caras"><i>SG</i><i>IP</i><i>MR</i></div>
         <div class="tm-txt"><b>Sofía</b> e <b>Ivo</b> van</div>
-        <div class="tm-nota">“¡Vamos a esta! 🔥” <span>— Sofía</span></div></div>` },
+        <div class="tm-nota">¡Vamos a esta! 🔥 <span>— Sofía</span></div></div>` },
     { t: 'Armá tu previa o fiesta',
       p: `Tocá el <b>+ naranja</b> ${compu ? '(<b>Crear evento</b>, en el menú de la izquierda)' : 'abajo en el medio'}, completá los datos y listo. Si es privada, elegís quién entra y la dirección solo la ven los aprobados.`,
       dibujo: `<div class="tm tm-crear"><div class="tm-mas">+${dedo}</div><div class="tm-crear-txt"><b>Crear evento</b><span>Previa · Fiesta · Boliche</span></div></div>`,
@@ -4734,9 +4743,9 @@ function textoConMenciones(t){ return esc(t).replace(/(^|\s)@([a-z0-9._]{3,20})/
 // Burbuja con el comentario de un amigo que compartió el evento.
 function notaAmigoHTML(ev, sinMia){
   const n = (state.red.notas?.[ev.id] || []).find(x => !state.bloqueados.has(x.uid));
-  if(n) return `<div class="nota-amigo"><span class="nota-txt">“${textoConMenciones(n.texto)}”</span><span class="nota-quien">— ${esc(nombreCorto(state.usuarios[n.uid]))}</span></div>`;
+  if(n) return `<div class="nota-amigo"><span class="nota-txt">${textoConMenciones(n.texto)}</span><span class="nota-quien">— ${esc(nombreCorto(state.usuarios[n.uid]))}</span></div>`;
   const mia = !sinMia && state.misCompartidos?.includes(ev.id) && state.misNotas?.[ev.id];   // en el evento, la mía ya está en su caja
-  return mia ? `<div class="nota-amigo nota-propia"><span class="nota-txt">“${textoConMenciones(mia)}”</span><span class="nota-quien">— Vos</span></div>` : '';
+  return mia ? `<div class="nota-amigo nota-propia"><span class="nota-txt">${textoConMenciones(mia)}</span><span class="nota-quien">— Vos</span></div>` : '';
 }
 // Primer nombre (o apodo).
 function nombreCorto(u){ return String(nombreVisible(u) || '').trim().split(/\s+/)[0] || 'Alguien'; }
@@ -4886,7 +4895,7 @@ async function pintarBotonCompartir(ev, tok){
 function miNotaHTML(id){
   const n = state.misNotas?.[id];
   return `<div class="mi-nota">
-    <div class="mi-nota-txt">${n ? `<small>Tu comentario</small>“${textoConMenciones(n)}”` : '<small>Sin comentario</small>'}</div>
+    <div class="mi-nota-txt">${n ? `<small>Tu comentario</small>${textoConMenciones(n)}` : '<small>Sin comentario</small>'}</div>
     <div class="mi-nota-acciones">
       <button class="btn-nota" data-editar-nota="${esc(id)}">✏️ ${n ? 'Editar' : 'Agregar comentario'}</button>
       ${n ? `<button class="btn-nota peligro" data-borrar-nota="${esc(id)}">🗑 Borrar</button>` : ''}
@@ -5185,6 +5194,7 @@ async function renderDetalle(id){
         <div class="lista-solicitudes" id="lista-solicitudes"><div class="empty-state">Cargando...</div></div>
       </div>` : '';
 
+    const comoLlegar = (!esPrivada || adentro || esCreador) ? aExterno(ev.ubicacionExacta && typeof ev.lat === 'number' ? `https://www.google.com/maps/dir/?api=1&destination=${ev.lat},${ev.lng}` : urlMaps(lugarMostrado, ev.ciudad), 'Cómo llegar') : '';
     cont.innerHTML = `
       <div class="detalle-hero"><div class="hero-img ${ev.fotoGrande && !fotosGrandes.has(ev.id) ? 'cargando' : ''}" id="hero-img" style="background-image:${cssFoto(ev, fotosGrandes.get(ev.id) || ev.imagen)}"></div>
         <div class="hero-top">
@@ -5213,19 +5223,6 @@ async function renderDetalle(id){
 
       ${amigosVanHTML(ev, true) ? `<div class="bloque"><div class="bloque-amigos-van">${amigosVanHTML(ev, true)}</div></div>` : ''}
 
-      <div class="bloque">
-        ${(!esCreador && !cancelado && ev.privacidad === 'publica') ? `<button class="btn btn-outline btn-repost" id="btn-repost" style="margin-bottom:10px;">${ICO_REPOST}Compartir con mis amigos</button><div id="mi-nota-repost" data-ev="${esc(ev.id)}"></div>` : ''}
-        <div class="acciones-evento">
-          <button class="btn btn-secundario" id="btn-compartir-evento">Compartir link</button>
-          <button class="btn btn-secundario" id="btn-enviar-amigos">Enviar a amigos</button>
-        </div>
-        ${(ev.repostsCount || 0) > 0 ? `<div class="contador-repost">${ICO_REPOST}${esc(textoCompartidoPor(ev))}</div>` : ''}
-        ${!esCreador && !cancelado && estado && estado !== 'rechazado' && ev.fechaTs > Date.now() - HORA && !asistencia?.checkinTs
-          ? `<button class="link-denuncia link-salir" data-salir="${esc(ev.id)}|${esc(estado)}">${estado === 'solicitado' ? '↩ Retirar mi solicitud' : estado === 'en-espera' ? '↩ Salir de la lista de espera' : '↩ Ya no voy · liberar mi lugar'}</button>` : ''}
-        ${esCreador ? '' : '<button class="link-denuncia" id="btn-denunciar-evento">🚩 Denunciar este evento</button>'}
-      </div>
-
-      ${bloquePrensaHTML(ev, esCreador, miAcred)}
       ${panelSolicitudes}
       ${esCreador ? `<div class="bloque">
         <h3 class="titulo-bloque">Lista de confirmados</h3>
@@ -5240,16 +5237,16 @@ async function renderDetalle(id){
 
       <div class="bloque">
         <h3 class="titulo-bloque">Detalles</h3>
-        <div class="datos-grid">
-          <div class="dato"><div class="label">Fecha y horario</div><div class="valor">${esc(horarioEvento(ev))}</div></div>
-          <div class="dato"><div class="label">Lugar</div><div class="valor">${esc(lugarMostrado)}</div></div>
-          <div class="dato"><div class="label">Clasificación</div><div class="valor">${esc(clasificacion(ev))}</div></div>
-          ${ventaExterna ? `<div class="dato"><div class="label">Capacidad</div><div class="valor">${ev.capacidadDesconocida ? 'Según la venta' : `${cap} personas`}</div><div class="cupo-ext">${cupo} ${cupo === 1 ? 'avisó' : 'avisaron'} que van por Partazy · el cupo lo maneja ${esc(ventaExterna.texto)}</div></div>`
-            : `<div class="dato"><div class="label">Capacidad</div><div class="valor">${cupo} / ${cap}${lleno ? ' · lleno' : ''}</div></div>`}
+        <div class="info-lista">
+          <div class="info-item"><span class="ii-ico">${II.cuando}</span><div class="ii-txt"><small>Cuándo</small><b>${esc(horarioEvento(ev))}</b></div></div>
+          <div class="info-item"><span class="ii-ico">${II.donde}</span><div class="ii-txt"><small>Dónde</small><b>${esc(lugarMostrado)}</b></div>${comoLlegar ? `<span class="ii-accion">${comoLlegar}</span>` : ''}</div>
+          <div class="info-item"><span class="ii-ico">${II.edad}</span><div class="ii-txt"><small>Edad</small><b>${esc(clasificacion(ev))}</b></div></div>
+          ${ventaExterna
+            ? `<div class="info-item"><span class="ii-ico">${II.gente}</span><div class="ii-txt"><small>Capacidad</small><b>${ev.capacidadDesconocida ? 'Según la venta' : `${cap} personas`}</b><span class="ii-sub cupo-ext">${cupo} ${cupo === 1 ? 'avisó' : 'avisaron'} que van por Partazy · el cupo lo maneja ${esc(ventaExterna.texto)}</span></div></div>`
+            : `<div class="info-item"><span class="ii-ico">${II.gente}</span><div class="ii-txt"><small>Lugares</small><b>${cupo} de ${cap} anotados${lleno ? ' · lleno' : ''}</b>${lleno ? '' : `<span class="ii-sub">${cap - cupo === 1 ? 'Queda 1 lugar' : `Quedan ${cap - cupo} lugares`}</span>`}
+                <div class="barra-cupo ${nivelCupo(cupo, cap)}" role="img" aria-label="${cupo} de ${cap} lugares ocupados"><div class="fill" style="width:${Math.max(3, Math.min(100, (cupo/cap)*100))}%;"></div></div></div>${pillCupoHTML(ev) ? `<span class="ii-accion">${pillCupoHTML(ev)}</span>` : ''}</div>`}
         </div>
-        ${ventaExterna ? '' : `<div class="barra-cupo"><div class="fill" style="width:${Math.min(100, (cupo/cap)*100)}%;"></div></div>`}
         ${ventaExterna && !esCreador && !estado && !cancelado ? `<button class="btn btn-secundario ya-compre" data-ya-compre="${esc(ev.id)}">✅ Ya compré mi entrada · Avisar que voy</button>` : ''}
-        <div class="fila-links">${(!esPrivada || adentro || esCreador) ? aExterno(ev.ubicacionExacta && typeof ev.lat === 'number' && (!esPrivada || adentro || esCreador) ? `https://www.google.com/maps/dir/?api=1&destination=${ev.lat},${ev.lng}` : urlMaps(lugarMostrado, ev.ciudad), 'Cómo llegar') : '<span></span>'}${ventaExterna ? '' : pillCupoHTML(ev)}</div>
         <div class="tags">
           <span class="tag">Dress code: ${esc(ev.dresscode||'Libre')}</span>
           ${ev.tipo !== 'previa' ? `<span class="tag ${ev.listaVip?'si':'no'}">${ev.listaVip? 'Con lista VIP' : 'Sin lista VIP'}</span>` : ''}
@@ -5258,22 +5255,40 @@ async function renderDetalle(id){
         </div>
       </div>
 
-      ${bloquePago}
-      ${esCreador && ev.listaVip ? '<div class="bloque" id="bloque-vip"></div>' : ''}
-
-      ${ev.lineup ? `<div class="bloque"><h3 class="titulo-bloque">Line-up</h3><div class="lineup">${lineupItems(ev.lineup).map(x =>
-        `<div class="lineup-item"><span class="hora">${esc(x.hora)}</span><b>${esc(x.nombre)}</b></div>`).join('')}</div></div>` : ''}
-
       <div class="bloque">
         <h3 class="titulo-bloque">Sobre el evento</h3>
         <p class="texto-desc">${esc(ev.descripcion||'')}</p>
       </div>
 
+      ${ev.lineup ? `<div class="bloque"><h3 class="titulo-bloque">Line-up</h3><div class="lineup">${lineupItems(ev.lineup).map(x =>
+        `<div class="lineup-item"><span class="hora">${esc(x.hora)}</span><b>${esc(x.nombre)}</b></div>`).join('')}</div></div>` : ''}
+
+      ${bloquePago}
+      ${esCreador && ev.listaVip ? '<div class="bloque" id="bloque-vip"></div>' : ''}
+
       ${ev.reglas ? `<div class="bloque"><h3 class="titulo-bloque">Reglas</h3><p class="texto-desc">${esc(ev.reglas)}</p></div>` : ''}
+
+      <div class="bloque">
+        <h3 class="titulo-bloque">Compartir</h3>
+        ${(!esCreador && !cancelado && ev.privacidad === 'publica') ? `<button class="btn btn-outline btn-repost" id="btn-repost" style="margin-bottom:10px;">${ICO_REPOST}Compartir con mis amigos</button><div id="mi-nota-repost" data-ev="${esc(ev.id)}"></div>` : ''}
+        <div class="acciones-evento">
+          <button class="btn btn-secundario" id="btn-compartir-evento">Compartir link</button>
+          <button class="btn btn-secundario" id="btn-enviar-amigos">Enviar a amigos</button>
+        </div>
+        ${(ev.repostsCount || 0) > 0 ? `<div class="contador-repost">${ICO_REPOST}${esc(textoCompartidoPor(ev))}</div>` : ''}
+      </div>
+
+      ${bloquePrensaHTML(ev, esCreador, miAcred)}
 
       <div class="bloque">${bloqueChat}</div>
 
       ${bloqueAdmin}
+
+      <div class="bloque bloque-pie-det">
+        ${!esCreador && !cancelado && estado && estado !== 'rechazado' && ev.fechaTs > Date.now() - HORA && !asistencia?.checkinTs
+          ? `<button class="link-denuncia link-salir" data-salir="${esc(ev.id)}|${esc(estado)}">${estado === 'solicitado' ? '↩ Retirar mi solicitud' : estado === 'en-espera' ? '↩ Salir de la lista de espera' : '↩ Ya no voy · liberar mi lugar'}</button>` : ''}
+        ${esCreador ? '' : '<button class="link-denuncia" id="btn-denunciar-evento">🚩 Denunciar este evento</button>'}
+      </div>
 
       <div class="cta-fija">
         <div class="precio-fijo">
@@ -6620,7 +6635,7 @@ function pintarMisCompartidos(){
   document.getElementById('perfil-compartidos').innerHTML = lista.map(e => `
     <div class="item-simple" role="button" tabindex="0" data-abrir="${esc(e.id)}">
       <div class="foto-mini" style="background-image:${cssFoto(e)}"></div>
-      <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs · lo ven tus amigos</span>${state.misNotas?.[e.id] ? `<span class="nota-mia">“${textoConMenciones(state.misNotas[e.id])}”</span>` : ''}
+      <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs · lo ven tus amigos</span>${state.misNotas?.[e.id] ? `<span class="nota-mia">${textoConMenciones(state.misNotas[e.id])}</span>` : ''}
         <span class="mi-nota-acciones"><button class="btn-nota" data-editar-nota="${esc(e.id)}">✏️ ${state.misNotas?.[e.id] ? 'Editar' : 'Comentar'}</button>${state.misNotas?.[e.id] ? `<button class="btn-nota peligro" data-borrar-nota="${esc(e.id)}">🗑 Borrar</button>` : ''}</span></div>
     </div>`).join('');
 }

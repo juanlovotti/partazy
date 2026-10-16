@@ -45,7 +45,7 @@ let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
   // La amiga lo ve en su inicio
   const B=mk('B'); await sleep(1100); await B.cargarRed(); await sleep(300);
   const lista=B.document.getElementById('lista-compartidos');
-  ok(/Juan lo compartió/.test(txt(lista)) && /“¡Vamos a esta! 🔥”/.test(txt(lista)) && /— Juan/.test(txt(lista)), 'Sofía ve el evento con el comentario de Juan');
+  ok(/Juan lo compartió/.test(txt(lista)) && /¡Vamos a esta! 🔥/.test(txt(lista)) && !/“/.test(txt(lista)) && /— Juan/.test(txt(lista)), 'Sofía ve el evento con el comentario de Juan (sin comillas)');
   // Un comentario largo que llegue de otro lado se recorta
   ok(B.limpiarNota('a '.repeat(40)).split(' ').length===15, 'un comentario más largo se recorta a 15 palabras');
   // Tutorial nuevo
