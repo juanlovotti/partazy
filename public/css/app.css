@@ -1136,3 +1136,14 @@
 @keyframes hoy-raya{from{clip-path:inset(0 100% 0 0);} to{clip-path:inset(0 0 0 0);}}
 @keyframes aparece-suave{from{opacity:0; transform:translateY(-3px);} to{opacity:1; transform:none;}}
 @media (prefers-reduced-motion: reduce){ .hoy-vivo, .hoy-vivo::after{animation:none;} }
+/* Compu: el bloque "¿Qué querés hacer hoy?" sube a la altura del logo PARTAZY
+   (la ubicación queda en la misma línea que el logo y los botones de arriba) y respira más */
+@media (min-width:900px){
+  #pantalla-home .topbar:not(.compacta){pointer-events:none;}
+  #pantalla-home .topbar:not(.compacta) > *{pointer-events:auto;}
+  #pantalla-home .saludo{margin-top:-50px !important; padding-bottom:34px;}
+  #pantalla-home .saludo .fila-ubic{padding:0 0 44px;}
+  #pantalla-home .saludo .eyebrow{margin-bottom:16px;}
+  #pantalla-home .ticker{margin-bottom:30px;}
+  #pantalla-home .buscador{margin-bottom:22px;}
+}
