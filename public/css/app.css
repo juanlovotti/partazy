@@ -1211,3 +1211,15 @@
 .av-mini{width:30px; height:30px; flex:none; border-radius:50%; overflow:hidden; display:flex; align-items:center; justify-content:center; font-style:normal; font-size:11px; font-weight:800; background:linear-gradient(135deg, var(--rojo), var(--rojo-oscuro)); color:var(--blanco);}
 .av-mini img{width:100%; height:100%; object-fit:cover;}
 .mencion{color:var(--rojo); font-weight:700; font-style:normal;}
+
+/* Mi comentario de lo que compartí: editar / borrar */
+.mi-nota{margin:-2px 0 12px; padding:10px 12px; border-radius:14px; background:var(--negro-3); border:1px solid var(--gris-linea); display:flex; flex-direction:column; gap:8px;}
+.mi-nota-txt{font-size:13px; font-style:italic; color:var(--hueso); overflow-wrap:anywhere;}
+.mi-nota-txt small{display:block; font-style:normal; font-family:var(--font-mono); font-size:9.5px; letter-spacing:1.5px; text-transform:uppercase; color:var(--gris); margin-bottom:3px;}
+.mi-nota-acciones{display:flex; gap:6px; flex-wrap:wrap; margin-top:6px;}
+.btn-nota{background:var(--negro-2); border:1px solid var(--gris-linea); color:var(--hueso); border-radius:999px; padding:5px 11px; font-size:11.5px; font-weight:700; cursor:pointer; font-family:var(--font-body);}
+.btn-nota:hover{background:var(--negro-4);}
+.btn-nota.peligro{color:#ff8a8a;}
+.amigos-van-yo svg{width:14px; height:14px; color:var(--rojo); flex:none;}
+.nota-propia{border-color:rgba(242,106,27,.35);}
+.bloque-amigos-van{flex-wrap:wrap;} .bloque-amigos-van .nota-amigo{flex:1 1 100%; margin-top:0;}

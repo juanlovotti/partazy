@@ -774,9 +774,9 @@ function pedirTexto(titulo, texto, placeholder, okTxt, opciones = {}){
     const maxP = opciones.maxPalabras || 0;
     document.getElementById('modal-titulo').textContent = titulo;
     document.getElementById('modal-texto').textContent = texto;
-    input.value = '';
-    input.placeholder = placeholder || '';
     input.maxLength = opciones.maxCaracteres || 200;
+    input.value = opciones.valorInicial || '';
+    input.placeholder = placeholder || '';
     input.style.display = 'block';
     ok.textContent = okTxt || 'Aceptar';
     cancel.textContent = opciones.cancelarTxt || 'Volver';
@@ -796,11 +796,11 @@ function pedirTexto(titulo, texto, placeholder, okTxt, opciones = {}){
       const m = antes.match(/(^|\s)@([a-z0-9._]{0,20})$/i);
       const opcionesM = m ? amigosParaMencionar(m[2]) : [];
       lista.style.display = opcionesM.length ? 'block' : 'none';
-      lista.innerHTML = opcionesM.map(u => `<button type="button" role="option" class="mencion-opcion" data-usuario="${esc(u.usuario)}">${avatarMini(u)}<span><b>${esc(nombreVisible(u))}</b><small>@${esc(u.usuario)}</small></span></button>`).join('');
-      lista.querySelectorAll('[data-usuario]').forEach(b => b.onmousedown = e => {
+      lista.innerHTML = opcionesM.map(u => `<button type="button" role="option" class="mencion-opcion" data-mencion="${esc(u.usuario)}">${avatarMini(u)}<span><b>${esc(nombreVisible(u))}</b><small>@${esc(u.usuario)}</small></span></button>`).join('');
+      lista.querySelectorAll('[data-mencion]').forEach(b => b.onmousedown = e => {
         e.preventDefault();
         const pos = input.selectionStart ?? input.value.length;
-        const izq = input.value.slice(0, pos).replace(/@([a-z0-9._]{0,20})$/i, '@' + b.dataset.usuario + ' ');
+        const izq = input.value.slice(0, pos).replace(/@([a-z0-9._]{0,20})$/i, '@' + b.dataset.mencion + ' ');
         input.value = izq + input.value.slice(pos).replace(/^\S*/, '');
         input.focus(); input.selectionStart = input.selectionEnd = izq.length;
         revisar(); pintarMenciones();
@@ -810,7 +810,7 @@ function pedirTexto(titulo, texto, placeholder, okTxt, opciones = {}){
     input.onkeyup = e => { if(['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) pintarMenciones(); };
     revisar();
     bg.classList.add('show');
-    input.focus();
+    input.focus(); input.selectionStart = input.selectionEnd = input.value.length;
     const done = val => {
       bg.classList.remove('show');
       input.style.display = 'none';
@@ -3918,6 +3918,10 @@ document.addEventListener('click', e => {
   if(ed){ e.stopPropagation(); (async () => { const ev = await eventoActual(ed.dataset.editar); if(ev) editarEvento(ev); })(); return; }
   const exp = e.target.closest('[data-exportar]');
   if(exp){ const [id, fmt] = exp.dataset.exportar.split('|'); exportarLista(id, fmt, exp); return; }
+  const edN = e.target.closest('[data-editar-nota]');
+  if(edN){ e.stopPropagation(); editarNotaCompartido(edN.dataset.editarNota); return; }
+  const boN = e.target.closest('[data-borrar-nota]');
+  if(boN){ e.stopPropagation(); borrarNotaCompartido(boN.dataset.borrarNota); return; }
   const sal = e.target.closest('[data-salir]');
   if(sal){ const [id, est] = sal.dataset.salir.split('|'); salirDelEvento(id, est); return; }
   const yc = e.target.closest('[data-ya-compre]');
@@ -4728,9 +4732,11 @@ function mencionadosEn(texto){
 // Texto del comentario con las @menciones resaltadas (ya escapado).
 function textoConMenciones(t){ return esc(t).replace(/(^|\s)@([a-z0-9._]{3,20})/gi, '$1<span class="mencion">@$2</span>'); }
 // Burbuja con el comentario de un amigo que compartió el evento.
-function notaAmigoHTML(ev){
+function notaAmigoHTML(ev, sinMia){
   const n = (state.red.notas?.[ev.id] || []).find(x => !state.bloqueados.has(x.uid));
-  return n ? `<div class="nota-amigo"><span class="nota-txt">“${textoConMenciones(n.texto)}”</span><span class="nota-quien">— ${esc(nombreCorto(state.usuarios[n.uid]))}</span></div>` : '';
+  if(n) return `<div class="nota-amigo"><span class="nota-txt">“${textoConMenciones(n.texto)}”</span><span class="nota-quien">— ${esc(nombreCorto(state.usuarios[n.uid]))}</span></div>`;
+  const mia = !sinMia && state.misCompartidos?.includes(ev.id) && state.misNotas?.[ev.id];   // en el evento, la mía ya está en su caja
+  return mia ? `<div class="nota-amigo nota-propia"><span class="nota-txt">“${textoConMenciones(mia)}”</span><span class="nota-quien">— Vos</span></div>` : '';
 }
 // Primer nombre (o apodo).
 function nombreCorto(u){ return String(nombreVisible(u) || '').trim().split(/\s+/)[0] || 'Alguien'; }
@@ -4755,9 +4761,10 @@ function carasHTML(uids){
 function amigosVanHTML(ev, largo){
   const van = amigosQueVan(ev);
   const destino = ev.tipo === 'previa' ? 'a esta previa' : 'a esta fiesta';
-  if(van.length) return `<div class="amigos-van">${carasHTML(van)}<span>${frasePersonas(van, largo ? 'va ' + destino : 'va', largo ? 'van ' + destino : 'van')}</span></div>${notaAmigoHTML(ev)}`;
+  if(van.length) return `<div class="amigos-van">${carasHTML(van)}<span>${frasePersonas(van, largo ? 'va ' + destino : 'va', largo ? 'van ' + destino : 'van')}</span></div>${notaAmigoHTML(ev, largo)}`;
   const comp = (state.red.compartidoPor[ev.id] || []).filter(u => !state.bloqueados.has(u));
-  if(comp.length) return `<div class="amigos-van">${carasHTML(comp)}<span>${frasePersonas(comp, 'lo compartió', 'lo compartieron')}</span></div>${notaAmigoHTML(ev)}`;
+  if(comp.length) return `<div class="amigos-van">${carasHTML(comp)}<span>${frasePersonas(comp, 'lo compartió', 'lo compartieron')}</span></div>${notaAmigoHTML(ev, largo)}`;
+  if(state.misCompartidos?.includes(ev.id)) return `<div class="amigos-van amigos-van-yo">${ICO_REPOST}<span><b>Lo compartiste vos</b></span></div>${notaAmigoHTML(ev, largo)}`;
   return '';
 }
 
@@ -4788,12 +4795,14 @@ function nombresCorto(uids){
 // Eventos que compartieron mis amigos, con quién los compartió.
 function compartidosDeAmigos(){
   const ahora = Date.now();
-  return Object.entries(state.red.compartidoPor || {})
+  const todos = Object.assign({}, state.red.compartidoPor || {});
+  (state.misCompartidos || []).forEach(id => { if(!todos[id]) todos[id] = []; });   // también lo que compartí yo
+  return Object.entries(todos)
     .map(([id, uids]) => ({ e: eventoEnCache(id), uids }))
     .filter(x => x.e && eventoVisible(x.e) && !esCancelado(x.e) && x.e.fechaTs > ahora - HORA)
     .sort((a, b) => b.uids.length - a.uids.length || a.e.fechaTs - b.e.fechaTs)
     .slice(0, 10)
-    .map(x => ({ e: x.e, razon: `${nombresCorto(x.uids)} lo ${x.uids.length === 1 ? 'compartió' : 'compartieron'}` }));
+    .map(x => ({ e: x.e, mio: !x.uids.length, razon: x.uids.length ? `${nombresCorto(x.uids)} lo ${x.uids.length === 1 ? 'compartió' : 'compartieron'}` : 'Lo compartiste vos' }));
 }
 // "Lo compartieron vos y Sofi" / "3 personas lo compartieron".
 function textoCompartidoPor(ev){
@@ -4868,8 +4877,51 @@ async function pintarBotonCompartir(ev, tok){
   try{ ya = await DataService.yaCompartido(ev.id, state.uid); } catch(e){}
   if(tok !== state.tok) return;
   btn.classList.toggle('hecho', ya);
-  btn.innerHTML = ICO_REPOST + (ya ? 'Compartido ✓' : 'Compartir con mis amigos');
+  btn.innerHTML = ICO_REPOST + (ya ? 'Compartido ✓ · tocá para dejar de compartir' : 'Compartir con mis amigos');
   btn.onclick = () => alternarCompartir(ev, btn);
+  const caja = document.getElementById('mi-nota-repost');
+  if(caja) caja.innerHTML = ya ? miNotaHTML(ev.id) : '';
+}
+// Mi comentario de un evento que compartí, con botones para editarlo o borrarlo.
+function miNotaHTML(id){
+  const n = state.misNotas?.[id];
+  return `<div class="mi-nota">
+    <div class="mi-nota-txt">${n ? `<small>Tu comentario</small>“${textoConMenciones(n)}”` : '<small>Sin comentario</small>'}</div>
+    <div class="mi-nota-acciones">
+      <button class="btn-nota" data-editar-nota="${esc(id)}">✏️ ${n ? 'Editar' : 'Agregar comentario'}</button>
+      ${n ? `<button class="btn-nota peligro" data-borrar-nota="${esc(id)}">🗑 Borrar</button>` : ''}
+    </div></div>`;
+}
+// Vuelve a pintar todo lo que muestra mis compartidos (detalle, perfil, inicio).
+function repintarMisCompartidos(id){
+  const caja = document.getElementById('mi-nota-repost');
+  if(caja && caja.dataset.ev === id) caja.innerHTML = miNotaHTML(id);
+  pintarMisCompartidos();
+  if(typeof renderHome === 'function') renderHome();
+}
+// Cambiar el comentario de algo que ya compartí (y avisar a los que se mencionen por primera vez).
+async function editarNotaCompartido(id){
+  const ev = eventoEnCache(id);
+  await Promise.all(amigosUids().slice(0, 100).map(u => getUsuario(u).catch(() => null)));
+  const antes = state.misNotas[id] || '';
+  const nota = await pedirTexto(antes ? 'Editar tu comentario' : 'Agregar un comentario', 'Lo ven tus amigos en su inicio. Escribí @ para mencionar a un amigo.',
+    'Ej: ¡Vamos a esta, @sofi! 🔥', 'Guardar', { maxPalabras: NOTA_MAX_PALABRAS, maxCaracteres: NOTA_MAX_CARACTERES, cancelarTxt: 'Cancelar', menciones: true, valorInicial: antes });
+  if(nota === null) return;
+  const limpia = limpiarNota(nota);
+  if(limpia) state.misNotas[id] = limpia; else delete state.misNotas[id];
+  await guardarMisPlanes();
+  const ya = new Set(mencionadosEn(antes));
+  mencionadosEn(limpia).filter(u => !ya.has(u)).forEach(u => notificar(u, 'mencion', { objetoId: id, objetoNombre: ev?.nombre || '', texto: limpia }));
+  toast(limpia ? 'Comentario guardado ✓' : 'Comentario borrado');
+  repintarMisCompartidos(id);
+}
+// Borrar mi comentario (el evento sigue compartido).
+async function borrarNotaCompartido(id){
+  if(!(await confirmar('¿Borrar tu comentario?', 'El evento sigue compartido con tus amigos, pero sin el comentario.', 'Borrar'))) return;
+  delete state.misNotas[id];
+  await guardarMisPlanes();
+  toast('Comentario borrado');
+  repintarMisCompartidos(id);
 }
 // Avisa a mis amigos que publiqué un evento.
 function avisarAmigosEvento(id, nombre, yaAvisados){
@@ -4930,6 +4982,8 @@ function renderHome(){
   document.getElementById('lista-sugeridos').innerHTML = sug.map(x => tarjetaHTML(x.e, null, x.razon)).join('');
   const comp = compartidosDeAmigos();
   mostrar('titulo-compartidos', comp.length); mostrar('lista-compartidos', comp.length);
+  const tituloComp = document.querySelector('#titulo-compartidos h2');
+  if(tituloComp) tituloComp.textContent = comp.every(x => x.mio) ? 'Lo que compartiste' : comp.some(x => x.mio || (state.misCompartidos || []).includes(x.e.id)) ? 'Compartidos por vos y tus amigos' : 'Compartidos por tus amigos';
   document.getElementById('lista-compartidos').innerHTML = comp.map(x => tarjetaHTML(x.e, null, x.razon)).join('');
   mostrar('titulo-tendencia', ten.length >= 2); mostrar('lista-tendencia', ten.length >= 2);
   document.getElementById('lista-tendencia').innerHTML = ten.map(e => tarjetaHTML(e, null, e.repostsCount ? `${e.repostsCount} ${e.repostsCount === 1 ? 'compartido' : 'compartidos'}` : `${e.confirmadosCount} van`)).join('');
@@ -5160,7 +5214,7 @@ async function renderDetalle(id){
       ${amigosVanHTML(ev, true) ? `<div class="bloque"><div class="bloque-amigos-van">${amigosVanHTML(ev, true)}</div></div>` : ''}
 
       <div class="bloque">
-        ${(!esCreador && !cancelado && ev.privacidad === 'publica') ? `<button class="btn btn-outline btn-repost" id="btn-repost" style="margin-bottom:10px;">${ICO_REPOST}Compartir con mis amigos</button>` : ''}
+        ${(!esCreador && !cancelado && ev.privacidad === 'publica') ? `<button class="btn btn-outline btn-repost" id="btn-repost" style="margin-bottom:10px;">${ICO_REPOST}Compartir con mis amigos</button><div id="mi-nota-repost" data-ev="${esc(ev.id)}"></div>` : ''}
         <div class="acciones-evento">
           <button class="btn btn-secundario" id="btn-compartir-evento">Compartir link</button>
           <button class="btn btn-secundario" id="btn-enviar-amigos">Enviar a amigos</button>
@@ -6566,7 +6620,8 @@ function pintarMisCompartidos(){
   document.getElementById('perfil-compartidos').innerHTML = lista.map(e => `
     <div class="item-simple" role="button" tabindex="0" data-abrir="${esc(e.id)}">
       <div class="foto-mini" style="background-image:${cssFoto(e)}"></div>
-      <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs · lo ven tus amigos</span>${state.misNotas?.[e.id] ? `<span class="nota-mia">“${textoConMenciones(state.misNotas[e.id])}”</span>` : ''}</div>
+      <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs · lo ven tus amigos</span>${state.misNotas?.[e.id] ? `<span class="nota-mia">“${textoConMenciones(state.misNotas[e.id])}”</span>` : ''}
+        <span class="mi-nota-acciones"><button class="btn-nota" data-editar-nota="${esc(e.id)}">✏️ ${state.misNotas?.[e.id] ? 'Editar' : 'Comentar'}</button>${state.misNotas?.[e.id] ? `<button class="btn-nota peligro" data-borrar-nota="${esc(e.id)}">🗑 Borrar</button>` : ''}</span></div>
     </div>`).join('');
 }
 

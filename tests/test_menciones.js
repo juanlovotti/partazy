@@ -20,11 +20,11 @@ const notifs=uid=>[...store.docs.entries()].filter(([k])=>k.startsWith(`notifica
   const input=$('modal-input');
   const tipear=v=>{ input.value=v; input.selectionStart=input.selectionEnd=v.length; input.dispatchEvent(new A.Event('input')); };
   tipear('Vamos @'); await sleep(30);
-  const ops=[...$('modal-menciones').querySelectorAll('[data-usuario]')].map(b=>b.dataset.usuario);
+  const ops=[...$('modal-menciones').querySelectorAll('[data-mencion]')].map(b=>b.dataset.mencion);
   ok($('modal-menciones').style.display==='block' && ops.includes('sofi') && ops.includes('ivo') && !ops.includes('extrano'), 'al escribir @ sugiere solo a tus amigos');
   tipear('Vamos @so'); await sleep(30);
-  const opsS=[...$('modal-menciones').querySelectorAll('[data-usuario]')];
-  ok(opsS.length===1 && opsS[0].dataset.usuario==='sofi', 'filtra mientras escribís (@so → Sofía)');
+  const opsS=[...$('modal-menciones').querySelectorAll('[data-mencion]')];
+  ok(opsS.length===1 && opsS[0].dataset.mencion==='sofi', 'filtra mientras escribís (@so → Sofía)');
   opsS[0].dispatchEvent(new A.MouseEvent('mousedown',{bubbles:true})); await sleep(30);
   ok(input.value==='Vamos @sofi ' && $('modal-menciones').style.display==='none', 'tocar la sugerencia completa el @usuario');
   tipear(input.value+'y @extrano 🔥'); await sleep(30);
