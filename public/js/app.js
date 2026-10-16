@@ -48,9 +48,14 @@ if(FIREBASE_OK){
   try{ if(auth.setPersistence && firebase.auth.Auth?.Persistence) auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {}); } catch(e){}
   db   = firebase.firestore();
   db.settings({ ignoreUndefinedProperties: true });
+  // Guarda una copia de los datos en el dispositivo: la próxima vez la app abre al instante con lo último
+  // que vio y después se actualiza sola. Si el navegador no lo permite (modo incógnito, etc.), sigue normal.
+  try{ if(db.enablePersistence) db.enablePersistence({ synchronizeTabs: true }).catch(() => {}); } catch(e){}
 }
 
 const HORA = 3600 * 1000;
+// Cuántos eventos trae la app al abrir (después se pueden cargar más). Menos = abre más rápido.
+const LIMITE_INICIAL = 50;
 
 // =========================================================
 //  DataService — única puerta a Firestore
@@ -81,7 +86,7 @@ const DataService = {
   escucharEventos(onData, onErr){
     return db.collection('events')
       .where('fechaTs', '>=', Date.now() - 6 * HORA)
-      .orderBy('fechaTs', 'asc').limit(state.limiteEventos || 100)
+      .orderBy('fechaTs', 'asc').limit(state.limiteEventos || LIMITE_INICIAL)
       .onSnapshot(snap => onData(snap.docs.map(d => ({ id: d.id, ...d.data() }))), onErr);
   },
   // Carga una sola vez los próximos 100 eventos (se usa si falla la escucha en vivo).
@@ -1195,7 +1200,7 @@ function cargarEventosEnVivo(){
     const fallback = async () => { try{ resolve(await DataService.listEventos()); } catch(e){ console.warn('eventos', e); resolve([]); } };
     try{
       state.unsubEventos = DataService.escucharEventos(lista => {
-        state.hayMasEventos = lista.length >= (state.limiteEventos || 100);
+        state.hayMasEventos = lista.length >= (state.limiteEventos || LIMITE_INICIAL);
         if(primera){ primera = false; resolve(lista); return; }
         state.eventos = lista;
         refrescarFeed();
@@ -1222,11 +1227,15 @@ function refrescarFeed(){
 // Arranque con sesión: carga perfil, eventos, red social y abre el link compartido si había.
 async function entrarALaApp(){
   mostrarLoader('CARGANDO EVENTOS...');
-  state.privado = await DataService.getPrivado(state.uid);
   if(state.perfil.suspendido){ mostrarSuspendido(); return; }
-  state.esAdmin = await DataService.esAdmin(state.uid);
-  if(esOrganizacion(state.perfil)) state.verificacion = await DataService.getVerificacion(state.uid);
-  state.eventos = await cargarEventosEnVivo();
+  // Todo a la vez (antes iba una consulta atrás de la otra y se sumaban las esperas)
+  const [privado, esAdmin, verificacion, eventos] = await Promise.all([
+    DataService.getPrivado(state.uid),
+    DataService.esAdmin(state.uid).catch(() => false),
+    esOrganizacion(state.perfil) ? DataService.getVerificacion(state.uid).catch(() => null) : Promise.resolve(state.verificacion),
+    cargarEventosEnVivo()
+  ]);
+  state.privado = privado; state.esAdmin = esAdmin; state.verificacion = verificacion; state.eventos = eventos;
   setNav(true);
   renderHome();
   renderExplorar();
@@ -1681,7 +1690,7 @@ async function salirDelEvento(id, estado){
 // Más eventos: amplía la escucha de a 100
 async function cargarMasEventos(btn){
   if(btn){ btn.disabled = true; btn.textContent = 'Cargando...'; }
-  state.limiteEventos = (state.limiteEventos || 100) + 100;
+  state.limiteEventos = (state.limiteEventos || LIMITE_INICIAL) + 100;
   state.eventos = await cargarEventosEnVivo();
   renderHome(); renderExplorar();
   if(btn){ btn.disabled = false; btn.textContent = 'Cargar más eventos'; }
@@ -1882,10 +1891,10 @@ async function verificarFoto(img){
 }
 
 // Lee, revisa y comprime una foto. Perfil: 320px cuadrada (~25 KB). Evento: 800px de ancho.
-// Miniatura liviana (~30-45 KB) para tarjetas y listas. La foto grande se baja solo al abrir el evento.
-const LIMITE_MINI = 60000;
+// Miniatura liviana (~20-30 KB) para tarjetas y listas. La foto grande se baja solo al abrir el evento.
+const LIMITE_MINI = 34000;
 // Achica una imagen para la tarjeta (menos peso, menos datos).
-function miniaturaDe(dataUrl, ancho = 480){
+function miniaturaDe(dataUrl, ancho = 440){
   return new Promise((ok, mal) => {
     const img = new Image();
     img.onload = () => {
@@ -1893,7 +1902,7 @@ function miniaturaDe(dataUrl, ancho = 480){
       const c = document.createElement('canvas');
       c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
       c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-      for(const q of [0.62, 0.5, 0.4, 0.3]){
+      for(const q of [0.6, 0.5, 0.4, 0.3, 0.22]){
         const d = c.toDataURL('image/jpeg', q);
         if(d.length <= LIMITE_MINI) return ok(d);
       }
@@ -5702,14 +5711,16 @@ async function renderTicket(id){
       </div>
     `;
 
-    if(ev.conQR && !ext) try{
-      new QRCode(document.getElementById('qr-target'), {
+    if(ev.conQR && !ext) cargarQR().then(() => {
+      const el = document.getElementById('qr-target');
+      if(!el) return;
+      new QRCode(el, {
         text: `PARTAZY|${ev.id}|${asistencia.ticket}`,
         width: 160, height: 160,
         colorDark: '#0A0809', colorLight: '#FFFFFF',
         correctLevel: QRCode.CorrectLevel.M
       });
-    } catch(e){ console.warn('QR error', e); }
+    }).catch(e => console.warn('QR error', e));
 
     const input = document.getElementById('chat-input-texto');
     input.addEventListener('keydown', e => { if(e.key === 'Enter') enviarMensaje(ev.id); });
@@ -6480,6 +6491,19 @@ function encuadrarMapa(eventos, centro){
 // =========================================================
 const MAPA = { mapa: null, pin: null, punto: null, dir: null, cargando: null, tRev: null };
 // Carga la librería de mapas solo cuando hace falta.
+// Carga la librería del QR recién cuando se abre una entrada con QR.
+let _cargandoQR = null;
+function cargarQR(){
+  if(window.QRCode) return Promise.resolve();
+  if(_cargandoQR) return _cargandoQR;
+  _cargandoQR = new Promise((ok, mal) => {
+    const js = document.createElement('script');
+    js.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
+    js.onload = () => ok(); js.onerror = () => { _cargandoQR = null; mal(new Error('No se pudo cargar el QR')); };
+    document.head.appendChild(js);
+  });
+  return _cargandoQR;
+}
 function cargarLeaflet(){
   if(window.L) return Promise.resolve();
   if(MAPA.cargando) return MAPA.cargando;

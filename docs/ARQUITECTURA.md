@@ -91,7 +91,7 @@ Buscá el nombre para saltar. En orden:
 ## Límites del plan gratis (Spark)
 
 - Firestore: 50.000 lecturas y 20.000 escrituras por día.
-- El inicio escucha en vivo los próximos 100 eventos (`onSnapshot`): cada cambio en un evento cuesta 1 lectura por cada persona con la app abierta. Si crece mucho el uso, es lo primero a revisar.
+- El inicio escucha en vivo los próximos 50 eventos (`LIMITE_INICIAL`, con "Cargar más" de a 100) (`onSnapshot`): cada cambio en un evento cuesta 1 lectura por cada persona con la app abierta. Si crece mucho el uso, es lo primero a revisar.
 - Sin Cloud Functions: no hay avisos push con la app cerrada ni tareas programadas.
 
 ## Pruebas
@@ -99,3 +99,13 @@ Buscá el nombre para saltar. En orden:
 - `tests/fakefb.js`: imitación en memoria de Firebase (Auth + Firestore). Con `store.estricto = true` imita además los permisos de un usuario sin cuenta.
 - `tests/cargar-html.js`: arma la página uniendo `index.html` + `css/app.css` + `js/app.js` y saca las librerías de internet.
 - Cada `test_*.js` abre una o varias "ventanas" (usuarios distintos) con jsdom y recorre un flujo real.
+
+## Velocidad de carga
+
+- **Hosting:** Firebase Hosting sirve los archivos desde una red global (CDN), cerca de quien entra. No depende de dónde esté la base de datos.
+- **Firestore** sí vive en una región fija (se ve en la consola → Firestore Database). Cada consulta viaja hasta ahí.
+- Al arrancar, perfil privado, admin, verificación y eventos se piden **en paralelo** (`entrarALaApp`).
+- Firestore guarda una **copia local** (`enablePersistence`): desde la segunda visita la app abre con lo último que vio y se actualiza sola.
+- Las miniaturas de los eventos pesan ~20-30 KB (`LIMITE_MINI`); la foto grande se baja solo al abrir el evento.
+- Librerías pesadas (mapas, PDF, QR, filtro de fotos) se cargan **recién cuando se usan**.
+- Mayor peso que queda: el SDK de Firebase "compat" (~200 KB comprimido). Migrar al SDK modular (con un empaquetador) lo reduce bastante; conviene hacerlo junto con la migración a React.

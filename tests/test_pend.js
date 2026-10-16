@@ -16,7 +16,7 @@ let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
   ok(/partazycontacto@gmail\.com/.test(txt(w.document.querySelector('#pantalla-home .pie-legal'))), 'el pie muestra el mail de contacto');
   w.abrirTerminos(); await sleep(50);
   ok(w.document.querySelector('#pantalla-terminos .mail-contacto a')?.getAttribute('href')==='mailto:partazycontacto@gmail.com', 'Términos tiene el mail con link');
-  ok(w.eval('state.eventos.length')===100, 'el feed carga los primeros 100');
+  ok(w.eval('state.eventos.length')===50, 'el feed carga los primeros 50 (abre más rápido)');
   w.ir('explorar'); await sleep(50);
   ok($('explorar-mas').style.display!=='none', 'Explorar ofrece "Cargar más eventos"');
   $('explorar-mas').querySelector('button').click(); await sleep(300);
