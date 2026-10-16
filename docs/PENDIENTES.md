@@ -7,7 +7,8 @@
 
 ## Ideas para más adelante
 
-- [ ] Dominio propio (ej. partazy.com.ar) en Firebase Hosting + mail con la marca reenviado a partazycontacto@gmail.com.
+- [ ] Dominio partazy.com (comprado en Namecheap, DNS cargado): esperar "Connected" en Hosting, sumar www.partazy.com con redirección y pasar og:url/og:image a partazy.com.
+- [ ] Mail con la marca (ej. hola@partazy.com) reenviado a partazycontacto@gmail.com.
 - [ ] Plan Blaze + Cloud Functions: avisos push con la app cerrada, vista previa por evento al compartir el link, aviso automático a la lista de espera cuando se libera un lugar, limpieza programada.
 - [ ] Pruebas de `firestore.rules` con el emulador de Firebase.
 - [ ] Partir `js/app.js` en módulos más chicos si el equipo crece (hoy es un solo script global a propósito).
