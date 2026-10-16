@@ -1101,7 +1101,8 @@ function mostrarRegistro(user){
   const max = new Date(); max.setFullYear(max.getFullYear() - 18);
   document.getElementById('rg-nacimiento').max = max.toISOString().slice(0, 10);
   renderSelectorIntereses('rg-intereses', []);
-  const rc = document.getElementById('rg-ciudad'); if(rc && !rc.value && state.ciudadActual && state.userCoords) rc.value = state.ciudadActual;
+  const rc = document.getElementById('rg-ciudad'); if(rc && !rc.value && state.ciudadActual && state.userCoords){ rc.value = state.ciudadActual; rc.dataset.ok = '1'; }
+  autocompletarLugar(rc);
   ir('registro');
   ocultarLoader();
 }
@@ -1122,6 +1123,8 @@ async function completarRegistro(){
   const usuario = normalizarUsuario(document.getElementById('rg-usuario').value);
   if(!(await comprobarUsuario(usuario, 'rg-usuario-estado'))) return err('Elegí otro nombre de usuario.');
   if(!document.getElementById('rg-normas').checked) return err('Para usar Partazy tenés que aceptar las normas de la comunidad.');
+  const ciudadOk = await validarLugar(document.getElementById('rg-ciudad'));
+  if(ciudadOk === null) return err('No encontramos esa ciudad o barrio. Escribila de nuevo y elegí una opción de la lista.');
   err('');
 
   const tipoCuenta = tipoCuentaElegido('rg-tipo');
@@ -1149,6 +1152,21 @@ async function completarRegistro(){
   }
 }
 
+// Ubica a la persona en la ciudad o barrio de su perfil (si existe). true si funcionó.
+async function usarCiudadDelPerfil(){
+  const c = (state.perfil?.ciudad || '').trim();
+  if(c.length < 3) return false;
+  let g = leerPref('geoPerfil');
+  if(!g || g.texto !== c){
+    const l = await buscarLugares(c, 1);
+    if(!l || !l.length) return false;
+    g = { texto: c, lat: l[0].lat, lng: l[0].lng, nombre: l[0].ciudad || c };
+    guardarPref('geoPerfil', g);
+  }
+  state.geoFallo = false;
+  aplicarUbicacion({ lat: g.lat, lng: g.lng }, false, g.nombre);
+  return true;
+}
 let geoPedida = false;
 // Pide la ubicación al navegador (una vez). Sin permiso: no inventa ciudad, muestra todo.
 function pedirUbicacion(){
@@ -1156,8 +1174,12 @@ function pedirUbicacion(){
   geoPedida = true;
   if(state.ubicManual){ aplicarUbicacion({ lat: state.ubicManual.lat, lng: state.ubicManual.lng }, true, state.ubicManual.nombre); return; }
   // Sin permiso de ubicación no inventamos una ciudad: mostramos todo y pedimos que elija la suya
-  const sinUbicacion = () => { state.geoFallo = true; state.userCoords = null; state.ubicacionReal = false; pintarUbicacion(); renderHome(); renderExplorar(); };
-  if(!navigator.geolocation){ sinUbicacion(); return; }
+  const sinUbicacion = async () => {
+    // Si en el perfil puso su ciudad o barrio, usamos esa (aproximada) en vez de mostrar todo el país
+    if(await usarCiudadDelPerfil()) return;
+    state.geoFallo = true; state.userCoords = null; state.ubicacionReal = false; pintarUbicacion(); renderHome(); renderExplorar();
+  };
+  if(!navigator.geolocation || navegadorDeApp()){ sinUbicacion(); return; }
   navigator.geolocation.getCurrentPosition(
     pos => { state.geoFallo = false; aplicarUbicacion({ lat: pos.coords.latitude, lng: pos.coords.longitude }, true); },
     sinUbicacion,
@@ -6226,6 +6248,7 @@ function abrirRango(){
     `<div class="chip ${state.radioKm === r ? 'activo' : ''}" role="button" tabindex="0" data-rango="${r}">${r ? r + ' km' : 'Todos'}</div>`).join('');
   document.getElementById('rango-ops').querySelectorAll('[data-rango]').forEach(c => c.onclick = () => elegirRango(+c.dataset.rango));
   document.getElementById('rango-estado').textContent = '';
+  autocompletarLugar(document.getElementById('rango-ciudad'), usarLugarElegido);
   document.getElementById('modal-rango').classList.add('show');
   abrirModalHist();
 }
@@ -6245,23 +6268,105 @@ function elegirRango(km){
   document.querySelectorAll('#rango-ops .chip').forEach(c => c.classList.toggle('activo', +c.dataset.rango === km));
   pintarUbicacion(); renderHome(); renderExplorar(); pintarMapaEventos(true);
 }
+// ¿Estamos adentro del navegador de Instagram / Facebook / TikTok? (ahí no se puede compartir la ubicación)
+function navegadorDeApp(){ return /Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|Line\//i.test(navigator.userAgent || ''); }
+function esIphone(){ return /iPhone|iPad|iPod/i.test(navigator.userAgent || ''); }
+// Explica, en simple, por qué no se pudo obtener la ubicación y cómo arreglarlo.
+function mensajeErrorUbicacion(err){
+  if(navegadorDeApp()) return 'Estás dentro de Instagram (o de otra app), y ahí no se puede compartir la ubicación. Tocá <b>⋯</b> arriba a la derecha → <b>"Abrir en el navegador"</b>, o escribí tu ciudad en el campo de arriba.';
+  if(err && err.code === 1) return esIphone()
+    ? 'La ubicación está bloqueada para esta página. En el iPhone: <b>Ajustes → Privacidad y seguridad → Localización → Sitios web de Safari → "Al usar la app"</b>. Después, en Safari tocá <b>aA</b> → <b>Configuración del sitio web</b> → <b>Ubicación: Permitir</b>. O escribí tu ciudad en el campo de arriba.'
+    : 'La ubicación está bloqueada para esta página. Tocá el <b>candado</b> al lado de la dirección → <b>Permisos</b> → <b>Ubicación: Permitir</b>, y probá de nuevo. O escribí tu ciudad en el campo de arriba.';
+  if(err && err.code === 2) return 'Tu celu no encontró la ubicación. Fijate que la <b>ubicación del teléfono esté activada</b>, o escribí tu ciudad en el campo de arriba.';
+  return 'Tardó demasiado en encontrar tu ubicación. Probá de nuevo en un lugar con mejor señal, o escribí tu ciudad en el campo de arriba.';
+}
+// Pide la ubicación con un segundo intento más tolerante (sin GPS fino, más tiempo).
+function pedirPosicion(ok, mal){
+  navigator.geolocation.getCurrentPosition(ok, e => {
+    if(e && e.code === 1) return mal(e);   // si está bloqueada, reintentar no sirve
+    navigator.geolocation.getCurrentPosition(ok, mal, { enableHighAccuracy: false, timeout: 15000, maximumAge: 30 * 60 * 1000 });
+  }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 5 * 60 * 1000 });
+}
 // Vuelve a pedir la ubicación del GPS.
 function usarMiUbicacion(){
   const est = document.getElementById('rango-estado');
-  if(!navigator.geolocation){ est.textContent = 'Tu navegador no comparte la ubicación.'; return; }
-  est.textContent = 'Buscando tu ubicación...';
-  navigator.geolocation.getCurrentPosition(pos => {
+  if(navegadorDeApp()){ est.innerHTML = mensajeErrorUbicacion(); return; }
+  if(!navigator.geolocation){ est.textContent = 'Este navegador no comparte la ubicación. Escribí tu ciudad en el campo de arriba.'; return; }
+  est.textContent = 'Buscando tu ubicación... (si te pregunta, tocá "Permitir")';
+  pedirPosicion(pos => {
     state.ubicManual = null; guardarPref('ubicManual', null);
     state.ciudadActual = ''; aplicarUbicacion({ lat: pos.coords.latitude, lng: pos.coords.longitude }, true);
     est.textContent = '✓ Listo, usamos tu ubicación actual.'; pintarTextoRango();
-  }, () => { est.textContent = 'No pudimos obtener tu ubicación. Revisá el permiso del navegador o escribí tu ciudad.'; },
-  { timeout: 8000, maximumAge: 5 * 60 * 1000 });
+  }, e => { est.innerHTML = mensajeErrorUbicacion(e); });
 }
+// Busca lugares reales de Argentina (OpenStreetMap). Devuelve [{ nombre, detalle, lat, lng }].
+// Si no hay internet o falla el servicio, devuelve null (no es lo mismo que "no existe").
+async function buscarLugares(q, limite = 5){
+  try{
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=${limite}&countrycodes=ar&addressdetails=1&accept-language=es&q=${encodeURIComponent(q)}`);
+    const lista = await r.json();
+    const vistos = new Set();
+    return (lista || []).map(x => {
+      const a = x.address || {};
+      const barrio = a.suburb || a.neighbourhood || a.quarter || '';
+      const ciudad = a.city || a.town || a.village || a.municipality || '';
+      const prov = (a.state || '').replace(/^Provincia (de )?/i, '');
+      const nombre = barrio && ciudad && barrio !== ciudad ? `${barrio}, ${ciudad}` : (ciudad || barrio || x.name || '');
+      return { nombre, detalle: prov, lat: parseFloat(x.lat), lng: parseFloat(x.lon), ciudad: ciudad || barrio || x.name || '' };
+    }).filter(l => l.nombre && !vistos.has(l.nombre) && vistos.add(l.nombre));
+  } catch(e){ return null; }
+}
+// Agrega sugerencias de lugares reales a un campo de texto. Al elegir una, guarda el lugar en el campo.
+function autocompletarLugar(input, alElegir){
+  if(!input || input.dataset.auto) return;
+  input.dataset.auto = '1';
+  input.removeAttribute('list');
+  input.setAttribute('autocomplete', 'off');
+  const caja = document.createElement('div');
+  caja.className = 'sug-lugares'; caja.setAttribute('role', 'listbox'); caja.style.display = 'none';
+  (input.closest('.rango-ciudad') || input).insertAdjacentElement('afterend', caja);
+  let t, pedido = 0;
+  input.addEventListener('input', () => {
+    input.dataset.ok = '';   // si escribe de nuevo, el lugar elegido deja de valer
+    clearTimeout(t);
+    const q = input.value.trim();
+    if(q.length < 3){ caja.style.display = 'none'; return; }
+    t = setTimeout(async () => {
+      const yo = ++pedido;
+      const lista = await buscarLugares(q);
+      if(yo !== pedido) return;
+      if(!lista){ caja.style.display = 'none'; return; }
+      caja.innerHTML = lista.length
+        ? lista.map((l, i) => `<button type="button" class="sug-lugar" role="option" data-i="${i}"><b>${esc(l.nombre)}</b>${l.detalle ? `<small>${esc(l.detalle)}</small>` : ''}</button>`).join('')
+        : '<div class="sug-vacio">No encontramos ese lugar. Probá con otro nombre (ej. "Villa María" o "Nueva Córdoba, Córdoba").</div>';
+      caja.style.display = 'block';
+      caja.querySelectorAll('[data-i]').forEach(b => b.onmousedown = e => {
+        e.preventDefault();
+        const l = lista[+b.dataset.i];
+        input.value = l.nombre; input.dataset.ok = '1'; input.dataset.lat = l.lat; input.dataset.lng = l.lng;
+        caja.style.display = 'none';
+        if(alElegir) alElegir(l);
+      });
+    }, 450);
+  });
+  input.addEventListener('blur', () => setTimeout(() => { caja.style.display = 'none'; }, 150));
+}
+// Revisa que una ciudad o barrio exista antes de guardarla. Devuelve el nombre a guardar, o null si no existe.
+async function validarLugar(input, original){
+  const v = (input.value || '').trim();
+  if(!v || input.dataset.ok === '1' || v === (original || '')) return v;
+  const lista = await buscarLugares(v, 1);
+  if(lista === null) return v;              // sin conexión al buscador: no frenamos a la persona
+  return lista.length ? v : null;
+}
+
 // Busca una ciudad de Argentina y la usa como ubicación.
 async function buscarCiudadRango(){
-  const q = document.getElementById('rango-ciudad').value.trim();
+  const inp = document.getElementById('rango-ciudad');
+  const q = inp.value.trim();
   const est = document.getElementById('rango-estado');
   if(q.length < 3){ est.textContent = 'Escribí al menos 3 letras.'; return; }
+  if(inp.dataset.ok === '1' && inp.dataset.lat){ usarLugarElegido({ nombre: q, lat: +inp.dataset.lat, lng: +inp.dataset.lng }); return; }
   est.textContent = 'Buscando...';
   try{
     const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=ar&addressdetails=1&accept-language=es&q=${encodeURIComponent(q)}`);
@@ -6273,6 +6378,13 @@ async function buscarCiudadRango(){
     aplicarUbicacion(coords, true, nombre);
     est.textContent = `✓ Mostrando eventos cerca de ${nombre}.`; pintarTextoRango();
   } catch(e){ est.textContent = 'No se pudo buscar. Probá de nuevo.'; }
+}
+// Usa un lugar elegido de la lista de sugerencias como ubicación.
+function usarLugarElegido(l){
+  const coords = { lat: l.lat, lng: l.lng };
+  state.ubicManual = { ...coords, nombre: l.nombre }; guardarPref('ubicManual', state.ubicManual);
+  aplicarUbicacion(coords, true, l.nombre);
+  document.getElementById('rango-estado').textContent = `✓ Mostrando eventos cerca de ${l.nombre}.`; pintarTextoRango();
 }
 // Aviso si no hay eventos en tu rango (o si no sabemos tu ciudad).
 function avisoRangoHTML(total, dentro){
@@ -6738,6 +6850,7 @@ function editarPerfil(){
   const sw = (id, on) => { const el = document.getElementById(id); el.classList.toggle('on', on); el.setAttribute('aria-checked', on ? 'true' : 'false'); };
   sw('ep-edad', !state.perfil.ocultarEdad); sw('ep-enlinea', !state.perfil.ocultarEnLinea); sw('ep-planes', !state.perfil.ocultarPlanes); sw('ep-mensajes', state.perfil.mensajesDe !== 'amigos');
   document.getElementById('ep-ciudad').value = state.perfil.ciudad || '';
+  autocompletarLugar(document.getElementById('ep-ciudad'));
   renderSelectorIntereses('ep-intereses', state.perfil.intereses || []);
 }
 
@@ -6752,7 +6865,9 @@ function cancelarEdicionPerfil(){
 async function guardarPerfil(){
   const nombre = document.getElementById('ep-nombre').value.trim();
   if(nombre.length < 2){ toast('Escribí tu nombre'); return; }
-  const ciudad = document.getElementById('ep-ciudad').value.trim() || state.perfil.ciudad;
+  const ciudadVal = await validarLugar(document.getElementById('ep-ciudad'), state.perfil.ciudad);
+  if(ciudadVal === null){ toast('No encontramos esa ciudad o barrio. Elegí una opción de la lista.'); document.getElementById('ep-ciudad').focus(); return; }
+  const ciudad = ciudadVal || state.perfil.ciudad;
   const usuario = normalizarUsuario(document.getElementById('ep-usuario').value);
   if(!(await comprobarUsuario(usuario, 'ep-usuario-estado'))){ toast('Elegí otro nombre de usuario'); return; }
   const tipoCuenta = tipoCuentaElegido('ep-tipo');
