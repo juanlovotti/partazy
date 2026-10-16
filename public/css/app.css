@@ -1270,3 +1270,10 @@
 .cta-gustos{grid-column:1 / -1; flex:0 0 100%; display:flex; flex-direction:column; gap:6px; align-items:flex-start; padding:18px; border-radius:var(--radius-card); background:linear-gradient(135deg, rgba(242,106,27,.14), rgba(76,185,68,.08)); border:1px dashed rgba(242,106,27,.45);}
 .cta-gustos b{font-size:15px;} .cta-gustos span{font-size:13px; color:var(--hueso); opacity:.85; line-height:1.45;}
 .cta-gustos .btn{width:auto; margin-top:8px; padding:11px 18px;}
+
+/* Gustos en dos grupos: música / planes */
+.intereses-sel{flex-direction:column; gap:16px;}
+.grupo-intereses{display:flex; flex-direction:column; gap:9px;}
+.grupo-tit{font-size:12.5px; font-weight:700; color:var(--hueso);}
+.grupo-chips{display:flex; flex-wrap:wrap; gap:8px;}
+.grupo-intereses + .grupo-intereses{padding-top:14px; border-top:1px solid var(--gris-linea);}

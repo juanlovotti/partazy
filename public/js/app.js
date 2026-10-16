@@ -937,7 +937,11 @@ function sumarConfirmadoEnCache(id){
 // =========================================================
 //  CUENTAS: Google + email y contraseña
 // =========================================================
-const INTERESES = ['Techno','House','Electrónica','Cachengue','Reggaetón','Cumbia','Cuarteto','Rock','Pop','Trap','Previas','Universitarias'];
+// Gustos de la persona, en dos grupos: la música que le gusta y los planes que le copan.
+// Se guardan juntos en users/{uid}.intereses (así las cuentas viejas siguen funcionando).
+const INTERESES_MUSICA = ['Techno','House','Electrónica','Cachengue','Reggaetón','Cumbia','Cuarteto','Rock','Pop','Trap'];
+const INTERESES_PLANES = ['Previas','After','Universitarias','Peñas','Egresados'];
+const INTERESES = [...INTERESES_MUSICA, ...INTERESES_PLANES];
 let modoAuth = 'ingresar'; // 'ingresar' | 'crear'
 
 const ERRORES_AUTH = {
@@ -1063,9 +1067,10 @@ function edadUsuario(){ return edadDesde(state.privado?.nacimiento); }
 // Selector de intereses (chips que se activan al tocarlos)
 function renderSelectorIntereses(contId, seleccion){
   const sel = seleccion || [];
-  document.getElementById(contId).innerHTML = INTERESES.map(i =>
-    `<div class="chip ${sel.includes(i) ? 'activo' : ''}" role="button" tabindex="0" aria-pressed="${sel.includes(i)}" data-interes="${esc(i)}">${esc(i)}</div>`
-  ).join('');
+  const chip = i => `<div class="chip ${sel.includes(i) ? 'activo' : ''}" role="button" tabindex="0" aria-pressed="${sel.includes(i)}" data-interes="${esc(i)}">${esc(i)}</div>`;
+  document.getElementById(contId).innerHTML = `
+    <div class="grupo-intereses" data-grupo="musica"><div class="grupo-tit">🎧 Música que te gusta</div><div class="grupo-chips">${INTERESES_MUSICA.map(chip).join('')}</div></div>
+    <div class="grupo-intereses" data-grupo="planes"><div class="grupo-tit">🎉 Planes que te copan</div><div class="grupo-chips">${INTERESES_PLANES.map(chip).join('')}</div></div>`;
 }
 // Lee los intereses marcados en un selector.
 function interesesElegidos(contId){
@@ -4738,6 +4743,9 @@ function afinidad(ev, gustos = misGustos()){
     let pts = 0;
     if(g === 'previas') pts = ev.tipo === 'previa' ? 2 : 0;
     else if(g === 'universitarias') pts = esUniversitaria(ev) ? 2 : 0;
+    else if(g === 'after') pts = ev.ocasion === 'after' ? 2 : 0;
+    else if(g === 'penas') pts = ev.ocasion === 'pena' ? 2 : 0;
+    else if(g === 'egresados') pts = ev.ocasion === 'egresados' ? 2 : 0;
     else if(ev.categoria === g || (musica && musica.includes(g))) pts = 2;
     else if((PARECIDOS[g] || []).includes(ev.categoria)) pts = 1;
     if(pts > mejor.puntos) mejor = { puntos: pts, motivo: (state.perfil.intereses || []).find(i => normalizar(i) === g) || g };
@@ -6708,7 +6716,8 @@ function pintarMisCompartidos(){
 // Lleva a elegir los gustos de música (editor del perfil, en la parte de intereses).
 function elegirGustos(){
   ir('perfil'); editarPerfil();
-  setTimeout(() => { const el = document.getElementById('ep-intereses'); if(el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 250);
+  state.desdeGustos = true;   // al guardar, vuelve al inicio con las recomendaciones
+  setTimeout(() => { const el = document.querySelector('#ep-intereses [data-grupo="musica"]'); if(el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 250);
 }
 // Abre el formulario de edición del perfil.
 function editarPerfil(){
@@ -6734,6 +6743,7 @@ function editarPerfil(){
 
 // Sale de la edición del perfil sin guardar.
 function cancelarEdicionPerfil(){
+  state.desdeGustos = false;
   document.getElementById('vista-perfil').style.display = 'block';
   document.getElementById('form-perfil').style.display = 'none';
 }
@@ -6763,10 +6773,13 @@ async function guardarPerfil(){
     await DataService.actualizarPerfil(state.uid, cambios, state.perfil.usuario || '');
     state.fotoPerfilNueva = null;
     Object.assign(state.perfil, cambios);
+    const desdeGustos = state.desdeGustos;
     cancelarEdicionPerfil();
     renderPerfilVista();
+    renderHome();          // el cartel "¿Qué música te gusta?" se va y aparece "Para vos"
     sincronizarPlanes();
-    toast('Perfil actualizado');
+    if(desdeGustos && misGustos().length){ ir('home'); toast('¡Listo! Ya te mostramos fiestas para vos 🎧'); }
+    else toast('Perfil actualizado');
   } catch(e){
     console.error(e);
     toast('No se pudo guardar');
