@@ -572,7 +572,7 @@ service cloud.firestore {
         && request.resource.data.tipo in ['amistad_solicitud', 'amistad_aceptada', 'evento_solicitud', 'evento_aprobada',
              'evento_rechazada', 'evento_cancelado', 'evento_confirmacion', 'verificacion_aprobada', 'verificacion_rechazada',
              'nuevo_evento', 'acreditacion_solicitud', 'acreditacion_aprobada', 'acreditacion_rechazada',
-             'amigo_evento', 'evento_compartido', 'mensaje_solicitud', 'mensaje_aceptado']
+             'amigo_evento', 'evento_compartido', 'mencion', 'mensaje_solicitud', 'mensaje_aceptado']
         && (!request.resource.data.tipo.matches('verificacion_.*') || esAdmin())
         && request.resource.data.leida == false
         && request.resource.data.ts is int

@@ -788,14 +788,35 @@ function pedirTexto(titulo, texto, placeholder, okTxt, opciones = {}){
       contador.classList.toggle('pasado', n > maxP);
       ok.disabled = n > maxP;
     };
-    input.oninput = revisar; revisar();
+    const lista = document.getElementById('modal-menciones');
+    // Menciones: al escribir @ aparecen tus amigos para elegir
+    const pintarMenciones = () => {
+      if(!opciones.menciones || !lista) return;
+      const antes = input.value.slice(0, input.selectionStart ?? input.value.length);
+      const m = antes.match(/(^|\s)@([a-z0-9._]{0,20})$/i);
+      const opcionesM = m ? amigosParaMencionar(m[2]) : [];
+      lista.style.display = opcionesM.length ? 'block' : 'none';
+      lista.innerHTML = opcionesM.map(u => `<button type="button" role="option" class="mencion-opcion" data-usuario="${esc(u.usuario)}">${avatarMini(u)}<span><b>${esc(nombreVisible(u))}</b><small>@${esc(u.usuario)}</small></span></button>`).join('');
+      lista.querySelectorAll('[data-usuario]').forEach(b => b.onmousedown = e => {
+        e.preventDefault();
+        const pos = input.selectionStart ?? input.value.length;
+        const izq = input.value.slice(0, pos).replace(/@([a-z0-9._]{0,20})$/i, '@' + b.dataset.usuario + ' ');
+        input.value = izq + input.value.slice(pos).replace(/^\S*/, '');
+        input.focus(); input.selectionStart = input.selectionEnd = izq.length;
+        revisar(); pintarMenciones();
+      });
+    };
+    input.oninput = () => { revisar(); pintarMenciones(); };
+    input.onkeyup = e => { if(['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) pintarMenciones(); };
+    revisar();
     bg.classList.add('show');
     input.focus();
     const done = val => {
       bg.classList.remove('show');
       input.style.display = 'none';
       if(contador){ contador.style.display = 'none'; contador.classList.remove('pasado'); }
-      input.oninput = null; input.maxLength = 200; ok.disabled = false;
+      input.oninput = input.onkeyup = null; input.maxLength = 200; ok.disabled = false;
+      if(lista){ lista.style.display = 'none'; lista.innerHTML = ''; }
       cancel.textContent = 'Cancelar';
       ok.onclick = cancel.onclick = null;
       document.removeEventListener('keydown', onKey);
@@ -2149,6 +2170,7 @@ const TIPOS_NOTIF = {
   mensaje_aceptado:       { icono: '💬', texto: n => `${n.deNombre} aceptó tu solicitud de mensaje`, ir: n => abrirDM(n.de) },
   amigo_evento:           { icono: '🎉', texto: n => `${n.deNombre} publicó ${n.objetoNombre}. ¿Vas?`, ir: n => abrirDetalle(n.objetoId) },
   evento_compartido:      { icono: '🔁', texto: n => `${n.deNombre} compartió ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
+  mencion:                { icono: '👉', texto: n => `${n.deNombre} te mencionó en ${n.objetoNombre}${n.texto ? ': “' + n.texto + '”' : ''}`, ir: n => abrirDetalle(n.objetoId) },
   nuevo_evento:           { icono: '📣', texto: n => `${n.deNombre} publicó una fecha nueva: ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
   acreditacion_solicitud: { icono: '📰', texto: n => `${n.deNombre}${n.texto ? ' (' + n.texto + ')' : ''} pidió acreditación de prensa para ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
   acreditacion_aprobada:  { icono: '✅', texto: n => `Aprobaron tu acreditación de prensa para ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
@@ -2160,7 +2182,7 @@ const TIPOS_NOTIF = {
 const GRUPOS_NOTIF = [['solicitudes', 'Solicitudes'], ['amigos', 'Amigos'], ['seguidos', 'Seguidos'], ['eventos', 'Tus eventos']];
 const GRUPO_NOTIF = {
   amistad_solicitud: 'solicitudes', evento_solicitud: 'solicitudes', mensaje_solicitud: 'solicitudes', acreditacion_solicitud: 'solicitudes',
-  amigo_evento: 'amigos', evento_compartido: 'amigos', amistad_aceptada: 'amigos', mensaje_aceptado: 'amigos',
+  amigo_evento: 'amigos', evento_compartido: 'amigos', mencion: 'amigos', amistad_aceptada: 'amigos', mensaje_aceptado: 'amigos',
   nuevo_evento: 'seguidos',
   evento_aprobada: 'eventos', evento_rechazada: 'eventos', evento_cancelado: 'eventos', evento_confirmacion: 'eventos',
   acreditacion_aprobada: 'eventos', acreditacion_rechazada: 'eventos', verificacion_aprobada: 'eventos', verificacion_rechazada: 'eventos'
@@ -4687,10 +4709,28 @@ function limpiarNota(t){
   if(typeof t !== 'string') return '';
   return t.trim().split(/\s+/).filter(Boolean).slice(0, NOTA_MAX_PALABRAS).join(' ').slice(0, NOTA_MAX_CARACTERES);
 }
+// Amigos que se pueden mencionar con @, filtrados por lo que se va escribiendo (máx. 5).
+function amigosParaMencionar(q){
+  const b = normalizar(q || '');
+  return amigosUids().filter(u => !state.bloqueados.has(u)).map(u => state.usuarios[u]).filter(u => u && u.usuario)
+    .filter(u => !b || u.usuario.startsWith(b) || normalizar(nombreVisible(u)).split(/\s+/).some(p => p.startsWith(b)))
+    .slice(0, 5);
+}
+// Carita chiquita (foto o iniciales).
+function avatarMini(u){
+  return `<i class="av-mini">${u && fotoValida(u.foto) ? `<img src="${esc(u.foto)}" alt="" referrerpolicy="no-referrer">` : esc(u?.iniciales || inicialesDe(u?.nombre))}</i>`;
+}
+// Amigos mencionados en un texto (@usuario) → sus uids. Solo cuentan los amigos.
+function mencionadosEn(texto){
+  const handles = new Set((String(texto || '').match(/@([a-z0-9._]{3,20})/gi) || []).map(h => h.slice(1).toLowerCase()));
+  return amigosUids().filter(u => state.usuarios[u]?.usuario && handles.has(state.usuarios[u].usuario.toLowerCase()) && !state.bloqueados.has(u));
+}
+// Texto del comentario con las @menciones resaltadas (ya escapado).
+function textoConMenciones(t){ return esc(t).replace(/(^|\s)@([a-z0-9._]{3,20})/gi, '$1<span class="mencion">@$2</span>'); }
 // Burbuja con el comentario de un amigo que compartió el evento.
 function notaAmigoHTML(ev){
   const n = (state.red.notas?.[ev.id] || []).find(x => !state.bloqueados.has(x.uid));
-  return n ? `<div class="nota-amigo"><span class="nota-txt">“${esc(n.texto)}”</span><span class="nota-quien">— ${esc(nombreCorto(state.usuarios[n.uid]))}</span></div>` : '';
+  return n ? `<div class="nota-amigo"><span class="nota-txt">“${textoConMenciones(n.texto)}”</span><span class="nota-quien">— ${esc(nombreCorto(state.usuarios[n.uid]))}</span></div>` : '';
 }
 // Primer nombre (o apodo).
 function nombreCorto(u){ return String(nombreVisible(u) || '').trim().split(/\s+/)[0] || 'Alguien'; }
@@ -4796,15 +4836,20 @@ async function alternarCompartir(ev, btn){
       if(c) c.repostsCount = Math.max(0, (c.repostsCount || 0) - 1);
       toast('Ya no lo compartís');
     } else {
-      const nota = await pedirTexto('Compartir con tus amigos', 'Les aparece en su inicio. Si querés, sumá un comentario (es opcional).',
-        'Ej: ¡Vamos a esta! 🔥', 'Compartir', { maxPalabras: NOTA_MAX_PALABRAS, maxCaracteres: NOTA_MAX_CARACTERES, cancelarTxt: 'Cancelar' });
+      await Promise.all(amigosUids().slice(0, 100).map(u => getUsuario(u).catch(() => null)));   // para sugerirlos con @
+      const nota = await pedirTexto('Compartir con tus amigos', 'Les aparece en su inicio. Si querés, sumá un comentario (es opcional). Escribí @ para mencionar a un amigo y le llega un aviso.',
+        'Ej: ¡Vamos a esta, @sofi! 🔥', 'Compartir', { maxPalabras: NOTA_MAX_PALABRAS, maxCaracteres: NOTA_MAX_CARACTERES, cancelarTxt: 'Cancelar', menciones: true });
       if(nota === null){ btn.disabled = false; return; }
       await DataService.compartirEvento(ev.id, state.uid, nombreVisible(state.perfil));
       state.misCompartidos = [ev.id, ...state.misCompartidos.filter(id => id !== ev.id)].slice(0, 60);
       if(limpiarNota(nota)) state.misNotas[ev.id] = limpiarNota(nota); else delete state.misNotas[ev.id];
       if(c) c.repostsCount = (c.repostsCount || 0) + 1;
       toast('Lo compartiste con tus amigos ✓');
-      amigosUids().slice(0, 100).forEach(u => notificar(u, 'evento_compartido', { objetoId: ev.id, objetoNombre: ev.nombre }));
+      // A los que mencionó les llega "te mencionó"; al resto de los amigos, el aviso común de compartido
+      const mencionados = mencionadosEn(state.misNotas[ev.id]);
+      mencionados.forEach(u => notificar(u, 'mencion', { objetoId: ev.id, objetoNombre: ev.nombre, texto: state.misNotas[ev.id] }));
+      amigosUids().filter(u => !mencionados.includes(u)).slice(0, 100).forEach(u => notificar(u, 'evento_compartido', { objetoId: ev.id, objetoNombre: ev.nombre }));
+      if(mencionados.length) toast(`Lo compartiste y le avisamos a ${mencionados.length === 1 ? nombreCorto(state.usuarios[mencionados[0]]) : mencionados.length + ' amigos'} ✓`);
     }
     sincronizarPlanes();
     pintarMisCompartidos();
@@ -6521,7 +6566,7 @@ function pintarMisCompartidos(){
   document.getElementById('perfil-compartidos').innerHTML = lista.map(e => `
     <div class="item-simple" role="button" tabindex="0" data-abrir="${esc(e.id)}">
       <div class="foto-mini" style="background-image:${cssFoto(e)}"></div>
-      <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs · lo ven tus amigos</span>${state.misNotas?.[e.id] ? `<span class="nota-mia">“${esc(state.misNotas[e.id])}”</span>` : ''}</div>
+      <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs · lo ven tus amigos</span>${state.misNotas?.[e.id] ? `<span class="nota-mia">“${textoConMenciones(state.misNotas[e.id])}”</span>` : ''}</div>
     </div>`).join('');
 }
 
