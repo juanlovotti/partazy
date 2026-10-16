@@ -1263,3 +1263,10 @@
   .info-item:last-child{border-bottom:1px solid rgba(54,48,50,.55);}
   .info-item:nth-last-child(-n+2){border-bottom:none;}
 }
+
+/* Para vos: recomendaciones por gustos de música */
+.sub-seccion{display:block; font-family:var(--font-body); text-transform:none; font-size:12px; font-weight:500; letter-spacing:0; color:var(--gris); margin-top:3px;}
+.razon-tarjeta{margin-top:9px; font-size:11.5px; color:var(--hueso); opacity:.85;}
+.cta-gustos{grid-column:1 / -1; flex:0 0 100%; display:flex; flex-direction:column; gap:6px; align-items:flex-start; padding:18px; border-radius:var(--radius-card); background:linear-gradient(135deg, rgba(242,106,27,.14), rgba(76,185,68,.08)); border:1px dashed rgba(242,106,27,.45);}
+.cta-gustos b{font-size:15px;} .cta-gustos span{font-size:13px; color:var(--hueso); opacity:.85; line-height:1.45;}
+.cta-gustos .btn{width:auto; margin-top:8px; padding:11px 18px;}

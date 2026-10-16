@@ -158,6 +158,7 @@
     <div id="home-amigos-cta"></div>
     <div class="chips" id="chips-home">
       <div class="chip activo" onclick="elegirChipHome(this,'hoy')">Hoy</div>
+      <div class="chip" id="chip-paravos" style="display:none;" onclick="elegirChipHome(this,'paravos')">Para vos 🎧</div>
       <div class="chip" onclick="elegirChipHome(this,'cerca')">Cerca tuyo</div>
       <div class="chip" onclick="elegirChipHome(this,'electronica')">Electrónica</div>
       <div class="chip" onclick="elegirChipHome(this,'cachengue')">Cachengue</div>
@@ -176,6 +177,8 @@
     <div class="fila-scroll" id="lista-esta-noche">
       <div class="skeleton sk-card"></div><div class="skeleton sk-card"></div><div class="skeleton sk-card"></div>
     </div>
+    <div class="seccion-titulo" id="titulo-paravos" style="display:none;"><h2>Para vos 🎧<small class="sub-seccion" id="sub-paravos"></small></h2><span onclick="elegirChipHome(document.getElementById('chip-paravos'),'paravos'); document.getElementById('pantalla-home').scrollTo({top:0, behavior:'smooth'})">Ver todas</span></div>
+    <div class="fila-scroll" id="lista-paravos" style="display:none;"></div>
     <div class="seccion-titulo" id="titulo-sugeridos" style="display:none;"><h2>Tal vez te interese ✨</h2><span onclick="ir('explorar')">Ver más</span></div>
     <div class="fila-scroll" id="lista-sugeridos" style="display:none;"></div>
     <div class="seccion-titulo" id="titulo-compartidos" style="display:none;"><h2>Compartidos por tus amigos</h2><span onclick="verMisCompartidos()">Mis compartidos</span></div>

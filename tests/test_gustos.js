@@ -1,0 +1,42 @@
+// Prueba: los gustos de música que elegís al crear la cuenta se usan para recomendarte eventos ("Para vos").
+const { JSDOM } = require('jsdom');
+const { crearStore, makeFirebase } = require('./fakefb.js');
+const html = require('./cargar-html.js')();
+const store = crearStore(); const put=(p,v)=>store.docs.set(p,v); const T=Date.now(), H=36e5;
+put('users/A',{nombre:'Juan Lovotti',usuario:'juan',iniciales:'J',ciudad:'Córdoba',intereses:['Techno','Previas'],foto:''}); put('users/A/privado/datos',{nacimiento:'1998-01-01'});
+put('users/S',{nombre:'Sin Gustos',usuario:'singustos',iniciales:'S',ciudad:'Córdoba',intereses:[],foto:''}); put('users/S/privado/datos',{nacimiento:'1998-01-01'});
+put('users/O',{nombre:'Org',usuario:'org',iniciales:'O',ciudad:'Córdoba',intereses:[],foto:''});
+const base={creador:'O',creadorNombre:'Org',organizador:'Org',tipo:'fiesta',ocasion:'fiesta',privacidad:'publica',hora:'23:00',precio:0,capacidad:100,confirmadosCount:3,edadMinima:18,imagen:'',descripcion:'x',lugar:'Güemes',lat:-31.42,lng:-64.19};
+put('events/t1',{...base,nombre:'Noche Techno',categoria:'techno',fechaTs:T+50*H});
+put('events/h1',{...base,nombre:'Noche House',categoria:'house',fechaTs:T+40*H});
+put('events/c1',{...base,nombre:'Cachengue Total',categoria:'cachengue',fechaTs:T+30*H});
+put('events/p1',{...base,nombre:'Previa de Juli',categoria:'cumbia',tipo:'previa',ocasion:'previa',fechaTs:T+60*H});
+put('events/r1',{...base,nombre:'Rock en vivo',categoria:'variado',musica:'Rock nacional',fechaTs:T+70*H});
+const mk=uid=>new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid,email:uid+'@t.com'})); w.navigator.geolocation=undefined; w.addEventListener('error',e=>console.error('ERROR JS',e.message)); }}).window;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const txt=el=>(el?.textContent||'').replace(/\s+/g,' ').trim();
+let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
+(async()=>{
+  const A=mk('A'); await sleep(1200); A.cerrarTutorial(); A.renderHome(); await sleep(100);
+  const $=id=>A.document.getElementById(id);
+  const ev=id=>A.eval(`eventoEnCache('${id}')`);
+  ok(A.afinidad(ev('t1')).puntos===2 && A.afinidad(ev('h1')).puntos===1 && A.afinidad(ev('c1')).puntos===0, 'Techno coincide exacto, House cuenta como parecido, Cachengue no');
+  ok(A.afinidad(ev('p1')).puntos===2, 'el gusto "Previas" ahora sí coincide con las previas');
+  const lista=$('lista-paravos'), nombres=[...lista.querySelectorAll('.tarjeta h3')].map(h=>h.textContent);
+  ok($('titulo-paravos').style.display!=='none' && /Porque te gusta Techno y Previas/.test(txt($('titulo-paravos'))), 'aparece la sección "Para vos" con tus gustos');
+  ok(nombres.includes('Noche Techno') && nombres.includes('Previa de Juli') && nombres.includes('Noche House') && !nombres.includes('Cachengue Total') && !nombres.includes('Rock en vivo'), '"Para vos" trae lo tuyo y lo parecido, no lo que no te gusta');
+  ok(nombres.indexOf('Noche Techno') < nombres.indexOf('Noche House'), 'lo que coincide exacto va antes que lo parecido');
+  ok(/🎧 Porque te gusta Techno/.test(txt(lista)) && /🎧 Parecido a Techno/.test(txt(lista)), 'cada tarjeta dice por qué te la recomendamos');
+  ok($('chip-paravos').style.display!=='none', 'hay un filtro "Para vos" arriba');
+  A.elegirChipHome($('chip-paravos'),'paravos'); await sleep(50);
+  ok(/Para vos/.test(txt($('titulo-fila-1'))) && !/Cachengue Total/.test(txt($('lista-esta-noche'))), 'el filtro "Para vos" muestra solo lo que va con tu música');
+  // La semana ordena lo tuyo primero
+  A.elegirChipHome(A.document.querySelector('#chips-home .chip'),'hoy'); await sleep(50);
+  const semana=[...$('lista-semana').querySelectorAll('.tarjeta h3')].map(h=>h.textContent);
+  ok(semana.length===0 || semana.indexOf('Cachengue Total')===-1 || semana.indexOf('Noche Techno') < semana.indexOf('Cachengue Total') || semana.indexOf('Noche Techno')===-1, 'en "Esta semana" lo que va con tu música aparece primero');
+  // Alguien sin gustos ve la invitación
+  const S=mk('S'); await sleep(1200); S.cerrarTutorial(); S.renderHome(); await sleep(100);
+  ok(/¿Qué música te gusta\?/.test(txt(S.document.getElementById('lista-paravos'))) && S.document.getElementById('chip-paravos').style.display==='none', 'si no elegiste gustos, te invita a elegirlos (y no aparece el filtro)');
+  S.elegirGustos(); await sleep(300);
+  ok(S.document.getElementById('form-perfil').style.display!=='none', '"Elegir mi música" abre el perfil para marcar tus estilos');
+  console.log(f?'\nFALLAS: '+f:'\nTODO OK'); process.exit(f?1:0);
+})();

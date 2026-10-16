@@ -4367,7 +4367,8 @@ function lineaMetaHTML(ev){
 }
 const PIN_MINI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg>';
 // Tarjeta de evento (vertical) para las filas del inicio.
-function tarjetaHTML(ev){
+function tarjetaHTML(ev, _dist, razon){
+  const amigos = amigosVanHTML(ev, false);
   const candado = ev.privacidad==='privada' ? `<div class="candado-badge">${svgLock}</div>` : '';
   return `
    <div class="tarjeta" role="button" tabindex="0" data-abrir="${esc(ev.id)}" aria-label="${esc(ev.nombre)}">
@@ -4377,13 +4378,15 @@ function tarjetaHTML(ev){
        <div class="cat">${iconoTipo(ev)}${esc(etiquetaTipo(ev))}<button class="btn-vista" data-vista="${esc(ev.id)}" aria-label="Vista previa de ${esc(ev.nombre)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>Vista previa</button></div>
        <h3>${esc(ev.nombre)}</h3>
        ${lineaMetaHTML(ev)}
-       ${amigosVanHTML(ev, false)}
+       ${amigos || (razon && /^[🎧👥📈]/u.test(razon) ? `<div class="razon-tarjeta">${esc(razon)}</div>` : '')}
      </div>
    </div>`;
 }
 
 // Tarjeta de evento horizontal (listas).
-function tarjetaHorizontalHTML(ev){
+function tarjetaHorizontalHTML(ev, razon){
+  const amigos = amigosVanHTML(ev, false);
+  if(!(razon && /^[🎧👥📈]/u.test(razon)) && afinidad(ev).puntos === 2) razon = `🎧 ${afinidad(ev).motivo}`;   // en Explorar también se ve si va con tu música
   const candado = ev.privacidad==='privada' ? ' 🔒' : '';
   return `
    <div class="tarjeta-h" role="button" tabindex="0" data-abrir="${esc(ev.id)}" aria-label="${esc(ev.nombre)}">
@@ -4392,7 +4395,7 @@ function tarjetaHorizontalHTML(ev){
        <div class="cat">${iconoTipo(ev)}${esc(etiquetaTipo(ev))}${candado}<button class="btn-vista" data-vista="${esc(ev.id)}" aria-label="Vista previa de ${esc(ev.nombre)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>Vista previa</button></div>
        <h4>${esc(ev.nombre)}</h4>
        ${lineaMetaHTML(ev)}
-       ${amigosVanHTML(ev, false)}
+       ${amigos || (razon && /^[🎧👥📈]/u.test(razon) ? `<div class="razon-tarjeta">${esc(razon)}</div>` : '')}
      </div>
    </div>`;
 }
@@ -4715,6 +4718,50 @@ async function guardarMisPlanes(){
   } catch(e){ console.warn('planes', e); }
 }
 
+// =========================================================
+//  GUSTOS MUSICALES → "Para vos"
+//  Lo que la persona eligió al crear la cuenta (o en su perfil) se usa para recomendarle eventos.
+//  Coincidencia exacta del estilo = 2 puntos; estilo parecido (ej. Techno ↔ House) = 1 punto.
+// =========================================================
+const PARECIDOS = {
+  techno: ['electronica', 'house'], house: ['electronica', 'techno'], electronica: ['techno', 'house'],
+  cachengue: ['reggaeton', 'cumbia', 'trap'], reggaeton: ['cachengue', 'trap'], trap: ['reggaeton', 'cachengue'],
+  cumbia: ['cachengue', 'cuarteto'], cuarteto: ['cumbia', 'cachengue'], rock: ['pop'], pop: ['rock']
+};
+// Mis gustos, normalizados (techno, reggaeton, previas...).
+function misGustos(){ return (state.perfil?.intereses || []).map(normalizar); }
+// Cuánto le puede interesar un evento según sus gustos: { puntos, motivo } (motivo = el gusto que coincide).
+function afinidad(ev, gustos = misGustos()){
+  let mejor = { puntos: 0, motivo: '' };
+  const musica = normalizar(ev.musica || '');
+  for(const g of gustos){
+    let pts = 0;
+    if(g === 'previas') pts = ev.tipo === 'previa' ? 2 : 0;
+    else if(g === 'universitarias') pts = esUniversitaria(ev) ? 2 : 0;
+    else if(ev.categoria === g || (musica && musica.includes(g))) pts = 2;
+    else if((PARECIDOS[g] || []).includes(ev.categoria)) pts = 1;
+    if(pts > mejor.puntos) mejor = { puntos: pts, motivo: (state.perfil.intereses || []).find(i => normalizar(i) === g) || g };
+  }
+  return mejor;
+}
+// "Techno y House" (los gustos de la persona, para los títulos).
+function gustosTexto(){
+  const l = (state.perfil?.intereses || []).slice(0, 3);
+  return l.length <= 1 ? (l[0] || '') : l.slice(0, -1).join(', ') + ' y ' + l[l.length - 1];
+}
+// Eventos para vos: los que más coinciden con tus gustos (y si van amigos, mejor).
+function paraVos(){
+  const ahora = Date.now(), gustos = misGustos();
+  if(!gustos.length) return [];
+  return eventosParaVer()
+    .filter(e => !esCancelado(e) && e.creador !== state.uid && e.fechaTs > ahora - HORA)
+    .map(e => ({ e, a: afinidad(e, gustos) }))
+    .filter(x => x.a.puntos > 0)
+    .sort((x, y) => y.a.puntos - x.a.puntos || (amigosQueVan(y.e).length - amigosQueVan(x.e).length) || x.e.fechaTs - y.e.fechaTs)
+    .slice(0, 10)
+    .map(x => ({ e: x.e, razon: `🎧 ${x.a.puntos === 2 ? 'Porque te gusta' : 'Parecido a'} ${x.a.motivo}` }));
+}
+
 // Comentario al compartir: opcional, hasta 15 palabras y 100 letras.
 const NOTA_MAX_PALABRAS = 15, NOTA_MAX_CARACTERES = 100;
 // Deja el comentario dentro del límite (por si llega uno más largo de otro lado).
@@ -4786,10 +4833,10 @@ function sugerencias(){
     .filter(e => !esCancelado(e) && e.creador !== state.uid && e.fechaTs > ahora - HORA && !state.misPlanes.has(e.id))
     .map(e => {
       const van = amigosQueVan(e).length, comp = (state.red.compartidoPor[e.id] || []).length, fof = Math.min(state.red.fof[e.id] || 0, 6);
-      const gusta = gustos.has(normalizar(etiquetaEstilo(e.categoria))) || gustos.has(normalizar(e.musica || ''));
+      const af = afinidad(e, [...gustos]), gusta = af.puntos > 0;
       const mov = Math.min(e.repostsCount || 0, 10) * 0.2 + ((e.confirmadosCount || 0) / Math.max(1, e.capacidad || 1)) * 0.5;
-      const score = van * 4 + comp * 2 + fof + (gusta ? 1.5 : 0) + mov;
-      const razon = van ? null : comp ? 'Lo compartieron tus amigos' : fof ? 'Van amigos de tus amigos' : gusta ? `Porque te gusta ${etiquetaEstilo(e.categoria)}` : 'Se está moviendo';
+      const score = van * 4 + comp * 2 + fof + af.puntos * 0.9 + mov;
+      const razon = van ? null : comp ? 'Lo compartieron tus amigos' : fof ? '👥 Van amigos de tus amigos' : gusta ? `🎧 Porque te gusta ${af.motivo}` : '📈 Se está moviendo';
       return { e, score, razon, social: van + comp + fof };
     })
     .filter(x => x.social > 0 || x.score >= 1.5)
@@ -4944,6 +4991,7 @@ function avisarAmigosEvento(id, nombre, yaAvisados){
 function filtrarPorChip(eventos, filtro){
   switch(filtro){
     case 'hoy':            return eventos.filter(e => esEstaNoche(e.fechaTs));
+    case 'paravos':        return eventos.filter(e => afinidad(e).puntos > 0).sort((a, b) => afinidad(b).puntos - afinidad(a).puntos || a.fechaTs - b.fechaTs);
     case 'electronica':    return eventos.filter(e => ['techno','electronica'].includes(e.categoria));
     case 'cachengue':      return eventos.filter(e => e.categoria==='cachengue');
     case 'house':          return eventos.filter(e => e.categoria==='house');
@@ -4984,9 +5032,25 @@ function renderHome(){
   const queViene = futuros.filter(e => e.fechaTs >= semana).slice(0, 12);
   document.getElementById('titulo-semana').style.display = deSemana.length ? '' : 'none';
   document.getElementById('lista-semana').style.display = deSemana.length ? '' : 'none';
-  document.getElementById('lista-semana').innerHTML = deSemana.map(e => tarjetaHTML(e)).join('');
   const sug = sugerencias(), ten = tendencia();
   const mostrar = (id, on) => { document.getElementById(id).style.display = on ? '' : 'none'; };
+  // Para vos (según tus gustos de música) o, si no elegiste, una invitación a elegirlos
+  const pv = state.invitado ? [] : paraVos();
+  const sinGustos = !state.invitado && state.perfil && !misGustos().length;
+  mostrar('titulo-paravos', pv.length || sinGustos); mostrar('lista-paravos', pv.length || sinGustos);
+  document.getElementById('sub-paravos').textContent = pv.length ? `Porque te gusta ${gustosTexto()}` : '';
+  document.querySelector('#titulo-paravos > span').style.display = pv.length ? '' : 'none';
+  document.getElementById('lista-paravos').innerHTML = pv.length ? pv.map(x => tarjetaHTML(x.e, null, x.razon)).join('')
+    : sinGustos ? `<div class="cta-gustos"><b>🎧 ¿Qué música te gusta?</b><span>Elegí tus estilos y te mostramos las fiestas que van con vos.</span><button class="btn btn-primario" onclick="elegirGustos()">Elegir mi música</button></div>` : '';
+  const chipPV = document.getElementById('chip-paravos');
+  if(chipPV) chipPV.style.display = misGustos().length && !state.invitado ? '' : 'none';
+  // Esta semana: primero lo que va con tu música (sin perder el orden por fecha entre iguales)
+  if(misGustos().length) deSemana.sort((a, b) => (afinidad(b).puntos > 0) - (afinidad(a).puntos > 0) || a.fechaTs - b.fechaTs);
+  document.getElementById('lista-semana').innerHTML = deSemana.map(e => tarjetaHTML(e, null, afinidad(e).puntos === 2 ? `🎧 ${afinidad(e).motivo}` : '')).join('');
+  // En "Tal vez te interese" no repetimos lo que ya está en "Para vos"
+  const enPV = new Set(pv.map(x => x.e.id));
+  const sugF = sug.filter(x => !enPV.has(x.e.id) || x.social > 0);   // si tiene motivo social (amigos), se queda
+  sug.length = 0; sug.push(...sugF);
   mostrar('titulo-sugeridos', sug.length); mostrar('lista-sugeridos', sug.length);
   document.getElementById('lista-sugeridos').innerHTML = sug.map(x => tarjetaHTML(x.e, null, x.razon)).join('');
   const comp = compartidosDeAmigos();
@@ -5011,7 +5075,7 @@ function renderHome(){
     titulo1.textContent = 'Más cerca tuyo 📍';
   } else {
     filtrados = filtrarPorChip(base, state.filtroActivoHome);
-    titulo1.textContent = state.filtroActivoHome==='hoy' ? 'Esta noche 🔥' : 'Recomendados ✨';
+    titulo1.textContent = state.filtroActivoHome==='hoy' ? 'Esta noche 🔥' : state.filtroActivoHome==='paravos' ? 'Para vos 🎧' : 'Recomendados ✨';
     // Nada esta noche: arriba va lo próximo (así lo recién publicado se ve primero)
     if(state.filtroActivoHome === 'hoy' && !filtrados.length && futuros.length){
       const ocultar = (...ids) => ids.forEach(id => { document.getElementById(id).style.display = 'none'; });
@@ -5019,8 +5083,9 @@ function renderHome(){
       else { filtrados = queViene; titulo1.textContent = 'Lo que viene 🔥'; ocultar('titulo-viene'); document.getElementById('lista-viene').innerHTML = ''; }
     }
   }
+  if(state.filtroActivoHome === 'hoy' && misGustos().length) filtrados = [...filtrados].sort((a, b) => (afinidad(b).puntos > 0) - (afinidad(a).puntos > 0) || a.fechaTs - b.fechaTs);
   cont1.innerHTML = filtrados.length
-    ? filtrados.map(e=>tarjetaHTML(e, e.dist!==undefined ? textoDistancia(e, e.dist) : null)).join('')
+    ? filtrados.map(e=>tarjetaHTML(e, e.dist!==undefined ? textoDistancia(e, e.dist) : null, afinidad(e).puntos === 2 ? `🎧 ${afinidad(e).motivo}` : '')).join('')
     : emptyState('No hay eventos para este filtro todavía. ¡Creá el primero!');
 
   const cercanos = conDistancia(base).sort(porDistancia).slice(0,6);
@@ -6640,6 +6705,11 @@ function pintarMisCompartidos(){
     </div>`).join('');
 }
 
+// Lleva a elegir los gustos de música (editor del perfil, en la parte de intereses).
+function elegirGustos(){
+  ir('perfil'); editarPerfil();
+  setTimeout(() => { const el = document.getElementById('ep-intereses'); if(el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 250);
+}
 // Abre el formulario de edición del perfil.
 function editarPerfil(){
   document.getElementById('vista-perfil').style.display = 'none';

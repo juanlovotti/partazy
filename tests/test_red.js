@@ -30,7 +30,7 @@ let fallas=0; const ok=(c,m)=>{ console.log((c?'✔ ':'✘ ')+m); if(!c) fallas+
   ok($('lista-sugeridos').style.display !== 'none' && /Noche Uno/.test(sug), 'aparece "Tal vez te interese" con lo que van tus amigos');
   ok(/Noche Dos/.test(sug) && /Sofia lo compartió/.test(sug), 'sugiere lo que compartió un amigo');
   ok(/Noche Tres/.test(sug), 'sugiere a donde van amigos de amigos');
-  ok(/Noche House/.test(sug), 'sugiere por tus gustos');
+  ok(/Noche House/.test(txt($('lista-paravos'))) && /Porque te gusta House/.test(txt($('lista-paravos'))), 'lo de tus gustos va en "Para vos"');
   ok(!/Sin relacion/.test(sug), 'no sugiere eventos sin relación');
   const orden = [...$('lista-sugeridos').querySelectorAll('h3')].map(h=>h.textContent);
   ok(orden[0]==='Noche Uno', 'primero lo que tiene más amigos');
