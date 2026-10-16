@@ -588,7 +588,8 @@ service cloud.firestore {
     match /planes/{uid} {
       allow read: if soy(uid) || (logueado() && amistadAceptada(request.auth.uid, uid));
       allow create, update: if soy(uid)
-        && request.resource.data.keys().hasOnly(['eventos', 'compartidos', 'red', 'ts'])
+        && request.resource.data.keys().hasOnly(['eventos', 'compartidos', 'notas', 'red', 'ts'])
+        && request.resource.data.get('notas', {}) is map && request.resource.data.get('notas', {}).size() <= 60
         && request.resource.data.eventos is list && request.resource.data.eventos.size() <= 60
         && request.resource.data.compartidos is list && request.resource.data.compartidos.size() <= 60
         && request.resource.data.red is map && request.resource.data.red.size() <= 150

@@ -760,25 +760,42 @@ function confirmar(titulo, texto, okTxt = 'Aceptar'){
   });
 }
 
+// Cuenta las palabras de un texto.
+function contarPalabras(t){ return String(t || '').trim().split(/\s+/).filter(Boolean).length; }
 // Igual que confirmar(), pero con un campo de texto. Devuelve el texto, o null si se cancela.
-function pedirTexto(titulo, texto, placeholder, okTxt){
+// opciones: { maxPalabras, maxCaracteres, cancelarTxt } → muestra un contador y frena el botón si se pasa.
+function pedirTexto(titulo, texto, placeholder, okTxt, opciones = {}){
   return new Promise(resolve => {
     const bg = document.getElementById('modal-bg');
     const ok = document.getElementById('modal-ok');
     const cancel = document.getElementById('modal-cancelar');
     const input = document.getElementById('modal-input');
+    const contador = document.getElementById('modal-contador');
+    const maxP = opciones.maxPalabras || 0;
     document.getElementById('modal-titulo').textContent = titulo;
     document.getElementById('modal-texto').textContent = texto;
     input.value = '';
     input.placeholder = placeholder || '';
+    input.maxLength = opciones.maxCaracteres || 200;
     input.style.display = 'block';
     ok.textContent = okTxt || 'Aceptar';
-    cancel.textContent = 'Volver';
+    cancel.textContent = opciones.cancelarTxt || 'Volver';
+    const revisar = () => {
+      if(!maxP || !contador) return;
+      const n = contarPalabras(input.value);
+      contador.style.display = 'block';
+      contador.textContent = n > maxP ? `${n}/${maxP} palabras · sacá ${n - maxP}` : `${n}/${maxP} palabras`;
+      contador.classList.toggle('pasado', n > maxP);
+      ok.disabled = n > maxP;
+    };
+    input.oninput = revisar; revisar();
     bg.classList.add('show');
     input.focus();
     const done = val => {
       bg.classList.remove('show');
       input.style.display = 'none';
+      if(contador){ contador.style.display = 'none'; contador.classList.remove('pasado'); }
+      input.oninput = null; input.maxLength = 200; ok.disabled = false;
       cancel.textContent = 'Cancelar';
       ok.onclick = cancel.onclick = null;
       document.removeEventListener('keydown', onKey);
@@ -4201,14 +4218,6 @@ function abrirReferencias(){
 function cerrarReferencias(){ document.getElementById('modal-referencias').classList.remove('show'); soltarModalHist(); }
 
 // ---------- Tutorial de bienvenida ----------
-const ICO = {
-  hola: '<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 20V4h6a5 5 0 0 1 0 10H7"/></svg>',
-  buscar: '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
-  ticket: '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/><path d="M13 6v12" stroke-dasharray="2 2"/></svg>',
-  colores: '<svg width="36" height="36" viewBox="0 0 24 24"><circle cx="7" cy="12" r="3.2" fill="currentColor"/><circle cx="17" cy="7" r="3.2" fill="currentColor" opacity=".7"/><circle cx="17" cy="17" r="3.2" fill="currentColor" opacity=".45"/></svg>',
-  crear: '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
-  amigos: '<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg>'
-};
 const LOGO_TUTO = `<div class="tuto-logo-wrap" aria-hidden="true">
   <svg class="tuto-logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
     <defs>
@@ -4228,20 +4237,44 @@ const LOGO_TUTO = `<div class="tuto-logo-wrap" aria-hidden="true">
   </svg>
   <span class="tuto-chispa c1">✦</span><span class="tuto-chispa c2">✦</span><span class="tuto-chispa c3">✦</span>
 </div>`;
-// Pasos del tutorial (con el nombre de la persona).
+// ¿Se está viendo en compu (menú a la izquierda) o en celu (barra abajo)?
+function esCompu(){ try{ return window.matchMedia('(min-width:900px)').matches; } catch(e){ return false; } }
+// Pasos del tutorial: cada uno con un dibujito de la pantalla real, un título corto y una sola idea.
+// Los textos cambian según dónde están los botones (compu o celu).
 function pasosTutorial(){
   const nombre = (nombreVisible(state.perfil) || '').split(' ')[0];
+  const compu = esCompu();
+  const dedo = '<span class="tm-dedo" aria-hidden="true"></span>';
   return [
-    { logo: true, t: nombre ? `¡Hola, ${esc(nombre)}!` : '¡Bienvenido/a!', p: 'Partazy te muestra las <b>fiestas, previas y boliches</b> cerca tuyo. Te enseñamos a usarla en 30 segundos.' },
-    { ico: ICO.buscar, t: 'Buscá un plan', p: 'En <b>Inicio</b> ves lo que hay esta noche y esta semana. En <b>Explorar</b> (la lupa de abajo) buscás por nombre o filtrás: gratis, cerca tuyo, por estilo de música.' },
-    { ico: ICO.ticket, t: 'Anotate', p: 'Tocá cualquier evento para ver todo: horario, lugar, precio. Abajo tocá <b>"Confirmar asistencia"</b> (o "Reservar entrada" si es pago). Tu entrada queda guardada en <b>Mis entradas</b> (el ticket arriba a la derecha).' },
-    { ico: ICO.colores, t: 'Mirá los colores', p: 'Cada evento tiene un punto que te dice cómo viene:', extra: `<div class="tuto-mini">
-        <div><span class="punto-ambiente amb-verde"></span>Verde: hay lugar</div>
-        <div><span class="punto-ambiente amb-amarillo"></span>Amarillo: se está llenando</div>
-        <div><span class="punto-ambiente amb-rojo"></span>Rojo: lleno o cancelado</div>
-        <div><span class="punto-ambiente amb-verde amb-vivo"></span>Si late: está pasando ahora</div></div>` },
-    { ico: ICO.crear, t: 'Organizá lo tuyo', p: '¿Hacés una previa o una fiesta? Tocá el <b>botón naranja +</b> de abajo, completá los datos y listo. Después lo podés editar o cancelar cuando quieras.' },
-    { ico: ICO.amigos, t: 'Sumá a tus amigos', p: 'Tocá el ícono de <b>personas</b> arriba para buscar amigos por nombre o @usuario. Pueden chatear y mandarse eventos. Si te perdés, en tu <b>Perfil</b> está la Ayuda y este tutorial.' }
+    { logo: true, t: nombre ? `¡Hola, ${esc(nombre)}!` : '¡Bienvenido/a!',
+      p: 'Partazy es para encontrar <b>fiestas, previas y boliches</b>, ver a dónde van tus amigos y anotarte. Son 5 pasos cortitos.' },
+    { t: 'Encontrá un plan',
+      p: `Arriba en <b>Inicio</b> está lo de esta noche y la semana. Para buscar algo puntual, usá el buscador o tocá un filtro.`,
+      dibujo: `<div class="tm tm-buscar">
+        <div class="tm-barra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="tm-tipeo">cachengue</span></div>
+        <div class="tm-chips"><i class="on">Hoy</i><i>Cerca tuyo</i><i>Gratis</i><i>Electrónica</i></div></div>` },
+    { t: 'Anotate en un toque',
+      p: `Abrí cualquier evento y tocá <b>Confirmar asistencia</b> (o <b>Reservar</b> si es pago). Tu entrada queda en <b>Mis entradas</b> 🎟️, ${compu ? 'en el menú de la izquierda' : 'el ícono del ticket arriba'}.`,
+      dibujo: `<div class="tm tm-evento">
+        <div class="tm-foto"></div>
+        <div class="tm-info"><small>FIESTA · SÁB 23:30</small><b>Noche de prueba</b><span><i class="punto-ambiente amb-verde"></i>Hay lugar</span></div>
+        <div class="tm-boton">Confirmar asistencia${dedo}</div></div>` },
+    { t: 'El punto te dice cómo viene', p: 'Todos los eventos tienen un punto de color:',
+      extra: `<div class="tuto-mini">
+        <div><span class="punto-ambiente amb-verde"></span><b>Verde</b> hay lugar</div>
+        <div><span class="punto-ambiente amb-amarillo"></span><b>Amarillo</b> se está llenando</div>
+        <div><span class="punto-ambiente amb-rojo"></span><b>Rojo</b> lleno o cancelado</div>
+        <div><span class="punto-ambiente amb-verde amb-vivo"></span><b>Si late</b> está pasando ahora</div></div>` },
+    { t: 'Mirá a dónde van tus amigos',
+      p: `Agregalos con el ícono de <b>personas</b> ${compu ? '(arriba a la derecha)' : '(arriba)'}. En cada evento vas a ver quién va, y podés <b>compartirlo</b> con un comentario para armar el plan.`,
+      dibujo: `<div class="tm tm-amigos">
+        <div class="tm-caras"><i>SG</i><i>IP</i><i>MR</i></div>
+        <div class="tm-txt"><b>Sofía</b> e <b>Ivo</b> van</div>
+        <div class="tm-nota">“¡Vamos a esta! 🔥” <span>— Sofía</span></div></div>` },
+    { t: 'Armá tu previa o fiesta',
+      p: `Tocá el <b>+ naranja</b> ${compu ? '(<b>Crear evento</b>, en el menú de la izquierda)' : 'abajo en el medio'}, completá los datos y listo. Si es privada, elegís quién entra y la dirección solo la ven los aprobados.`,
+      dibujo: `<div class="tm tm-crear"><div class="tm-mas">+${dedo}</div><div class="tm-crear-txt"><b>Crear evento</b><span>Previa · Fiesta · Boliche</span></div></div>`,
+      pie: `¿Te perdiste? Volvé a ver esto desde <b>Perfil → ☰ → Tutorial</b>.` }
   ];
 }
 const tuto = { i: 0 };
@@ -4267,7 +4300,8 @@ function pasoTutorial(d){
 function pintarTutorial(){
   const pasos = pasosTutorial(), p = pasos[tuto.i], ultimo = tuto.i === pasos.length - 1;
   document.getElementById('tuto-paso').textContent = `${tuto.i + 1} / ${pasos.length}`;
-  document.getElementById('tuto-slide').innerHTML = `<div class="tuto-slide">${p.logo ? LOGO_TUTO : `<div class="tuto-ico">${p.ico}</div>`}<h2>${p.t}</h2><p>${p.p}</p>${p.extra || ''}</div>`;
+  const arriba = p.logo ? LOGO_TUTO : p.dibujo ? p.dibujo : '';
+  document.getElementById('tuto-slide').innerHTML = `<div class="tuto-slide">${arriba}<h2>${p.t}</h2><p>${p.p}</p>${p.extra || ''}${p.pie ? `<p class="tuto-nota">${p.pie}</p>` : ''}</div>`;
   document.getElementById('tuto-puntos').innerHTML = pasos.map((_, k) => `<i class="${k === tuto.i ? 'on' : ''}"></i>`).join('');
   document.getElementById('tuto-atras').style.display = tuto.i === 0 ? 'none' : '';
   document.getElementById('tuto-sig').textContent = ultimo ? '¡Empezar!' : 'Siguiente';
@@ -4579,8 +4613,9 @@ function avisarDMsNuevos(lista){
 // Cada persona guarda en planes/{uid} los eventos públicos a los que va y los que compartió.
 // Solo lo leen sus amigos. "red" = cuántos de SUS amigos van a cada evento (anónimo):
 // así, leyendo a mis amigos, sé a dónde van los amigos de mis amigos.
-state.red = { amigosVan: {}, compartidoPor: {}, fof: {}, planes: {}, listo: false };
+state.red = { amigosVan: {}, compartidoPor: {}, fof: {}, notas: {}, planes: {}, listo: false };
 state.misCompartidos = [];
+state.misNotas = {};          // comentario opcional de cada evento que compartí { eventId: texto }
 state.misPlanes = new Set();
 let _tRed;
 // Vuelve a calcular la red de amigos en un rato (agrupa cambios seguidos).
@@ -4591,12 +4626,16 @@ async function cargarRed(){
   if(!state.uid) return;
   const amigos = amigosUids().filter(u => !state.bloqueados.has(u)).slice(0, 100);
   const planes = await Promise.all(amigos.map(async u => [u, await DataService.getPlanes(u).catch(() => null)]));
-  const amigosVan = {}, compartidoPor = {}, fof = {}, mapa = {};
+  const amigosVan = {}, compartidoPor = {}, fof = {}, mapa = {}, notas = {};
   for(const [u, pl] of planes){
     if(!pl) continue;
     mapa[u] = pl;
     (pl.eventos || []).forEach(id => (amigosVan[id] = amigosVan[id] || []).push(u));
-    (pl.compartidos || []).forEach(id => (compartidoPor[id] = compartidoPor[id] || []).push(u));
+    (pl.compartidos || []).forEach(id => {
+      (compartidoPor[id] = compartidoPor[id] || []).push(u);
+      const nota = limpiarNota(pl.notas?.[id]);
+      if(nota) (notas[id] = notas[id] || []).push({ uid: u, texto: nota });
+    });
     Object.entries(pl.red || {}).forEach(([id, n]) => { fof[id] = (fof[id] || 0) + (Number(n) || 0); });
   }
   // Sacamos lo que ya contamos directo (y a mí mismo) del conteo de amigos de amigos
@@ -4604,7 +4643,7 @@ async function cargarRed(){
     const directos = (amigosVan[id] || []).length;
     fof[id] = Math.max(0, fof[id] - directos - (state.misPlanes.has(id) ? Object.keys(mapa).length : 0));
   });
-  state.red = { amigosVan, compartidoPor, fof, planes: mapa, listo: true };
+  state.red = { amigosVan, compartidoPor, fof, notas, planes: mapa, listo: true };
   await Promise.all(Object.keys(mapa).map(getUsuario));
   if(typeof renderHome === 'function'){ renderHome(); renderExplorar(); }
   sincronizarPlanes();
@@ -4619,7 +4658,9 @@ async function guardarMisPlanes(){
   try{
     if(!state._planesCargados){
       const mio = await DataService.getPlanes(state.uid).catch(() => null);
-      state.misCompartidos = (mio?.compartidos || []).slice(0, 60);
+      // Se suman a lo que ya haya compartido en esta sesión (si compartió antes de que esto cargue, no se pierde)
+      state.misCompartidos = [...new Set([...state.misCompartidos, ...(mio?.compartidos || [])])].slice(0, 60);
+      state.misNotas = Object.assign({}, mio?.notas || {}, state.misNotas);
       state._planesCargados = true;
     }
     const ahora = Date.now();
@@ -4631,10 +4672,26 @@ async function guardarMisPlanes(){
     const red = {};
     Object.entries(state.red.amigosVan).filter(([id]) => vigente(id))
       .sort((a, b) => b[1].length - a[1].length).slice(0, 150).forEach(([id, l]) => { red[id] = l.length; });
-    await DataService.guardarPlanes(state.uid, { eventos, compartidos: state.perfil.ocultarPlanes ? [] : state.misCompartidos.slice(0, 60), red, ts: ahora });
+    const compartidos = state.perfil.ocultarPlanes ? [] : state.misCompartidos.slice(0, 60);
+    const notas = {};
+    compartidos.forEach(id => { const n = limpiarNota(state.misNotas[id]); if(n) notas[id] = n; });
+    state.misNotas = notas;
+    await DataService.guardarPlanes(state.uid, { eventos, compartidos, notas, red, ts: ahora });
   } catch(e){ console.warn('planes', e); }
 }
 
+// Comentario al compartir: opcional, hasta 15 palabras y 100 letras.
+const NOTA_MAX_PALABRAS = 15, NOTA_MAX_CARACTERES = 100;
+// Deja el comentario dentro del límite (por si llega uno más largo de otro lado).
+function limpiarNota(t){
+  if(typeof t !== 'string') return '';
+  return t.trim().split(/\s+/).filter(Boolean).slice(0, NOTA_MAX_PALABRAS).join(' ').slice(0, NOTA_MAX_CARACTERES);
+}
+// Burbuja con el comentario de un amigo que compartió el evento.
+function notaAmigoHTML(ev){
+  const n = (state.red.notas?.[ev.id] || []).find(x => !state.bloqueados.has(x.uid));
+  return n ? `<div class="nota-amigo"><span class="nota-txt">“${esc(n.texto)}”</span><span class="nota-quien">— ${esc(nombreCorto(state.usuarios[n.uid]))}</span></div>` : '';
+}
 // Primer nombre (o apodo).
 function nombreCorto(u){ return String(nombreVisible(u) || '').trim().split(/\s+/)[0] || 'Alguien'; }
 // Amigos que van a un evento.
@@ -4658,9 +4715,9 @@ function carasHTML(uids){
 function amigosVanHTML(ev, largo){
   const van = amigosQueVan(ev);
   const destino = ev.tipo === 'previa' ? 'a esta previa' : 'a esta fiesta';
-  if(van.length) return `<div class="amigos-van">${carasHTML(van)}<span>${frasePersonas(van, largo ? 'va ' + destino : 'va', largo ? 'van ' + destino : 'van')}</span></div>`;
+  if(van.length) return `<div class="amigos-van">${carasHTML(van)}<span>${frasePersonas(van, largo ? 'va ' + destino : 'va', largo ? 'van ' + destino : 'van')}</span></div>${notaAmigoHTML(ev)}`;
   const comp = (state.red.compartidoPor[ev.id] || []).filter(u => !state.bloqueados.has(u));
-  if(comp.length) return `<div class="amigos-van">${carasHTML(comp)}<span>${frasePersonas(comp, 'lo compartió', 'lo compartieron')}</span></div>`;
+  if(comp.length) return `<div class="amigos-van">${carasHTML(comp)}<span>${frasePersonas(comp, 'lo compartió', 'lo compartieron')}</span></div>${notaAmigoHTML(ev)}`;
   return '';
 }
 
@@ -4735,16 +4792,22 @@ async function alternarCompartir(ev, btn){
     if(ya){
       await DataService.dejarDeCompartir(ev.id, state.uid);
       state.misCompartidos = state.misCompartidos.filter(id => id !== ev.id);
+      delete state.misNotas[ev.id];
       if(c) c.repostsCount = Math.max(0, (c.repostsCount || 0) - 1);
       toast('Ya no lo compartís');
     } else {
+      const nota = await pedirTexto('Compartir con tus amigos', 'Les aparece en su inicio. Si querés, sumá un comentario (es opcional).',
+        'Ej: ¡Vamos a esta! 🔥', 'Compartir', { maxPalabras: NOTA_MAX_PALABRAS, maxCaracteres: NOTA_MAX_CARACTERES, cancelarTxt: 'Cancelar' });
+      if(nota === null){ btn.disabled = false; return; }
       await DataService.compartirEvento(ev.id, state.uid, nombreVisible(state.perfil));
       state.misCompartidos = [ev.id, ...state.misCompartidos.filter(id => id !== ev.id)].slice(0, 60);
+      if(limpiarNota(nota)) state.misNotas[ev.id] = limpiarNota(nota); else delete state.misNotas[ev.id];
       if(c) c.repostsCount = (c.repostsCount || 0) + 1;
       toast('Lo compartiste con tus amigos ✓');
       amigosUids().slice(0, 100).forEach(u => notificar(u, 'evento_compartido', { objetoId: ev.id, objetoNombre: ev.nombre }));
     }
     sincronizarPlanes();
+    pintarMisCompartidos();
     renderDetalle(ev.id);
   } catch(e){
     console.error(e);
@@ -6458,7 +6521,7 @@ function pintarMisCompartidos(){
   document.getElementById('perfil-compartidos').innerHTML = lista.map(e => `
     <div class="item-simple" role="button" tabindex="0" data-abrir="${esc(e.id)}">
       <div class="foto-mini" style="background-image:${cssFoto(e)}"></div>
-      <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs · lo ven tus amigos</span></div>
+      <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs · lo ven tus amigos</span>${state.misNotas?.[e.id] ? `<span class="nota-mia">“${esc(state.misNotas[e.id])}”</span>` : ''}</div>
     </div>`).join('');
 }
 

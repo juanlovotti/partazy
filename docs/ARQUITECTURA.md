@@ -64,7 +64,7 @@ Buscá el nombre para saltar. En orden:
 | `friendships/{a_b}` | Amistades (ids ordenados) | Los dos |
 | `dms/{a_b}` y `/mensajes` | Mensajes directos y solicitudes de mensaje | Los dos |
 | `notificaciones/{uid}/items` | Avisos internos | El destinatario |
-| `planes/{uid}` | A qué eventos va y qué compartió (para "van tus amigos") | El dueño y sus amigos |
+| `planes/{uid}` | A qué eventos va, qué compartió y su comentario opcional (`notas`, hasta 15 palabras) | El dueño y sus amigos |
 | `seguidores/{org}/fans/{uid}` | Seguidores de organizaciones | La persona y la organización |
 | `verificaciones/{uid}` | Pedido de insignia ✓ | El dueño y admins |
 | `reports`, `bloqueos`, `admins` | Denuncias, bloqueos y administradores (`admins/{uid}` se crea a mano en la consola) | Según el caso |

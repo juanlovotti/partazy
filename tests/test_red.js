@@ -45,7 +45,7 @@ let fallas=0; const ok=(c,m)=>{ console.log((c?'✔ ':'✘ ')+m); if(!c) fallas+
 
   w.abrirDetalle('E5'); await sleep(300);
   ok(/Compartir con mis amigos/.test($('btn-repost').textContent), 'botón para compartir con mis amigos');
-  $('btn-repost').click(); await sleep(400);
+  $('btn-repost').click(); await sleep(300); $('modal-ok').click(); await sleep(400); // ventana del comentario opcional: compartir sin comentario
   ok(store.docs.has('events/E5/reposts/A') && store.docs.get('events/E5').repostsCount===1, 'compartir guarda el registro y suma 1');
   const nB=[...store.docs.entries()].find(([k,v])=>k.startsWith('notificaciones/B/items/') && v.tipo==='evento_compartido');
   ok(!!nB, 'a mis amigos les llega "Juan compartió..."');

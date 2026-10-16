@@ -1147,3 +1147,56 @@
   #pantalla-home .ticker{margin-bottom:30px;}
   #pantalla-home .buscador{margin-bottom:22px;}
 }
+
+/* Comentario opcional al compartir */
+.modal-contador{font-family:var(--font-mono); font-size:10.5px; letter-spacing:1px; color:var(--gris); text-align:right; margin:-10px 0 14px;}
+.modal-contador.pasado{color:var(--peligro);}
+#modal-ok:disabled{opacity:.45; cursor:not-allowed;}
+.nota-amigo{margin-top:8px; padding:8px 10px; border-radius:12px 12px 12px 4px; background:var(--negro-3); border:1px solid var(--gris-linea); font-size:12px; line-height:1.4; color:var(--hueso);}
+.nota-amigo .nota-txt{font-style:italic; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; overflow-wrap:anywhere;}
+.nota-amigo .nota-quien{display:block; margin-top:3px; font-size:10.5px; color:var(--rojo); font-weight:700;}
+.item-simple .nota-mia{display:block; margin-top:3px; font-style:italic; color:var(--hueso); opacity:.85;}
+
+/* =========================================================
+   TUTORIAL: dibujitos de la pantalla real en cada paso (.tm = "tutorial mockup")
+   ========================================================= */
+.tm{position:relative; margin:2px 0 18px; padding:14px; border-radius:18px; background:var(--negro); border:1px solid var(--gris-linea); box-shadow:inset 0 0 0 1px rgba(255,255,255,.02);}
+.tuto-nota{margin-top:12px; font-size:12.5px !important; opacity:.7 !important;}
+.tuto-mini b{color:var(--blanco); margin-right:2px;}
+/* Dedo que toca: un círculo que late sobre el botón */
+.tm-dedo{position:absolute; right:14%; bottom:-6px; width:26px; height:26px; border-radius:50%; background:rgba(255,255,255,.85); box-shadow:0 0 0 0 rgba(255,255,255,.5); animation:tm-toque 1.6s ease-out infinite; pointer-events:none;}
+@keyframes tm-toque{0%{transform:scale(.6); opacity:0; box-shadow:0 0 0 0 rgba(255,255,255,.5);} 25%{transform:scale(1); opacity:.9;} 60%{box-shadow:0 0 0 16px rgba(255,255,255,0); opacity:.6;} 100%{transform:scale(.9); opacity:0; box-shadow:0 0 0 16px rgba(255,255,255,0);}}
+/* Paso: buscar */
+.tm-barra{display:flex; align-items:center; gap:9px; padding:10px 14px; border-radius:999px; background:var(--negro-2); border:1px solid var(--gris-linea); color:var(--gris); font-size:13px;}
+.tm-barra svg{width:15px; height:15px; flex:none;}
+.tm-tipeo{color:var(--blanco); overflow:hidden; white-space:nowrap; border-right:2px solid var(--rojo); width:0; animation:tm-tipear 2.8s steps(9) infinite;}
+@keyframes tm-tipear{0%,10%{width:0;} 55%,85%{width:9ch;} 100%{width:0;}}
+.tm-chips{display:flex; gap:6px; margin-top:10px; flex-wrap:wrap;}
+.tm-chips i{font-style:normal; font-size:11.5px; font-weight:600; padding:6px 11px; border-radius:999px; background:var(--negro-2); border:1px solid var(--gris-linea); color:var(--hueso);}
+.tm-chips i.on{background:var(--rojo); border-color:var(--rojo); color:var(--blanco);}
+/* Paso: anotarse */
+.tm-evento{display:grid; grid-template-columns:64px 1fr; gap:12px; align-items:center;}
+.tm-foto{width:64px; height:64px; border-radius:12px; background:radial-gradient(circle at 30% 30%, var(--rojo), var(--rojo-oscuro) 70%);}
+.tm-info{display:flex; flex-direction:column; gap:3px; min-width:0;}
+.tm-info small{font-family:var(--font-mono); font-size:9.5px; letter-spacing:1.5px; color:var(--rojo);}
+.tm-info b{font-family:var(--font-display); text-transform:uppercase; font-size:18px; letter-spacing:.3px;}
+.tm-info span{display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--hueso);}
+.tm-info .punto-ambiente{width:8px; height:8px;}
+.tm-boton{grid-column:1 / -1; position:relative; text-align:center; padding:11px; border-radius:999px; background:var(--rojo); color:var(--blanco); font-weight:800; font-size:13px; animation:tm-latido 1.6s ease-in-out infinite;}
+@keyframes tm-latido{0%,100%{transform:scale(1);} 30%{transform:scale(.97);} 45%{transform:scale(1.01);}}
+/* Paso: amigos */
+.tm-amigos{display:grid; grid-template-columns:auto 1fr; gap:8px 10px; align-items:center;}
+.tm-caras{display:flex;}
+.tm-caras i{width:30px; height:30px; margin-left:-8px; border-radius:50%; border:2px solid var(--negro); display:flex; align-items:center; justify-content:center; font-style:normal; font-size:10px; font-weight:800; color:var(--blanco); background:linear-gradient(135deg, var(--rojo), var(--rojo-oscuro));}
+.tm-caras i:first-child{margin-left:0;} .tm-caras i:nth-child(2){background:linear-gradient(135deg, var(--verde), #1f5a1b);} .tm-caras i:nth-child(3){background:linear-gradient(135deg, var(--amarillo), #6b5208);}
+.tm-txt{font-size:13px; color:var(--hueso);} .tm-txt b{color:var(--rojo);}
+.tm-nota{grid-column:1 / -1; padding:9px 12px; border-radius:14px 14px 14px 4px; background:var(--negro-3); border:1px solid var(--gris-linea); font-size:12.5px; font-style:italic; color:var(--hueso); animation:tm-sube .6s .3s var(--ease) both;}
+.tm-nota span{font-style:normal; font-weight:700; font-size:11px; color:var(--rojo); margin-left:4px;}
+@keyframes tm-sube{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+/* Paso: crear */
+.tm-crear{display:flex; align-items:center; gap:14px;}
+.tm-mas{position:relative; width:54px; height:54px; flex:none; border-radius:50%; background:var(--rojo); color:var(--blanco); display:flex; align-items:center; justify-content:center; font-size:30px; font-weight:400; line-height:1; box-shadow:0 8px 22px rgba(242,106,27,.4); animation:tm-latido 1.6s ease-in-out infinite;}
+.tm-mas .tm-dedo{right:-6px; bottom:-8px;}
+.tm-crear-txt{display:flex; flex-direction:column; gap:3px;}
+.tm-crear-txt b{font-size:14.5px;} .tm-crear-txt span{font-size:12px; color:var(--gris);}
+@media (prefers-reduced-motion: reduce){ .tm-dedo,.tm-tipeo,.tm-boton,.tm-mas,.tm-nota{animation:none !important;} .tm-tipeo{width:auto;} }
