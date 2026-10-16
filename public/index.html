@@ -147,7 +147,7 @@
     <div class="saludo">
       <div class="fila-ubic"><button class="ubic-btn" onclick="abrirRango()" aria-label="Cambiar ubicación y distancia"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg><span class="txt-ubic">Ubicando...</span> · <span class="rango txt-rango">50 km</span> ▾</button></div>
       <div class="eyebrow" id="home-eyebrow">Hoy</div>
-      <h1>¿Qué querés<br>hacer hoy?</h1>
+      <h1>¿Qué querés hacer <span class="hoy-vivo">hoy</span>?</h1>
     </div>
     <div class="ticker" aria-hidden="true"><div class="ticker-pista" id="home-ticker"></div></div>
     <div class="buscador" onclick="ir('explorar'); document.getElementById('input-buscar').focus();" aria-label="Buscar eventos">
@@ -876,7 +876,7 @@
 
   <!-- ============ NAVBAR ============ -->
   <nav class="navbar" aria-label="Navegación principal">
-    <div class="nav-marca solo-escritorio" role="button" tabindex="0" onclick="ir('home')" aria-label="PARTAZY · Inicio"><span class="marca-bandera notranslate" translate="no">PARTAZY</span><img class="nav-logo-mini" src="icono-192.png" alt=""></div>
+    <div class="nav-marca solo-escritorio" role="button" tabindex="0" onclick="ir('home')" aria-label="PARTAZY · Inicio"><span class="marca-bandera notranslate" translate="no">PARTAZY</span><span class="nav-logo-mini marca-bandera notranslate" translate="no" aria-hidden="true">P</span></div>
     <button class="nav-toggle solo-escritorio" id="nav-toggle" onclick="alternarNav()" aria-label="Achicar el menú" title="Achicar el menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
     <button class="nav-item activo" data-nav="home" onclick="ir('home')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg>

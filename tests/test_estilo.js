@@ -72,6 +72,7 @@ const llenar=(n)=>{ $('f-nombre').value=n; $('f-lugar').value='Belgrano 800, Gü
   const pie=w.document.querySelector('.pie-ig');
   ok(pie && /instagram\.com\/partazy/.test(pie.getAttribute('href')), 'footer con el logo de Instagram que lleva a @partazy');
   ok(w.document.querySelectorAll('[data-idioma]').length>=3 && [...w.document.querySelectorAll('[data-idioma]')].some(x=>x.dataset.idioma==='pt'), 'selector de idioma (español / inglés / portugués)');
-  const marcas=[...w.document.querySelectorAll('.marca-bandera')]; ok(marcas.length>=3 && marcas.every(m=>m.textContent.trim()==='PARTAZY') && !w.document.querySelector('.punto-beat'), 'el logo ya no tiene el puntito');
+  const marcas=[...w.document.querySelectorAll('.marca-bandera:not(.nav-logo-mini)')]; ok(marcas.length>=3 && marcas.every(m=>m.textContent.trim()==='PARTAZY') && !w.document.querySelector('.punto-beat'), 'el logo ya no tiene el puntito');
+  const mini=w.document.querySelector('.nav-logo-mini'); ok(mini && mini.textContent.trim()==='P' && mini.classList.contains('marca-bandera'), 'el menú achicado muestra la P sola con las rayas de la marca');
   console.log(f?'\nFALLAS: '+f:'\nTODO OK'); process.exit(f?1:0);
 })();

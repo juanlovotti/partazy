@@ -49,7 +49,7 @@
   .icon-btn{width:38px;height:38px; border-radius:var(--radius-pill); background:var(--negro-3); border:1px solid var(--gris-linea); display:flex;align-items:center;justify-content:center; color:var(--hueso); cursor:pointer;}
   .saludo{padding:6px 20px 16px;}
   .saludo .eyebrow{font-family:var(--font-mono); font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--rojo); font-weight:700;}
-  .saludo h1{font-family:var(--font-display); text-transform:uppercase; font-weight:700; font-size:38px; line-height:1.02; letter-spacing:.3px; margin-top:6px;}
+  .saludo h1{font-family:var(--font-display); text-transform:uppercase; font-weight:600; font-size:34px; line-height:1.05; letter-spacing:.5px; margin-top:6px; color:var(--hueso);}
   .buscador{margin:4px 20px 18px; background:var(--negro-3); border:1px solid var(--gris-linea); border-radius:var(--radius-pill); padding:13px 18px; display:flex;align-items:center;gap:10px; color:var(--gris); font-size:14px; cursor:pointer;}
   .buscador input{background:none; border:none; outline:none; color:var(--blanco); font-family:var(--font-body); font-size:14px; width:100%;}
   .buscador input::placeholder{color:var(--gris);}
@@ -739,19 +739,27 @@
     .phone.sin-nav .screen{padding-bottom:48px;}
     .screen > *{width:100%; max-width:1140px; margin-left:auto !important; margin-right:auto !important;}
     .toast{bottom:32px; left:calc(50% + 128px);}
-    .navbar{transition:width .25s var(--ease), padding .25s var(--ease);}
-    .phone{transition:padding-left .25s var(--ease);}
-    .nav-logo-mini{display:none; width:46px; height:46px; border-radius:12px;}
+    .navbar{transition:width .45s cubic-bezier(.4,0,.2,1), padding .45s cubic-bezier(.4,0,.2,1);}
+    .phone{transition:padding-left .45s cubic-bezier(.4,0,.2,1);}
+    /* Logo del menú achicado: la P sola con las rayas de la marca */
+    .nav-marca .nav-logo-mini{display:none;}
+    .nav-logo-mini{font-family:var(--font-display); font-weight:800; font-size:40px; line-height:1; letter-spacing:0;}
+    .nav-logo-mini.marca-bandera::before{left:-.38em; right:-.22em; top:52%; height:.4em;}
     .nav-toggle{position:absolute; top:34px; right:-15px; width:30px; height:30px; border-radius:50%; background:var(--negro-2); border:1px solid var(--gris-linea); color:var(--hueso); align-items:center; justify-content:center; cursor:pointer; z-index:3; box-shadow:0 4px 12px rgba(0,0,0,.4); padding:0;}
     .nav-toggle:hover{background:var(--negro-3); color:var(--rojo);}
-    .nav-toggle svg{width:15px; height:15px; transition:transform .25s var(--ease);}
+    .nav-toggle svg{width:15px; height:15px; transition:transform .45s cubic-bezier(.4,0,.2,1);}
     /* Menú achicado: solo íconos, el logo queda siempre */
     .phone.nav-mini{padding-left:88px;}
     .phone.nav-mini.sin-nav{padding-left:0;}
     .phone.nav-mini .navbar{width:88px; padding:22px 12px 20px;}
     .phone.nav-mini .nav-marca{padding:0 0 22px; display:flex !important; justify-content:center;}
-    .phone.nav-mini .nav-marca .marca-bandera{display:none;}
-    .phone.nav-mini .nav-logo-mini{display:block;}
+    .phone.nav-mini .nav-marca .marca-bandera:not(.nav-logo-mini){display:none;}
+    .phone.nav-mini .nav-marca .nav-logo-mini{display:inline-flex; animation:aparece-suave .45s .12s both;}
+    .phone:not(.nav-mini) .nav-marca .marca-bandera, .phone:not(.nav-mini) .nav-pie{animation:aparece-suave .4s .2s both;}
+    /* Los textos del menú se achican y agrandan junto con el ancho, sin saltos */
+    .navbar .nav-item{white-space:nowrap; overflow:hidden; transition:font-size .45s cubic-bezier(.4,0,.2,1), gap .45s cubic-bezier(.4,0,.2,1), padding .45s cubic-bezier(.4,0,.2,1), background-color var(--t-rapida), opacity var(--t-rapida);}
+    .navbar .nav-item.crear{overflow:visible;}
+    .phone.nav-mini .navbar .nav-item{transition-duration:.15s, .45s, .45s, .18s, .18s;}
     .phone.nav-mini .nav-toggle svg{transform:rotate(180deg);}
     .phone.nav-mini .nav-item{justify-content:center; font-size:0; gap:0; padding:12px 0;}
     .phone.nav-mini .nav-item .txt-crear{display:none;}
@@ -762,7 +770,7 @@
 
     /* Inicio */
     #pantalla-home .topbar .logo{visibility:hidden;}
-    .saludo h1{font-size:64px;}
+    .saludo h1{font-size:46px;}
     .saludo .eyebrow{font-size:12px;}
     #pantalla-home .buscador{max-width:640px; margin-left:max(20px, calc((100% - 1140px) / 2 + 20px)) !important; margin-right:auto !important;}
     .fila-scroll > .empty-state, .fila-scroll > .empty-cta{grid-column:1 / -1;}
@@ -965,11 +973,15 @@
   .hoja-bg.show{display:flex;}
   #hoja-cuenta{z-index:470;}
   /* Encabezado del inicio fijo al bajar */
-  #pantalla-home .topbar{position:sticky; top:0; z-index:40; gap:12px; transition:background .2s, box-shadow .2s, padding .2s;}
+  #pantalla-home .topbar{position:sticky; top:0; z-index:40; gap:12px;}
   /* Al bajar, el encabezado se vuelve una franja sólida de borde a borde: el fondo es un ::before
      que se estira a los costados y hacia arriba (tapa el espacio del padding de la pantalla) */
+  #pantalla-home .topbar{transition:padding .35s var(--ease);}
+  #pantalla-home .topbar::before{content:''; position:absolute; z-index:-1; left:-100vmax; right:-100vmax; top:-40px; bottom:0; background:rgba(20,18,20,.96); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid var(--gris-linea); box-shadow:0 8px 24px rgba(0,0,0,.35); pointer-events:none;
+    opacity:0; transform:translateY(-8px); transition:opacity .35s var(--ease), transform .35s var(--ease);}
   #pantalla-home .topbar.compacta{padding-top:12px; padding-bottom:12px;}
-  #pantalla-home .topbar.compacta::before{content:''; position:absolute; z-index:-1; left:-100vmax; right:-100vmax; top:-40px; bottom:0; background:rgba(20,18,20,.96); backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); border-bottom:1px solid var(--gris-linea); box-shadow:0 8px 24px rgba(0,0,0,.35); pointer-events:none;}
+  #pantalla-home .topbar.compacta::before{opacity:1; transform:none;}
+  #pantalla-home .topbar.compacta .buscador-mini, #pantalla-home .topbar.compacta .btn-buscar-mini{animation:aparece-suave .35s .05s both;}
   .buscador-mini{display:none; align-items:center; gap:9px; flex:1; min-width:0; background:var(--negro-2); border:1px solid var(--gris-linea); border-radius:var(--radius-pill); padding:10px 16px; color:var(--gris); font-size:13.5px; cursor:text;}
   .buscador-mini span{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
   .btn-buscar-mini{display:none !important;}
@@ -1108,3 +1120,19 @@
   .hoja{max-height:calc(100dvh - env(safe-area-inset-top, 0px) - 28px) !important;}
   .tuto{max-height:calc(100dvh - env(safe-area-inset-top, 0px) - 16px); overflow-y:auto;}
   .loader{padding-top:env(safe-area-inset-top, 0px);}
+
+/* =========================================================
+   "¿Qué querés hacer HOY?": la palabra "hoy" pasa por los colores de la app
+   y tiene las rayas de la marca debajo, que se dibujan al entrar
+   ========================================================= */
+.hoy-vivo{position:relative; display:inline-block; font-weight:800; padding:0 .04em;
+  background:linear-gradient(90deg, var(--rojo), var(--amarillo), var(--verde), #8B5CF6, var(--rojo)); background-size:400% 100%;
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:var(--rojo);
+  animation:hoy-colores 9s linear infinite;}
+.hoy-vivo::after{content:''; position:absolute; left:.02em; right:.02em; bottom:-.06em; height:.14em; transform:skewX(-14deg); transform-origin:left;
+  background:linear-gradient(to bottom, var(--rojo) 0 40%, transparent 40% 60%, var(--verde) 60% 100%);
+  animation:hoy-raya .9s .35s cubic-bezier(.4,0,.2,1) both;}
+@keyframes hoy-colores{to{background-position:400% 0;}}
+@keyframes hoy-raya{from{clip-path:inset(0 100% 0 0);} to{clip-path:inset(0 0 0 0);}}
+@keyframes aparece-suave{from{opacity:0; transform:translateY(-3px);} to{opacity:1; transform:none;}}
+@media (prefers-reduced-motion: reduce){ .hoy-vivo, .hoy-vivo::after{animation:none;} }
