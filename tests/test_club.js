@@ -20,7 +20,9 @@ const ev = (id, o) => put('events/' + id, Object.assign({ nombre: id, creador: '
   verificado: true, conQR: true, deOrganizacion: true }, o));
 ev('casiLleno', { nombre: 'Casi Lleno', capacidad: 100, confirmadosCount: 90 });
 ev('lleno', { nombre: 'Agotadisimo', capacidad: 50, confirmadosCount: 50, fechaTs: Date.now() + 10 * 864e5 });
-ev('pronto', { nombre: 'Muy Pronto', fechaTs: Date.now() + 10 * 3600e3 });
+// "Esta noche" termina a las 08:00: el evento cae siempre antes de ese corte, corra la prueba a la hora que corra
+const finNoche = (() => { const d = new Date(); if(d.getHours() >= 8) d.setDate(d.getDate() + 1); d.setHours(8, 0, 0, 0); return d.getTime(); })();
+ev('pronto', { nombre: 'Muy Pronto', fechaTs: Math.min(Date.now() + 10 * 3600e3, Date.now() + (finNoche - Date.now()) / 2) });
 
 const usuarios = {};
 const abrir = (uid, hash) => {
