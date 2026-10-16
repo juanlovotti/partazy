@@ -1277,3 +1277,8 @@
 .grupo-tit{font-size:12.5px; font-weight:700; color:var(--hueso);}
 .grupo-chips{display:flex; flex-wrap:wrap; gap:8px;}
 .grupo-intereses + .grupo-intereses{padding-top:14px; border-top:1px solid var(--gris-linea);}
+/* Campo @usuario: el @ y el texto forman UNA sola caja; al escribir se resalta la caja entera */
+.input-handle{transition:border-color var(--t-rapida), box-shadow var(--t-rapida);}
+.input-handle:focus-within{border-color:var(--rojo); box-shadow:0 0 0 3px rgba(242,106,27,.18);}
+.input-handle span{flex:none; line-height:1;}
+.campo .input-handle input, .form-perfil .campo .input-handle input{flex:1; min-width:0; width:auto; border:none !important; background:transparent !important; box-shadow:none !important; outline:none !important; padding-left:2px; border-radius:0;}
