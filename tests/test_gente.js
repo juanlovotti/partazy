@@ -1,0 +1,31 @@
+// Prueba: Buscar personas y sugerencias.
+const { JSDOM } = require('jsdom'); const fs = require('fs');
+const { crearStore, makeFirebase } = require('./fakefb.js');
+const html = require('./cargar-html.js')();
+const store = crearStore(); const put=(p,v)=>store.docs.set(p,v);
+const perfil=(uid,nombre,usuario,extra)=>{ put('users/'+uid,{nombre,usuario,iniciales:nombre[0],ciudad:'Río Tercero',intereses:[],foto:'',nombreBusqueda:nombre.toLowerCase(),palabras:nombre.toLowerCase().split(' '),...(extra||{})}); put(`users/${uid}/privado/datos`,{nacimiento:'1998-01-01'}); };
+perfil('A','Juan Lovotti','juan'); perfil('L','Lucio Perez','lucio'); perfil('K','Kudu Amaro','kudu'); perfil('O','Vortex Club','vortex',{tipoCuenta:'organizacion',ciudad:'Córdoba'});
+perfil('S','Sofia Gomez','sofi',{ciudad:'Córdoba'});
+put('friendships/A_S',{users:['A','S'],de:'S',para:'A',estado:'pendiente'});
+const w=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid:'A',email:'a@t.com'})); w.navigator.geolocation=undefined; w.addEventListener('error',e=>console.error('ERROR JS',e.message)); }}).window;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const $=id=>w.document.getElementById(id); const txt=el=>(el?.textContent||'').replace(/\s+/g,' ').trim();
+let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
+(async()=>{
+  await sleep(900); w.cerrarTutorial(); await sleep(200);
+  w.ir('perfil'); w.renderPerfilVista();
+  w.document.querySelector('#pantalla-perfil .fila-botones .btn-primario').click(); await sleep(400);
+  ok(w.document.querySelector('.screen.activa').id==='pantalla-explorar' && $('pantalla-explorar').classList.contains('modo-personas'), '"Buscar amigos" del perfil abre Explorar en modo Personas');
+  ok(/Te quieren agregar \(1\)/.test(txt($('explorar-gente'))) && /Sofia Gomez/.test(txt($('explorar-gente'))), 'muestra las solicitudes recibidas');
+  ok(/Gente de Río Tercero/.test(txt($('explorar-gente'))) && /Lucio Perez/.test(txt($('explorar-gente'))), 'sugiere gente de tu ciudad');
+  ok(/Boliches y productoras/.test(txt($('explorar-gente'))) && /Vortex Club/.test(txt($('explorar-gente'))), 'sugiere organizaciones');
+  ok(w.getComputedStyle($('chips-explorar')).display==='none', 'en Personas se ocultan los filtros de eventos');
+  $('input-buscar').value='kudu'; $('input-buscar').dispatchEvent(new w.Event('input')); await sleep(600);
+  ok(/Resultados/.test(txt($('explorar-gente'))) && /Kudu Amaro/.test(txt($('explorar-gente'))), 'buscar encuentra a la persona');
+  w.document.querySelector('#explorar-gente [data-amigo-accion="pedir"]').click(); await sleep(400);
+  ok(store.docs.get('friendships/A_K')?.estado==='pendiente', 'se manda la solicitud de amistad desde Explorar');
+  ok(/Enviada ✓/.test(txt($('explorar-gente'))), 'el botón pasa a "Enviada ✓"');
+  w.modoExplorar('eventos'); await sleep(50);
+  ok(!$('pantalla-explorar').classList.contains('modo-personas') && w.getComputedStyle($('chips-explorar')).display!=='none', 'se vuelve a Eventos');
+  ok($('input-buscar').getAttribute('autocomplete')==='off' && $('input-buscar').type==='search' && !/nombre/i.test($('input-buscar-personas').placeholder), 'buscadores sin "nombre" (para que el iPhone no ofrezca AutoFill Contact)');
+  console.log(f?'\nFALLAS: '+f:'\nTODO OK'); process.exit(f?1:0);
+})();

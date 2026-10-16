@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <filter id="grano"><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
+  </defs>
+  <rect width="64" height="64" rx="15" fill="#0A0809"/>
+  <g transform="skewX(-14) translate(8 0)">
+    <rect x="-12" y="30" width="90" height="9" fill="#F26A1B"/>
+    <rect x="-12" y="41.5" width="90" height="3.5" fill="#F4EFEC"/>
+    <rect x="-12" y="47.5" width="90" height="3" fill="#4CB944"/>
+    <path d="M24 50V14h11a11 11 0 0 1 0 22H24" transform="translate(2.6 2.6)" fill="none" stroke="#F26A1B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24 50V14h11a11 11 0 0 1 0 22H24" fill="none" stroke="#0A0809" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M24 50V14h11a11 11 0 0 1 0 22H24" fill="none" stroke="#F4EFEC" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <rect width="64" height="64" rx="15" fill="#fff" filter="url(#grano)" opacity=".16"/>
+</svg>

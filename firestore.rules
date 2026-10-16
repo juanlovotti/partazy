@@ -1,0 +1,685 @@
+rules_version = '2';
+
+// PARTAZY · Reglas de seguridad de Firestore
+// Pegar en Firebase Console → Firestore Database → Reglas → Publicar.
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Helpers ----------
+    function logueado() { return request.auth != null; }
+    function soy(uid) { return logueado() && request.auth.uid == uid; }
+    function evPath(eventId) { return /databases/$(database)/documents/events/$(eventId); }
+    function atPath(eventId, uid) { return /databases/$(database)/documents/events/$(eventId)/attendees/$(uid); }
+    function esCreador(eventId) {
+      return logueado() && exists(evPath(eventId)) && get(evPath(eventId)).data.creador == request.auth.uid;
+    }
+    // Aprobado o confirmado en el evento
+    function adentro(eventId) {
+      return logueado() && exists(atPath(eventId, request.auth.uid))
+        && get(atPath(eventId, request.auth.uid)).data.estado in ['aprobado', 'confirmado'];
+    }
+    function texto(v, max) { return v is string && v.size() <= max; }
+    // Calificación de quien hace la escritura en un evento
+    function califPath(eventId) {
+      return /databases/$(database)/documents/events/$(eventId)/calificaciones/$(request.auth.uid);
+    }
+    function sinCalif(d) {
+      return d.get('califN', 0) == 0 && d.get('califSuma', 0) == 0 && d.get('califJoda', 0) == 0 && d.get('califAnf', 0) == 0;
+    }
+    function repostPath(eventId) {
+      return /databases/$(database)/documents/events/$(eventId)/reposts/$(request.auth.uid);
+    }
+    // Amistad aceptada entre dos personas (el id del par va ordenado)
+    function amistadAceptada(a, b) {
+      let p1 = /databases/$(database)/documents/friendships/$(a + '_' + b);
+      let p2 = /databases/$(database)/documents/friendships/$(b + '_' + a);
+      return (exists(p1) && get(p1).data.estado == 'aceptada') || (exists(p2) && get(p2).data.estado == 'aceptada');
+    }
+    // Administradores: documento admins/{uid} creado a mano en la consola
+    function esAdmin() { return logueado() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    // Cuenta no suspendida (necesario para publicar contenido)
+    function activo() { return !get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('suspendido', false); }
+    // La denuncia de esta persona se crea en la misma escritura (una por persona y contenido)
+    function denunciaNueva(tipo, id) {
+      let r = /databases/$(database)/documents/reports/$(tipo + '_' + id + '_' + request.auth.uid);
+      return !exists(r) && existsAfter(r);
+    }
+
+    // ---------- Usuarios ----------
+    // Perfil público: lo ven todos los usuarios logueados.
+    match /users/{uid} {
+      allow read: if logueado();
+      // Al crearlo, en la misma escritura tiene que existir su parte privada (con la edad verificada)
+      allow create: if soy(uid)
+        && perfilValido() && usuarioReservado(uid)
+        && request.resource.data.get('denuncias', 0) == 0
+        && request.resource.data.get('suspendido', false) == false
+        && request.resource.data.get('verificado', false) == false
+        && request.resource.data.get('seguidores', 0) == 0
+        && sinCalif(request.resource.data)
+        && existsAfter(/databases/$(database)/documents/users/$(uid)/privado/datos);
+      // El dueño edita su perfil, pero no puede tocar sus denuncias ni su suspensión
+      allow update: if soy(uid) && perfilValido() && usuarioReservado(uid)
+        && !resource.data.get('suspendido', false)
+        && request.resource.data.get('denuncias', 0) == resource.data.get('denuncias', 0)
+        && request.resource.data.get('suspendido', false) == false
+        && request.resource.data.get('verificado', false) == resource.data.get('verificado', false)
+        && request.resource.data.get('seguidores', 0) == resource.data.get('seguidores', 0)
+        && request.resource.data.get('califN', 0) == resource.data.get('califN', 0)
+        && request.resource.data.get('califSuma', 0) == resource.data.get('califSuma', 0)
+        && request.resource.data.get('califUlt', '') == resource.data.get('califUlt', '');
+      // Alguien califica un evento de esta organización: +1 y su nota, junto con su calificación
+      allow update: if logueado() && !soy(uid)
+        && resource.data.get('tipoCuenta', 'persona') == 'organizacion'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['califN', 'califSuma', 'califUlt'])
+        && request.resource.data.califUlt is string
+        && get(evPath(request.resource.data.califUlt)).data.creador == uid
+        && !exists(califPath(request.resource.data.califUlt))
+        && existsAfter(califPath(request.resource.data.califUlt))
+        && request.resource.data.califN == resource.data.get('califN', 0) + 1
+        && request.resource.data.califSuma == resource.data.get('califSuma', 0) + getAfter(califPath(request.resource.data.califUlt)).data.anfitrion;
+      // Alguien empieza o deja de seguir a una organización: solo ±1, junto con su registro de seguidor
+      allow update: if logueado() && !soy(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['seguidores'])
+        && ((request.resource.data.seguidores == resource.data.get('seguidores', 0) + 1
+              && !exists(fanPath(uid)) && existsAfter(fanPath(uid)))
+          || (request.resource.data.seguidores == resource.data.get('seguidores', 0) - 1
+              && exists(fanPath(uid)) && !existsAfter(fanPath(uid))));
+      // Otra persona lo denuncia: solo +1, junto con su denuncia
+      allow update: if logueado() && !soy(uid)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['denuncias'])
+        && request.resource.data.denuncias == resource.data.get('denuncias', 0) + 1
+        && denunciaNueva('usuario', uid);
+      // Moderación: quitar foto, limpiar denuncias, suspender o reactivar
+      allow update: if esAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['foto', 'denuncias', 'suspendido', 'verificado']);
+      allow delete: if soy(uid);
+
+      // Datos privados: fecha de nacimiento y email. Solo el dueño.
+      match /privado/{docId} {
+        allow read: if soy(uid);
+        allow create: if soy(uid) && docId == 'datos'
+          && request.resource.data.nacimiento is string
+          && request.resource.data.nacimiento.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          && mayorDeEdad(request.resource.data.nacimiento);
+        // La fecha de nacimiento no se puede cambiar una vez cargada
+        allow update: if soy(uid) && request.resource.data.nacimiento == resource.data.nacimiento;
+        allow delete: if soy(uid);
+      }
+    }
+
+    function perfilValido() {
+      let d = request.resource.data;
+      return texto(d.nombre, 60) && d.nombre.size() >= 2
+        && (!('ciudad' in d) || texto(d.ciudad, 80))
+        && (!('foto' in d) || (texto(d.foto, 70000)
+              && (d.foto.size() == 0 || d.foto.matches('^https://.*') || d.foto.matches('^data:image/jpeg;base64,.*'))))
+        && (!('apodo' in d) || texto(d.apodo, 40))
+        && (!('tipoCuenta' in d) || d.tipoCuenta in ['persona', 'organizacion'])
+        && texto(d.get('bio', ''), 300) && texto(d.get('direccionPublica', ''), 150)
+        && texto(d.get('horarios', ''), 200) && texto(d.get('instagram', ''), 60) && texto(d.get('web', ''), 150)
+        && (!('faq' in d) || (d.faq is list && d.faq.size() <= 5))
+        && (!('intereses' in d) || (d.intereses is list && d.intereses.size() <= 20))
+        && (!('nombreBusqueda' in d) || texto(d.nombreBusqueda, 60))
+        && (!('palabras' in d) || (d.palabras is list && d.palabras.size() <= 10));
+    }
+
+    // El @usuario tiene que estar reservado a nombre de esta persona
+    function usuarioReservado(uid) {
+      let d = request.resource.data;
+      return !('usuario' in d) || (d.usuario is string && d.usuario.matches('^[a-z0-9._]{3,20}$')
+        && getAfter(/databases/$(database)/documents/usernames/$(d.usuario)).data.uid == uid);
+    }
+
+    // ---------- Nombres de usuario (únicos) ----------
+    match /usernames/{handle} {
+      allow get: if logueado();
+      allow create: if logueado() && handle.matches('^[a-z0-9._]{3,20}$')
+        && request.resource.data.uid == request.auth.uid
+        && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('usuario', '') == handle;
+      allow delete: if logueado() && resource.data.uid == request.auth.uid
+        && (!existsAfter(/databases/$(database)/documents/users/$(request.auth.uid))
+            || getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('usuario', '') != handle);
+      allow list, update: if false;
+    }
+
+    // 18 años ≈ 6573 días (margen de 1-2 días por años bisiestos; la app valida la fecha exacta)
+    function mayorDeEdad(fecha) {
+      let p = fecha.split('-');
+      return timestamp.date(int(p[0]), int(p[1]), int(p[2])) + duration.value(6573, 'd') <= request.time;
+    }
+
+    // Line-up, hora de cierre y link de venta externa (solo https)
+    function extrasEventoValidos() {
+      let d = request.resource.data;
+      return texto(d.get('lineup', ''), 600) && texto(d.get('horaFin', ''), 5)
+        && d.get('ocasion', '') in ['', 'universitaria', 'egresados', 'tematica', 'cumple', 'after', 'fiesta', 'previa', 'pena', 'musical', 'gastronomico']
+        && d.get('ubicacionExacta', false) is bool
+        && d.get('fotoGrande', false) is bool
+        && texto(d.get('linkEntradas', ''), 300)
+        && (d.get('linkEntradas', '') == '' || d.get('linkEntradas', '').matches('^https://.*'))
+        && (!d.get('deOrganizacion', false)
+            || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('tipoCuenta', 'persona') == 'organizacion');
+    }
+
+    // Las entradas con QR son solo para cuentas de organización
+    function qrPermitido() {
+      return !request.resource.data.get('conQR', false)
+        || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('tipoCuenta', 'persona') == 'organizacion';
+    }
+
+    // ---------- Eventos ----------
+    match /events/{eventId} {
+      // Los eventos se pueden mirar sin cuenta (modo invitado). La dirección de las previas privadas
+      // está aparte (private/) y solo la leen quien organiza y los aprobados.
+      allow read: if true;
+
+      allow create: if logueado()
+        && eventId.matches('^[A-Za-z0-9_-]{1,64}$')
+        && request.resource.data.creador == request.auth.uid
+        && texto(request.resource.data.nombre, 80) && request.resource.data.nombre.size() > 0
+        && texto(request.resource.data.lugar, 120)
+        && texto(request.resource.data.descripcion, 800)
+        && texto(request.resource.data.imagen, 80000)
+        && request.resource.data.privacidad in ['publica', 'privada']
+        && request.resource.data.fechaTs is int
+        && request.resource.data.capacidad is int && request.resource.data.capacidad >= 1 && request.resource.data.capacidad <= 20000
+        && request.resource.data.confirmadosCount is int && request.resource.data.confirmadosCount >= 0
+        && request.resource.data.confirmadosCount <= request.resource.data.capacidad
+        && request.resource.data.confirmadosCount <= 1
+        && request.resource.data.get('repostsCount', 0) == 0
+        && request.resource.data.precio is int && request.resource.data.precio >= 0
+        && request.resource.data.get('estado', 'publicado') == 'publicado'
+        && request.resource.data.get('denuncias', 0) == 0
+        && sinCalif(request.resource.data)
+        && texto(request.resource.data.get('pagoInfo', ''), 200)
+        && request.resource.data.get('verificado', false) == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('verificado', false)
+        && qrPermitido()
+        && extrasEventoValidos()
+        && activo();
+
+      // El creador edita su evento (sin poder cederlo ni pasarse de capacidad)
+      allow update: if logueado()
+        && resource.data.creador == request.auth.uid
+        && request.resource.data.creador == resource.data.creador
+        && request.resource.data.privacidad in ['publica', 'privada']
+        && texto(request.resource.data.nombre, 80) && request.resource.data.nombre.size() > 0
+        && texto(request.resource.data.lugar, 120)
+        && texto(request.resource.data.descripcion, 800)
+        && (texto(request.resource.data.imagen, 80000) || request.resource.data.imagen == resource.data.imagen)
+        && request.resource.data.fechaTs is int
+        && request.resource.data.capacidad is int && request.resource.data.capacidad >= 1 && request.resource.data.capacidad <= 20000
+        && request.resource.data.precio is int && request.resource.data.precio >= 0
+        && request.resource.data.confirmadosCount <= request.resource.data.capacidad
+        && request.resource.data.get('estado', 'publicado') in ['publicado', 'cancelado']
+        && texto(request.resource.data.get('motivoCancelacion', ''), 200)
+        && texto(request.resource.data.get('pagoInfo', ''), 200)
+        && request.resource.data.get('denuncias', 0) == resource.data.get('denuncias', 0)
+        && request.resource.data.get('verificado', false) == resource.data.get('verificado', false)
+        && request.resource.data.get('repostsCount', 0) == resource.data.get('repostsCount', 0)
+        && request.resource.data.get('califN', 0) == resource.data.get('califN', 0)
+        && request.resource.data.get('califJoda', 0) == resource.data.get('califJoda', 0)
+        && request.resource.data.get('califAnf', 0) == resource.data.get('califAnf', 0)
+        && (request.resource.data.get('conQR', false) == resource.data.get('conQR', false) || qrPermitido())
+        && extrasEventoValidos();
+
+      // Alguien lo comparte o deja de compartir: solo ±1, junto con su registro
+      allow update: if logueado()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['repostsCount'])
+        && ((request.resource.data.repostsCount == resource.data.get('repostsCount', 0) + 1
+              && !exists(repostPath(eventId)) && existsAfter(repostPath(eventId)))
+          || (request.resource.data.repostsCount == resource.data.get('repostsCount', 0) - 1
+              && exists(repostPath(eventId)) && !existsAfter(repostPath(eventId))));
+
+      // Quien fue lo califica: +1 y sus notas, junto con su calificación (una sola vez)
+      allow update: if logueado() && resource.data.creador != request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['califN', 'califJoda', 'califAnf'])
+        && !exists(califPath(eventId)) && existsAfter(califPath(eventId))
+        && request.resource.data.califN == resource.data.get('califN', 0) + 1
+        && request.resource.data.califJoda == resource.data.get('califJoda', 0) + getAfter(califPath(eventId)).data.joda
+        && request.resource.data.califAnf == resource.data.get('califAnf', 0) + getAfter(califPath(eventId)).data.anfitrion;
+
+      // Alguien lo denuncia: solo +1, junto con su denuncia
+      allow update: if logueado() && resource.data.creador != request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['denuncias'])
+        && request.resource.data.denuncias == resource.data.get('denuncias', 0) + 1
+        && denunciaNueva('evento', eventId);
+
+      // Moderación: quitar la foto o limpiar denuncias
+      allow update: if esAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['imagen', 'denuncias', 'verificado', 'fotoGrande']);
+
+      // Un asistente confirma un evento público: solo +1 al contador y,
+      // en la misma transacción, crea su propia asistencia confirmada.
+      allow update: if logueado()
+        && resource.data.privacidad == 'publica'
+        && resource.data.get('estado', 'publicado') != 'cancelado'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['confirmadosCount'])
+        && request.resource.data.confirmadosCount == resource.data.confirmadosCount + 1
+        && request.resource.data.confirmadosCount <= resource.data.capacidad
+        && !exists(atPath(eventId, request.auth.uid))
+        && getAfter(atPath(eventId, request.auth.uid)).data.estado == 'confirmado';
+
+      // Un asistente libera su lugar ("Ya no voy"): solo -1, junto con el borrado de su asistencia
+      allow update: if logueado() && resource.data.creador != request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['confirmadosCount'])
+        && request.resource.data.confirmadosCount == resource.data.confirmadosCount - 1
+        && exists(atPath(eventId, request.auth.uid))
+        && get(atPath(eventId, request.auth.uid)).data.estado in ['confirmado', 'aprobado']
+        && !existsAfter(atPath(eventId, request.auth.uid));
+
+      // Quien organiza lo puede eliminar al instante (la app avisa a los anotados)
+      allow delete: if (logueado() && resource.data.creador == request.auth.uid) || esAdmin();
+
+      // Dirección exacta: solo creador y aprobados/confirmados
+      // Lista VIP: solo la ve y la edita quien organiza
+      match /vip/{docId} {
+        allow read: if esCreador(eventId);
+        allow create, update: if logueado() && docId == 'lista'
+          && getAfter(evPath(eventId)).data.creador == request.auth.uid
+          && request.resource.data.keys().hasOnly(['nombres', 'ts'])
+          && request.resource.data.nombres is list && request.resource.data.nombres.size() <= 300
+          && request.resource.data.ts is int;
+        allow delete: if esCreador(eventId) || esAdmin();
+      }
+
+      // Calificaciones: solo quien fue (confirmado o aprobado), después del evento y hasta 15 días, una vez.
+      // Son anónimas: cada uno ve solo la suya; los totales están en el evento.
+      match /calificaciones/{uid} {
+        allow read: if soy(uid);
+        allow create: if soy(uid) && adentro(eventId)
+          && get(evPath(eventId)).data.creador != uid
+          && get(evPath(eventId)).data.get('estado', 'publicado') != 'cancelado'
+          && request.time.toMillis() >= get(evPath(eventId)).data.fechaTs + 3 * 3600000
+          && request.time.toMillis() <= get(evPath(eventId)).data.fechaTs + 15 * 86400000
+          && request.resource.data.keys().hasOnly(['uid', 'joda', 'anfitrion', 'ts'])
+          && request.resource.data.uid == uid
+          && request.resource.data.joda is int && request.resource.data.joda >= 1 && request.resource.data.joda <= 5
+          && request.resource.data.anfitrion is int && request.resource.data.anfitrion >= 1 && request.resource.data.anfitrion <= 5
+          && request.resource.data.ts is int
+          && getAfter(evPath(eventId)).data.get('califN', 0) == get(evPath(eventId)).data.get('califN', 0) + 1;
+      }
+
+      // Foto grande del evento (las tarjetas usan la miniatura del evento)
+      match /media/{docId} {
+        allow read: if true;
+        allow create, update: if logueado() && docId == 'foto'
+          && getAfter(evPath(eventId)).data.creador == request.auth.uid
+          && request.resource.data.keys().hasOnly(['imagen', 'ts'])
+          && texto(request.resource.data.imagen, 750000)
+          && request.resource.data.ts is int;
+        allow delete: if esCreador(eventId) || esAdmin();
+      }
+
+      // Compartidos (repost): uno por persona, con el contador en la misma escritura
+      match /reposts/{uid} {
+        allow read: if logueado();
+        allow create: if soy(uid)
+          && request.resource.data.keys().hasOnly(['ts', 'nombre'])
+          && request.resource.data.ts is int && texto(request.resource.data.nombre, 60)
+          && get(evPath(eventId)).data.privacidad == 'publica'
+          && getAfter(evPath(eventId)).data.get('repostsCount', 0) == get(evPath(eventId)).data.get('repostsCount', 0) + 1
+          && activo();
+        allow delete: if soy(uid)
+          && getAfter(evPath(eventId)).data.get('repostsCount', 0) == get(evPath(eventId)).data.get('repostsCount', 0) - 1;
+      }
+
+      // Votos de ambiente en vivo: solo quien está anotado, y solo mientras el evento pasa
+      match /votos/{uid} {
+        allow read: if logueado();
+        allow create, update: if logueado() && uid == request.auth.uid && adentro(eventId)
+          && request.resource.data.keys().hasOnly(['voto', 'ts'])
+          && request.resource.data.voto in ['tranqui', 'bueno', 'explotado']
+          && request.resource.data.ts is int
+          && request.time.toMillis() >= get(evPath(eventId)).data.fechaTs - 1800000
+          && request.time.toMillis() <= get(evPath(eventId)).data.fechaTs + 86400000;
+        allow delete: if logueado() && uid == request.auth.uid;
+      }
+
+      match /private/{docId} {
+        allow read: if esCreador(eventId) || adentro(eventId);
+        allow create, update: if logueado()
+          && getAfter(evPath(eventId)).data.creador == request.auth.uid
+          && texto(request.resource.data.direccion, 200);
+        allow delete: if esCreador(eventId) || esAdmin();
+      }
+
+      // Asistencias
+      match /attendees/{uid} {
+        allow read: if soy(uid) || esCreador(eventId);
+
+        allow create: if soy(uid)
+          && request.resource.data.uid == uid
+          && texto(request.resource.data.nombre, 60)
+          && (
+            // 1) Pedir unirse a una previa privada
+            (request.resource.data.estado == 'solicitado'
+              && get(evPath(eventId)).data.privacidad == 'privada'
+              && get(evPath(eventId)).data.get('estado', 'publicado') != 'cancelado')
+            // 2) Lista de espera de un evento público lleno
+            || (request.resource.data.estado == 'en-espera'
+              && get(evPath(eventId)).data.privacidad == 'publica'
+              && get(evPath(eventId)).data.get('estado', 'publicado') != 'cancelado'
+              && get(evPath(eventId)).data.confirmadosCount >= get(evPath(eventId)).data.capacidad)
+            // 3) Confirmar un evento público (con el +1 en la misma transacción)
+            || (request.resource.data.estado == 'confirmado'
+              && exists(evPath(eventId))
+              && get(evPath(eventId)).data.privacidad == 'publica'
+              && getAfter(evPath(eventId)).data.confirmadosCount == get(evPath(eventId)).data.confirmadosCount + 1)
+            // 4) El creador se anota en su propio evento al crearlo
+            || (request.resource.data.estado == 'confirmado'
+              && !exists(evPath(eventId))
+              && getAfter(evPath(eventId)).data.creador == request.auth.uid)
+          );
+
+        // Solo el creador aprueba o rechaza solicitudes
+        allow update: if esCreador(eventId)
+          && resource.data.estado == 'solicitado'
+          && request.resource.data.estado in ['aprobado', 'rechazado']
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'ticket', 'respondidoTs'])
+          && (request.resource.data.estado == 'rechazado'
+              || getAfter(evPath(eventId)).data.confirmadosCount == get(evPath(eventId)).data.confirmadosCount + 1);
+
+        // Control de puerta: quien organiza marca el ingreso una sola vez
+        allow update: if esCreador(eventId)
+          && resource.data.estado in ['confirmado', 'aprobado']
+          && !('checkinTs' in resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['checkinTs'])
+          && request.resource.data.checkinTs is int;
+
+        // Darse de baja: retirar una solicitud o salir de la lista de espera, o liberar el lugar
+        // (con el -1 en la misma escritura). Quien organiza no se baja de su propio evento.
+        allow delete: if soy(uid) && (
+          !existsAfter(evPath(eventId))
+          || resource.data.estado in ['solicitado', 'en-espera']
+          || (resource.data.estado in ['confirmado', 'aprobado']
+              && !('checkinTs' in resource.data)
+              && get(evPath(eventId)).data.creador != uid
+              && getAfter(evPath(eventId)).data.confirmadosCount == get(evPath(eventId)).data.confirmadosCount - 1));
+      }
+
+      // Acreditaciones de prensa: eventos de organizaciones, hasta 24 h antes
+      match /acreditaciones/{uid} {
+        allow get: if soy(uid) || esCreador(eventId);
+        allow list: if esCreador(eventId);
+        allow create: if soy(uid) && activo()
+          && request.resource.data.uid == uid
+          && request.resource.data.estado == 'pendiente'
+          && request.resource.data.ts is int
+          && texto(request.resource.data.nombre, 60)
+          && texto(request.resource.data.medio, 80) && request.resource.data.medio.size() >= 2
+          && request.resource.data.rol in ['Periodista', 'Fotografía', 'Video', 'Streaming / redes', 'Otro']
+          && texto(request.resource.data.get('link', ''), 200)
+          && texto(request.resource.data.get('comentario', ''), 300)
+          && get(evPath(eventId)).data.creador != uid
+          && get(evPath(eventId)).data.get('estado', 'publicado') != 'cancelado'
+          && get(evPath(eventId)).data.fechaTs > request.time.toMillis() + 86400000
+          && get(/databases/$(database)/documents/users/$(get(evPath(eventId)).data.creador)).data.get('tipoCuenta', 'persona') == 'organizacion';
+        allow update: if esCreador(eventId)
+          && resource.data.estado == 'pendiente'
+          && request.resource.data.estado in ['aprobada', 'rechazada']
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'respondidoTs']);
+        allow delete: if soy(uid);
+      }
+    }
+
+    // ---------- Seguidores de organizaciones ----------
+    function fanPath(org) { return /databases/$(database)/documents/seguidores/$(org)/fans/$(request.auth.uid); }
+    match /seguidores/{org}/fans/{uid} {
+      allow get: if soy(uid) || soy(org);
+      allow list: if soy(org);
+      allow create: if soy(uid) && uid != org
+        && request.resource.data.uid == uid && request.resource.data.ts is int
+        && get(/databases/$(database)/documents/users/$(org)).data.get('tipoCuenta', 'persona') == 'organizacion'
+        && getAfter(/databases/$(database)/documents/users/$(org)).data.get('seguidores', 0)
+           == get(/databases/$(database)/documents/users/$(org)).data.get('seguidores', 0) + 1;
+      allow delete: if soy(uid)
+        && getAfter(/databases/$(database)/documents/users/$(org)).data.get('seguidores', 0)
+           == get(/databases/$(database)/documents/users/$(org)).data.get('seguidores', 0) - 1;
+      allow update: if false;
+    }
+
+    // Consulta "mis entradas" (collectionGroup): cada uno solo ve las suyas
+    match /{path=**}/attendees/{uid} {
+      allow read: if logueado() && resource.data.uid == request.auth.uid;
+    }
+
+    // ---------- Amistades ----------
+    // ID = los dos uids ordenados y unidos por "_". Solo los dos involucrados lo ven.
+    function parDe(pairId) { return pairId.split('_'); }
+    function sonAmigos(pairId) {
+      let f = /databases/$(database)/documents/friendships/$(pairId);
+      return exists(f) && get(f).data.estado == 'aceptada';
+    }
+
+    match /friendships/{pairId} {
+      allow get: if logueado() && request.auth.uid in parDe(pairId);
+      allow list: if logueado() && request.auth.uid in resource.data.users;
+
+      // Mandar solicitud: siempre "pendiente", de mí hacia otra persona que existe
+      allow create: if logueado()
+        && request.resource.data.de == request.auth.uid
+        && request.resource.data.para != request.auth.uid
+        && request.resource.data.estado == 'pendiente'
+        && request.resource.data.users.size() == 2
+        && request.resource.data.users[0] < request.resource.data.users[1]
+        && request.auth.uid in request.resource.data.users
+        && request.resource.data.para in request.resource.data.users
+        && pairId == request.resource.data.users[0] + '_' + request.resource.data.users[1]
+        && exists(/databases/$(database)/documents/users/$(request.resource.data.para))
+        && !exists(/databases/$(database)/documents/bloqueos/$(request.resource.data.para + '_' + request.auth.uid))
+        && !exists(/databases/$(database)/documents/bloqueos/$(request.auth.uid + '_' + request.resource.data.para))
+        && activo();
+
+      // Solo quien la recibe puede aceptarla
+      allow update: if logueado()
+        && resource.data.para == request.auth.uid
+        && resource.data.estado == 'pendiente'
+        && request.resource.data.estado == 'aceptada'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'aceptadaTs']);
+
+      // Cualquiera de los dos puede cancelar, rechazar o eliminar la amistad
+      allow delete: if logueado() && request.auth.uid in resource.data.users;
+    }
+
+    // ---------- Mensajes directos (solo entre amigos) ----------
+    // Nadie bloqueó a nadie dentro del par
+    function sinBloqueo(pairId) {
+      let p = parDe(pairId);
+      return !exists(/databases/$(database)/documents/bloqueos/$(p[0] + '_' + p[1]))
+        && !exists(/databases/$(database)/documents/bloqueos/$(p[1] + '_' + p[0]));
+    }
+    // La otra persona acepta solicitudes de mensajes de no-amigos
+    function aceptaDesconocidos(pairId) {
+      let p = parDe(pairId);
+      return (p[0] == request.auth.uid
+          && get(/databases/$(database)/documents/users/$(p[1])).data.get('mensajesDe', 'todos') != 'amigos')
+        || (p[1] == request.auth.uid
+          && get(/databases/$(database)/documents/users/$(p[0])).data.get('mensajesDe', 'todos') != 'amigos');
+    }
+    function dmCampos(pairId) {
+      let d = request.resource.data;
+      return (!('ultimoMsg' in d) || texto(d.ultimoMsg, 120))
+        && (!('ultimoDe' in d) || d.ultimoDe in parDe(pairId))
+        && (!('escribiendo' in d) || (d.escribiendo is map && d.escribiendo.size() <= 2))
+        && (!('estado' in d) || d.estado in ['solicitud', 'aceptado', 'rechazado']);
+    }
+    // Solicitud de mensaje: quien la manda puede seguir escribiendo; quien la recibe acepta o rechaza
+    function transicionDM() {
+      let antes = resource.data.get('estado', '');
+      let despues = request.resource.data.get('estado', '');
+      let soySolicitante = request.auth.uid == resource.data.get('solicitante', '');
+      return (antes == 'aceptado' && despues == 'aceptado')
+        || (antes == 'solicitud' && soySolicitante && despues == 'solicitud')
+        || (antes == 'solicitud' && !soySolicitante && despues in ['solicitud', 'aceptado', 'rechazado'])
+        || (antes == 'rechazado' && !soySolicitante && despues in ['rechazado', 'aceptado']);
+    }
+    // Se puede escribir en el chat aunque no sean amigos
+    function dmAbierto(pairId) {
+      let d = getAfter(/databases/$(database)/documents/dms/$(pairId)).data;
+      return sinBloqueo(pairId) && (d.get('estado', '') == 'aceptado'
+        || (d.get('estado', '') == 'solicitud' && d.get('solicitante', '') == request.auth.uid));
+    }
+
+    match /dms/{pairId} {
+      allow get: if logueado() && request.auth.uid in parDe(pairId);
+      allow list: if logueado() && request.auth.uid in resource.data.miembros;
+      allow create: if logueado()
+        && request.auth.uid in parDe(pairId)
+        && request.resource.data.miembros == parDe(pairId)
+        && dmCampos(pairId)
+        && (sonAmigos(pairId)
+            || (request.resource.data.get('estado', '') == 'solicitud'
+                && request.resource.data.get('solicitante', '') == request.auth.uid
+                && sinBloqueo(pairId) && aceptaDesconocidos(pairId) && activo()));
+      allow update: if logueado()
+        && request.auth.uid in parDe(pairId)
+        && request.resource.data.miembros == parDe(pairId)
+        && dmCampos(pairId)
+        && request.resource.data.get('solicitante', '') == resource.data.get('solicitante', '')
+        && (sonAmigos(pairId) || (sinBloqueo(pairId) && transicionDM()));
+      allow delete: if false;
+
+      match /mensajes/{msgId} {
+        allow read: if logueado() && request.auth.uid in parDe(pairId);
+        allow create: if logueado()
+          && request.auth.uid in parDe(pairId)
+          && (sonAmigos(pairId) || dmAbierto(pairId))
+          && activo()
+          && request.resource.data.de == request.auth.uid
+          && request.resource.data.ts is int
+          && (
+            (request.resource.data.tipo == 'texto'
+              && texto(request.resource.data.texto, 500) && request.resource.data.texto.size() > 0)
+            || (request.resource.data.tipo == 'evento'
+              && request.resource.data.eventoId is string
+              && texto(request.resource.data.eventoNombre, 80)
+              && texto(request.resource.data.eventoLugar, 120))
+          );
+        allow delete: if logueado() && resource.data.de == request.auth.uid;
+        allow update: if false;
+      }
+    }
+
+    // ---------- Notificaciones ----------
+    // Las crea quien hace la acción; solo el destinatario las lee, marca como leídas o borra.
+    match /notificaciones/{uid}/items/{nid} {
+      allow read, delete: if soy(uid);
+      allow update: if soy(uid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['leida']);
+      allow create: if logueado() && uid != request.auth.uid
+        && request.resource.data.de == request.auth.uid
+        && request.resource.data.tipo in ['amistad_solicitud', 'amistad_aceptada', 'evento_solicitud', 'evento_aprobada',
+             'evento_rechazada', 'evento_cancelado', 'evento_confirmacion', 'verificacion_aprobada', 'verificacion_rechazada',
+             'nuevo_evento', 'acreditacion_solicitud', 'acreditacion_aprobada', 'acreditacion_rechazada',
+             'amigo_evento', 'evento_compartido', 'mensaje_solicitud', 'mensaje_aceptado']
+        && (!request.resource.data.tipo.matches('verificacion_.*') || esAdmin())
+        && request.resource.data.leida == false
+        && request.resource.data.ts is int
+        && texto(request.resource.data.deNombre, 60)
+        && texto(request.resource.data.get('objetoId', ''), 64)
+        && texto(request.resource.data.get('objetoNombre', ''), 80)
+        && texto(request.resource.data.get('texto', ''), 200)
+        && !exists(/databases/$(database)/documents/bloqueos/$(uid + '_' + request.auth.uid))
+        && activo();
+    }
+
+    // ---------- Planes: a qué eventos públicos va cada uno (solo lo ven sus amigos) ----------
+    match /planes/{uid} {
+      allow read: if soy(uid) || (logueado() && amistadAceptada(request.auth.uid, uid));
+      allow create, update: if soy(uid)
+        && request.resource.data.keys().hasOnly(['eventos', 'compartidos', 'red', 'ts'])
+        && request.resource.data.eventos is list && request.resource.data.eventos.size() <= 60
+        && request.resource.data.compartidos is list && request.resource.data.compartidos.size() <= 60
+        && request.resource.data.red is map && request.resource.data.red.size() <= 150
+        && request.resource.data.ts is int;
+      allow delete: if soy(uid);
+    }
+
+    // ---------- Verificación de organizaciones ----------
+    function verifValida(uid) {
+      let d = request.resource.data;
+      return d.uid == uid && d.estado == 'pendiente' && d.ts is int
+        && texto(d.nombreOrg, 80) && d.nombreOrg.size() >= 2
+        && d.rubro in ['Boliche', 'Bar', 'Productora', 'Centro de estudiantes', 'DJ / Artista', 'Salón de fiestas', 'Otro']
+        && texto(d.get('instagram', ''), 100) && texto(d.get('web', ''), 150)
+        && texto(d.telefono, 30) && texto(d.emailContacto, 100)
+        && texto(d.get('direccion', ''), 150) && texto(d.get('cuit', ''), 20)
+        && texto(d.get('comentario', ''), 500);
+    }
+    match /verificaciones/{uid} {
+      allow get: if soy(uid) || esAdmin();
+      allow list: if esAdmin();
+      allow create: if soy(uid) && activo() && verifValida(uid);
+      // Se puede corregir o volver a pedir mientras no esté aprobada
+      allow update: if soy(uid) && activo() && resource.data.estado != 'aprobada' && verifValida(uid);
+      allow update: if esAdmin()
+        && request.resource.data.estado in ['aprobada', 'rechazada']
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'motivoRechazo', 'revisadoPor', 'revisadoTs']);
+      allow delete: if soy(uid);
+    }
+
+    // ---------- Denuncias ----------
+    // Cualquiera denuncia (una vez por contenido); solo los administradores las leen y resuelven.
+    match /reports/{rid} {
+      allow create: if logueado()
+        && request.resource.data.reportante == request.auth.uid
+        && request.resource.data.tipo in ['evento', 'usuario', 'mensaje']
+        && request.resource.data.objetoId is string
+        && rid == request.resource.data.tipo + '_' + request.resource.data.objetoId + '_' + request.auth.uid
+        && request.resource.data.motivo in ['sexual', 'menores', 'violencia', 'odio', 'acoso', 'drogas', 'estafa', 'suplantacion', 'spam', 'otro']
+        && request.resource.data.estado == 'pendiente'
+        && texto(request.resource.data.get('detalle', ''), 500)
+        && texto(request.resource.data.get('texto', ''), 500)
+        && texto(request.resource.data.get('objetoNombre', ''), 80);
+      allow read, update, delete: if esAdmin();
+    }
+
+    // ---------- Consultas (formulario de contacto de Ayuda) ----------
+    // Cualquiera puede mandar una (incluso sin cuenta); solo los administradores las leen y borran.
+    match /consultas/{id} {
+      allow create: if request.resource.data.keys().hasOnly(['nombre', 'email', 'motivo', 'mensaje', 'uid', 'ts'])
+        && texto(request.resource.data.nombre, 60) && request.resource.data.nombre.size() >= 2
+        && texto(request.resource.data.email, 100) && request.resource.data.email.matches('^[^@ ]+@[^@ ]+[.][^@ ]+$')
+        && request.resource.data.motivo in ['consulta', 'problema', 'organizacion', 'cuenta', 'denuncia', 'sugerencia']
+        && texto(request.resource.data.mensaje, 1000) && request.resource.data.mensaje.size() >= 5
+        && request.resource.data.uid == (logueado() ? request.auth.uid : '')
+        && request.resource.data.ts is int;
+      allow read, delete: if esAdmin();
+      allow update: if false;
+    }
+
+    // ---------- Bloqueos ----------
+    // bloqueos/{quienBloquea_bloqueado}: solo quien bloquea lo ve y lo puede quitar
+    match /bloqueos/{bid} {
+      allow get: if logueado() && bid.split('_')[0] == request.auth.uid;
+      allow list: if logueado() && resource.data.de == request.auth.uid;
+      allow create: if logueado()
+        && request.resource.data.de == request.auth.uid
+        && request.resource.data.a is string
+        && request.resource.data.a != request.auth.uid
+        && bid == request.auth.uid + '_' + request.resource.data.a;
+      allow delete: if logueado() && resource.data.de == request.auth.uid;
+      allow update: if false;
+    }
+
+    // ---------- Administradores ----------
+    match /admins/{uid} {
+      allow get: if soy(uid);
+      allow list, write: if false;
+    }
+
+    // ---------- Chat del evento ----------
+    match /chats/{eventId}/messages/{msgId} {
+      allow read: if esCreador(eventId) || adentro(eventId);
+      allow create: if (esCreador(eventId) || adentro(eventId))
+        && request.resource.data.uid == request.auth.uid
+        && texto(request.resource.data.nombre, 60)
+        && texto(request.resource.data.texto, 500) && request.resource.data.texto.size() > 0
+        && request.resource.data.ts is int
+        && activo();
+      allow delete: if logueado() && resource.data.uid == request.auth.uid;
+      allow update: if false;
+    }
+  }
+}
