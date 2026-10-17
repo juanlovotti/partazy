@@ -1,9 +1,10 @@
 {
   "name": "partazy",
   "private": true,
-  "description": "PARTAZY: red social de fiestas, previas y boliches (Firebase Hosting + Firestore).",
+  "description": "PARTAZY: red social de eventos (fiestas, recitales, charlas, ferias...) sobre Firebase Hosting + Firestore.",
   "scripts": {
     "test": "node tests/correr-todas.js",
+    "paginas": "node herramientas/generar-paginas.js",
     "deploy": "firebase deploy"
   },
   "devDependencies": {

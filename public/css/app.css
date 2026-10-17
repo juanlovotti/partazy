@@ -1532,3 +1532,11 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 .phone:not(.nav-mini) .nav-marca .lv, .phone:not(.nav-mini) .nav-pie{animation:aparece-suave .4s .2s both;}
 /* Compu: el selector Eventos / Personas más angosto (no ocupa todo el ancho) */
 @media (min-width:900px){ .seg-explorar{max-width:420px;} }
+
+/* Tablas en los textos legales (servicios que usamos, plazos) */
+.tabla-legal{width:100%; border-collapse:collapse; margin:6px 0 14px; font-size:12.5px;}
+.tabla-legal th, .tabla-legal td{border:1px solid var(--gris-linea); padding:8px 10px; text-align:left; vertical-align:top;}
+.tabla-legal th{background:var(--negro-2); color:var(--hueso); font-weight:700;}
+.pie-legal .links a{color:var(--gris); font-size:11px; padding:2px; text-decoration:underline; text-underline-offset:2px;}
+.pie-legal .links a:hover{color:var(--blanco);}
+.nav-pie .links a{color:var(--gris); font-size:11px; text-decoration:none;} .nav-pie .links a:hover{color:var(--blanco);}

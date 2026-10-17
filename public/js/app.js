@@ -1385,7 +1385,7 @@ function cerrarPedirCuenta(){
 function irALogin(modo){
   cerrarPedirCuenta();
   // Si estaba mirando un evento, al entrar lo volvemos a abrir
-  if(/^#\/(evento|u)\//.test(location.hash)){ try{ sessionStorage.setItem('partazy_ruta', location.hash); } catch(e){} }
+  if(/^#\/(evento\/|u\/|crear$)/.test(location.hash)){ try{ sessionStorage.setItem('partazy_ruta', location.hash); } catch(e){} }
   setNav(false);
   setTimeout(() => { setModoAuth(modo === 'crear' ? 'crear' : 'ingresar'); ir('bienvenida'); }, 60);
 }
@@ -3976,6 +3976,7 @@ function fijarRuta(ruta){
 }
 // Abre lo que indica un link #/evento/... o #/u/...
 function abrirRuta(hash){
+  if(hash === '#/crear'){ ir('crear'); return true; }
   const m = String(hash || '').match(/^#\/(evento|u)\/([A-Za-z0-9_-]{1,64})$/);
   if(!m) return false;
   if(m[1] === 'evento') abrirDetalle(m[2]);

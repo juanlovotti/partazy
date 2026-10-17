@@ -15,11 +15,14 @@ partazy/
 │   ├── css/app.css          estilos
 │   ├── js/app.js            toda la lógica (ver mapa en docs/ARQUITECTURA.md)
 │   ├── sw.js                service worker mínimo (avisos del celular)
+│   ├── privacidad.html, terminos.html, soporte.html, eliminar-cuenta.html, organizadores.html
+│   │                        páginas públicas (partazy.com/privacidad...). Se generan: npm run paginas
 │   ├── manifest.json        app instalable (PWA)
 │   └── *.png / *.svg        íconos e imagen para compartir (og-partazy.png)
 ├── firestore.rules          reglas de seguridad de la base de datos (¡la seguridad real está acá!)
 ├── firestore.indexes.json   índices de Firestore
 ├── firebase.json            configuración de Hosting (2 sitios) y Firestore
+├── herramientas/            generar-paginas.js (arma las páginas públicas con los textos de la app)
 ├── tests/                   pruebas automáticas (jsdom + base de datos falsa en memoria)
 └── docs/                    arquitectura y pendientes
 ```
@@ -36,7 +39,7 @@ npm install
 npm test
 ```
 
-Corre 37 archivos de prueba (más de 450 comprobaciones) contra la app real, con una base de datos falsa en memoria (`tests/fakefb.js`). Para correr una sola: `node tests/test_calif.js`.
+Corre 38 archivos de prueba (más de 450 comprobaciones) contra la app real, con una base de datos falsa en memoria (`tests/fakefb.js`). Para correr una sola: `node tests/test_calif.js`.
 
 > Las pruebas **no** verifican `firestore.rules` (la base falsa no aplica reglas). Cualquier cambio en las reglas se prueba a mano o con el emulador de Firebase (`firebase emulators:start`).
 

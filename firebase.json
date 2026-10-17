@@ -39,7 +39,8 @@
             }
           ]
         }
-      ]
+      ],
+      "cleanUrls": true
     },
     {
       "site": "partazy-5555d",

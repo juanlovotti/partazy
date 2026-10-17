@@ -123,3 +123,12 @@ Buscá el nombre para saltar. En orden:
 
 - "Mis datos" (☰): lo que la persona cargó al registrarse, solo para ella. El mail ya no se muestra en el perfil.
 - `ocultarAmigos` / `ocultarSeguidores`: la app no muestra la lista de amigos ni el número de seguidores. (Las amistades aceptadas siguen siendo legibles por usuarios con cuenta en las reglas; para privacidad total habría que mover las amistades públicas a un documento aparte.)
+
+
+## Páginas públicas (partazy.com/privacidad, /terminos, /soporte, /eliminar-cuenta, /organizadores)
+
+- Son archivos HTML sueltos en `public/`, con su propio estilo liviano (`css/paginas.css`). `firebase.json` tiene `cleanUrls: true`, así se abren sin ".html".
+- **No se editan a mano:** las genera `herramientas/generar-paginas.js` (`npm run paginas`) con los textos de la app: Privacidad y Términos salen de `index.html`, las preguntas de Soporte salen de `AYUDA` en `app.js`. `tests/test_paginas.js` falla si quedaron desactualizadas.
+- `/organizadores` tiene un formulario que guarda en la colección `consultas` (motivo `organizacion`), la misma del formulario de Ayuda: se ve en Moderación → Consultas. Usa `js/organizadores.js` y App Check.
+- Sirven también para lo que piden Google y Meta al revisar el inicio de sesión: link a la política de privacidad y a cómo borrar los datos (`/eliminar-cuenta`).
+- La app acepta el link `partazy.com/#/crear` (abre Crear evento; sin cuenta pide registrarse y después sigue ahí).
