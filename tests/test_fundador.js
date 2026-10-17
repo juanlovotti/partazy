@@ -11,13 +11,17 @@ function abrir(perfilA, ahora){
   put('users/C', { nombre: 'Caro Vieja', usuario: 'caro', iniciales: 'C', ciudad: 'Córdoba', intereses: [], foto: '' });
   return new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://partazy.com/', beforeParse(w){
     if(ahora){ const D = w.Date; w.Date = class extends D { constructor(...a){ super(...(a.length ? a : [ahora])); } static now(){ return ahora; } }; }
+    w.__probarFundador = true;
     w.firebase = makeFirebase(store, () => ({ uid: 'A', email: 'a@t.com' })); w.navigator.geolocation = undefined;
     w.addEventListener('error', e => console.error('ERROR JS', e.message)); } }).window;
 }
 (async () => {
   const w = abrir({ nombre: 'Juan', usuario: 'juan', iniciales: 'J', ciudad: 'Córdoba', intereses: [], foto: '', createdAt: Date.parse('2026-10-17T12:00:00-03:00') });
-  await sleep(1400); w.cerrarTutorial(); await sleep(150);
+  await sleep(1400); w.cerrarTutorial(); await sleep(700);
   const d = w.document;
+  ok(/Sos Fundador/.test(d.getElementById('modal-titulo').textContent) && d.getElementById('modal-bg').classList.contains('show') && d.getElementById('modal-cancelar').textContent === 'Listo', 'al entrar, una cuenta que ya existía ve el cartel "Sos Fundador"');
+  d.getElementById('modal-cancelar').click(); await sleep(100);
+  ok(d.getElementById('modal-cancelar').textContent !== 'Listo', 'después el botón de las otras ventanas vuelve a su texto');
   const corte = Date.parse('2026-11-20T00:00:00-03:00');
   ok(w.fundadorAntesDe({ createdAt: corte - 1 }, corte) && !w.fundadorAntesDe({ createdAt: corte }, corte), 'el día que se lance: antes de ese día sí es Fundador, desde ese día ya no');
   ok(w.esFundador({ createdAt: Date.parse('2027-03-01T12:00:00-03:00') }) && w.etapaFundadores(), 'sin fecha de lanzamiento (próximamente): todas las cuentas son Fundadoras');
@@ -29,6 +33,7 @@ function abrir(perfilA, ahora){
   w.abrirUsuario('C'); await sleep(500);
   ok(/Fundador/.test(d.querySelector('#pantalla-usuario .perfil-header')?.textContent || ''), 'en el perfil de otro Fundador también se ve');
   const aviso = [...d.querySelectorAll('[data-pre-lanzamiento]')];
+  ok(w.localStorage.getItem('partazy_fundador_A') === '1', 'a quien ya tenía cuenta se le avisa una sola vez que es Fundador');
   ok(aviso.length >= 2 && aviso.every(e => !e.hidden), 'antes del lanzamiento: el aviso "quedás como Fundador" se muestra al registrarse');
   ok(!/2026|octubre|noviembre/.test(aviso.map(e => e.textContent).join(' ')), 'el aviso no muestra ninguna fecha');
   console.log(f ? '\nFALLAS: ' + f : '\nTODO OK'); process.exit(f ? 1 : 0);

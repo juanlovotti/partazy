@@ -1315,7 +1315,8 @@ async function entrarALaApp(){
   state.rutaPendiente = null;
   if(ruta) abrirRuta(ruta);
   // El tutorial sale solo a quien recién se registra. Los demás lo tienen en Ayuda / Más opciones.
-  if(state.cuentaNueva && !tutorialVisto()) setTimeout(abrirTutorial, ruta ? 1500 : 500);
+  if(state.cuentaNueva && !tutorialVisto()){ setTimeout(abrirTutorial, ruta ? 1500 : 500); marcarAvisoFundador(); }
+  else if(!ruta && debeAvisarFundador()) setTimeout(() => avisarFundador().then(() => setTimeout(revisarParaCalificar, 1500)), 1800);
   else setTimeout(revisarParaCalificar, 4000);
   setTimeout(limpiarEventosViejos, 9000);
   state.cuentaNueva = false;
@@ -2384,6 +2385,21 @@ const FIN_FUNDADORES = null;
 function fundadorAntesDe(u, fin){ return !!u && (fin == null || !u.createdAt || u.createdAt < fin); }
 function esFundador(u){ return fundadorAntesDe(u, FIN_FUNDADORES); }
 function etapaFundadores(){ return FIN_FUNDADORES == null || Date.now() < FIN_FUNDADORES; }
+// A quien ya tenía cuenta le contamos UNA vez que es Fundador (las cuentas nuevas ya lo leen al registrarse).
+function claveAvisoFundador(){ return 'partazy_fundador_' + (state.uid || ''); }
+function marcarAvisoFundador(){ try{ localStorage.setItem(claveAvisoFundador(), '1'); } catch(e){} }
+function debeAvisarFundador(){
+  if(!state.uid || state.invitado || !esFundador(state.perfil) || !etapaFundadores()) return false;
+  try{ return localStorage.getItem(claveAvisoFundador()) !== '1'; } catch(e){ return false; }
+}
+async function avisarFundador(){
+  marcarAvisoFundador();
+  const cancelar = document.getElementById('modal-cancelar'), antes = cancelar.textContent;
+  cancelar.textContent = 'Listo';
+  const ver = await confirmar('✦ Sos Fundador', 'Te sumaste a Partazy antes del lanzamiento oficial, así que tu perfil lleva la insignia ✦ Fundador para siempre. ¡Gracias por estar desde el principio!', 'Ver mi perfil');
+  cancelar.textContent = antes;
+  if(ver) ir('perfil');
+}
 function fundadorHTML(u){ return esFundador(u) ? '<span class="tag-fundador" title="Se sumó a Partazy antes del lanzamiento oficial">✦ Fundador</span>' : ''; }
 function insignia(u){ return u?.verificado ? `<span class="ins-verif" title="Cuenta verificada" aria-label="Cuenta verificada">${SVG_CHECK}</span>` : ''; }
 // ¿Es una cuenta de organización (boliche, productora...)?
