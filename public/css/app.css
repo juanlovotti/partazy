@@ -1525,7 +1525,10 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 .tuto-logo{filter:drop-shadow(0 14px 26px rgba(76,185,68,.25));}
 @media (prefers-reduced-motion: reduce){ .lv-ico, .lv-punto, .lv-b, .lv-q, .lv-txt i{animation:none !important; opacity:1 !important; transform:none !important;} }
 
-/* Listas debajo de la barra de arriba: un poco de aire (Chats, Amigos, Notificaciones...) */
-.screen:not(#pantalla-home) > .topbar + .lista-simple{padding-top:16px;}
+/* Barra de arriba (todas menos Inicio): más finita y con aire debajo, así nada queda pegado (Chats, Explorar, Notificaciones...) */
+.screen:not(#pantalla-home) > .topbar{padding-top:16px; padding-bottom:12px; margin-bottom:14px;}
+@media (max-width:899px){ .screen.con-scroll:not(#pantalla-home) > .topbar{padding-top:8px; padding-bottom:8px;} }
 .lv-txt i{font-style:normal; display:inline-block;}
 .phone:not(.nav-mini) .nav-marca .lv, .phone:not(.nav-mini) .nav-pie{animation:aparece-suave .4s .2s both;}
+/* Compu: el selector Eventos / Personas más angosto (no ocupa todo el ancho) */
+@media (min-width:900px){ .seg-explorar{max-width:420px;} }

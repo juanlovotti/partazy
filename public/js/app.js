@@ -4824,7 +4824,7 @@ function abrirDestinoAviso(dest){
 function avisoSistema(titulo, cuerpo, destino, forzar){
   if(!avisosSoportados() || Notification.permission !== 'granted') return;
   if(!forzar && document.visibilityState === 'visible') return;
-  const opts = { body: cuerpo, icon: 'icono-180.png', badge: 'favicon-32.png', tag: destino || 'partazy', renotify: true, data: { destino } };
+  const opts = { body: cuerpo, icon: 'icono-180.png?v=3', badge: 'favicon-32.png?v=3', tag: destino || 'partazy', renotify: true, data: { destino } };
   const reg = AVISOS.reg;
   if(reg && reg.showNotification){ reg.showNotification(titulo, opts).catch(() => {}); return; }
   try{ const n = new Notification(titulo, opts); n.onclick = () => { window.focus(); abrirDestinoAviso(destino); n.close(); }; } catch(e){}
