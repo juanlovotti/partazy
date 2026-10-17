@@ -3399,8 +3399,8 @@ function planDeAmigo(ev, u){
   const cuandoTxt = enCurso ? 'Ahora' : dias <= 0 ? 'Hoy ' + hora : dias === 1 ? 'Mañana' : dias < 7 ? DS[d.getDay()] + ' ' + hora : DS[d.getDay()] + ' ' + d.getDate();
   return {
     emoji: emojiTipo(ev), ahora: enCurso, hoy: dias <= 0, org,
-    cuando: org ? (enCurso ? 'Organizando' : 'Organiza · ' + (dias <= 0 ? 'hoy' : cuandoTxt.split(' ')[0].toLowerCase())) : (enCurso ? 'Ahora en' : cuandoTxt),
-    frase: org ? (enCurso ? 'está organizando' : 'organiza') : (enCurso ? 'está en' : 'va a'),
+    cuando: org ? 'Host · ' + (enCurso ? 'ahora' : dias <= 0 ? 'hoy' : dias === 1 ? 'mañana' : cuandoTxt.split(' ')[0].toLowerCase()) : (enCurso ? 'Ahora en' : cuandoTxt),
+    frase: org ? 'es host de' : (enCurso ? 'está en' : 'va a'),
   };
 }
 // Personas en el buscador de Explorar
@@ -4496,7 +4496,7 @@ function pasosTutorial(){
     { t: 'Encontrá un plan',
       p: `En <b>Inicio</b> tenés lo de hoy y <b>Para vos</b>, armado con tus gustos. Filtrá por tipo (fiestas, charlas, deportes...) o buscá algo puntual.`,
       dibujo: `<div class="tm tm-buscar">
-        <div class="tm-barra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="tm-tipeo">recital</span></div>
+        <div class="tm-barra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="tm-tipeo"></span></div>
         <div class="tm-chips"><i>Hoy</i><i class="on">Para vos 🎧</i><i>Charlas</i><i>Deportes</i></div></div>` },
     { t: 'Anotate en un toque',
       p: `Abrí un evento y tocá <b>Confirmar asistencia</b> (o <b>Reservar</b> si es pago: ahí ves a quién pagarle y copiás el alias). Algunos tienen <b>fecha límite</b> para anotarse. Tu entrada queda en <b>Mis entradas</b> 🎟️, ${compu ? 'en el menú de la izquierda' : 'el ícono del ticket arriba'}.`,
@@ -4516,9 +4516,9 @@ function pasosTutorial(){
         <div class="tm-caras"><i>SG</i><i>IP</i><i>MR</i></div>
         <div class="tm-txt">🎤 <b>Sofía</b> está ahora en un recital</div>
         <div class="tm-nota">¡Vamos a esta! 🔥 <b>@ivo</b> <span>— Sofía</span></div></div>` },
-    { t: 'Armá tu evento',
+    { t: 'Publicá en 3 pasos', cierre: true,
       p: `Tocá el <b>+ naranja</b> ${compu ? '(<b>Crear evento</b>, en el menú de la izquierda)' : 'abajo en el medio'}. Son 3 pasos: <b>lo básico</b>, <b>qué tipo de evento</b> (fiesta, charla, deporte, feria...) y <b>los detalles</b>, que cambian según el tipo. Si es privado, elegís quién entra y la dirección solo la ven los aprobados.`,
-      dibujo: `<div class="tm tm-crear"><div class="tm-mas">+${dedo}</div><div class="tm-crear-txt"><b>Crear evento</b><span>1 Lo básico · 2 Tipo · 3 Detalles</span></div></div>`,
+      dibujo: `<div class="tm tm-crear"><div class="tm-mas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>${dedo}</div><div class="tm-crear-txt"><b>Crear evento</b><span>1 Lo básico · 2 Tipo · 3 Detalles</span></div></div>`,
       pie: `¿Te perdiste? Volvé a ver esto desde <b>Perfil → ☰ → Tutorial</b>.` }
   ];
 }
@@ -4531,7 +4531,7 @@ function tutorialVisto(){ try{ return localStorage.getItem(claveTutorial()) === 
 function abrirTutorial(){ tuto.i = 0; pintarTutorial(); document.getElementById('tutorial').classList.add('show'); abrirModalHist(); }
 // Cierra el tutorial y lo marca como visto.
 function cerrarTutorial(){
-  document.getElementById('tutorial').classList.remove('show');
+  document.getElementById('tutorial').classList.remove('show'); clearTimeout(tuto.timer);
   soltarModalHist();
   try{ localStorage.setItem(claveTutorial(), '1'); } catch(e){}
 }
@@ -4541,12 +4541,32 @@ function pasoTutorial(d){
   if(tuto.i + d >= n){ cerrarTutorial(); return; }
   tuto.i = Math.max(0, tuto.i + d); pintarTutorial();
 }
+// Buscador del tutorial: se van escribiendo los tipos de evento que hay ("previa", "recital", "charla"...).
+const PALABRAS_TUTO = ['previa', 'recital', 'charla', 'peña', 'fiesta', 'taller', 'feria', 'after', 'egresados', 'cumple', 'partido', 'cena', 'muestra de arte'];
+function tipearTutorial(){
+  clearTimeout(tuto.timer);
+  const el = document.querySelector('#tuto-slide .tm-tipeo');
+  if(!el) return;
+  let w = 0, n = 0, borrando = false;
+  const paso = () => {
+    if(!el.isConnected || !document.getElementById('tutorial')?.classList.contains('show')) return;
+    const pal = PALABRAS_TUTO[w % PALABRAS_TUTO.length];
+    n += borrando ? -1 : 1;
+    el.textContent = pal.slice(0, n);
+    let espera = borrando ? 45 : 95;
+    if(!borrando && n >= pal.length){ borrando = true; espera = 1100; }
+    else if(borrando && n <= 0){ borrando = false; w++; espera = 300; }
+    tuto.timer = setTimeout(paso, espera);
+  };
+  tuto.timer = setTimeout(paso, 400);
+}
 // Pinta el paso actual del tutorial.
 function pintarTutorial(){
   const pasos = pasosTutorial(), p = pasos[tuto.i], ultimo = tuto.i === pasos.length - 1;
   document.getElementById('tuto-paso').textContent = `${tuto.i + 1} / ${pasos.length}`;
   const arriba = p.logo ? LOGO_TUTO : p.dibujo ? p.dibujo : '';
-  document.getElementById('tuto-slide').innerHTML = `<div class="tuto-slide">${arriba}<h2>${p.t}</h2><p>${p.p}</p>${p.extra || ''}${p.pie ? `<p class="tuto-nota">${p.pie}</p>` : ''}</div>`;
+  document.getElementById('tuto-slide').innerHTML = `<div class="tuto-slide">${arriba}<h2>${p.t}</h2><p>${p.p}</p>${p.extra || ''}${p.cierre ? `<div class="tuto-cierre"><b>Armá tu evento ahora con <span class="notranslate" translate="no">Partazy</span></b><span class="tuto-rayas" aria-hidden="true"><i></i><i></i><i></i></span></div>` : ''}${p.pie ? `<p class="tuto-nota">${p.pie}</p>` : ''}</div>`;
+  tipearTutorial();
   document.getElementById('tuto-puntos').innerHTML = pasos.map((_, k) => `<i class="${k === tuto.i ? 'on' : ''}"></i>`).join('');
   document.getElementById('tuto-atras').style.display = tuto.i === 0 ? 'none' : '';
   document.getElementById('tuto-sig').textContent = ultimo ? '¡Empezar!' : 'Siguiente';

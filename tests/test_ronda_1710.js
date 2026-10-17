@@ -18,7 +18,7 @@ let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
   let p=w.planDeAmigo(enVivo,'B');
   ok(p.ahora && p.cuando==='Ahora en' && p.emoji==='🎤', 'amigo en un recital que está pasando: "🎤 Ahora en"');
   p=w.planDeAmigo(enVivo,'P');
-  ok(p.org && p.cuando==='Organizando', 'si el amigo es el organizador dice "Organizando", no que va');
+  ok(p.org && p.cuando==='Host · ahora', 'si el amigo es el organizador dice "Host", no que va');
   p=w.planDeAmigo(charla,'B');
   ok(!p.ahora && p.emoji==='🎙️' && /^(Dom|Lun|Mar|Mié|Jue|Vie|Sáb) \d\d:\d\d$/.test(p.cuando), 'charla en unos días: emoji de charla y día/hora ('+p.cuando+')');
   w.eval('state').red.amigosVan['e2']=['P','B']; w.eval('state').usuarios.B={uid:'B',nombre:'Beto'}; w.eval('state').usuarios.P={uid:'P',nombre:'Productora'};

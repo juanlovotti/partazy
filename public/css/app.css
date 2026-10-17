@@ -1523,3 +1523,20 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 .tuto-logo .ico-onda{animation:lv-late 1.4s ease-in-out 1s infinite;}
 .tuto-logo .ico-onda.o2{animation-delay:1.2s;}
 @media (prefers-reduced-motion: reduce){ .tuto-logo .ico-disco, .tuto-logo .ico-onda{animation:none !important;} }
+
+/* ===== Tutorial 17/10 (3) ===== */
+/* el buscador escribe palabra por palabra (sin espacio de más): el cursor va pegado al texto */
+.tm-tipeo{width:auto; animation:tm-cursor .9s steps(1) infinite; min-height:1.2em; padding-right:2px;}
+@keyframes tm-cursor{50%{border-right-color:transparent;}}
+/* el + centrado de verdad (dibujado, no con la letra) */
+.tm-mas svg{width:26px; height:26px; display:block;}
+/* cierre del tutorial con las rayas de colores */
+.tuto-cierre{margin-top:16px; display:flex; flex-direction:column; gap:9px;}
+.tuto-cierre b{font-family:var(--font-display); text-transform:uppercase; font-size:22px; letter-spacing:.3px; line-height:1.05;}
+.tuto-rayas{display:flex; flex-direction:column; gap:3px; width:150px; transform:skewX(-14deg); transform-origin:left;}
+.tuto-rayas i{display:block; height:5px; border-radius:1px; transform:scaleX(0); transform-origin:left; animation:tuto-raya .5s var(--ease) forwards;}
+.tuto-rayas i:nth-child(1){background:var(--rojo); height:7px; animation-delay:.25s;}
+.tuto-rayas i:nth-child(2){background:var(--hueso); height:3px; animation-delay:.37s;}
+.tuto-rayas i:nth-child(3){background:var(--verde); height:3px; animation-delay:.49s;}
+@keyframes tuto-raya{to{transform:none;}}
+@media (prefers-reduced-motion: reduce){ .tuto-rayas i{animation:none; transform:none;} }
