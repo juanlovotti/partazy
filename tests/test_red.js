@@ -87,7 +87,7 @@ let fallas=0; const ok=(c,m)=>{ console.log((c?'✔ ':'✘ ')+m); if(!c) fallas+
   ok(nA.length===2, 'a mis amigos les llega "Juan publicó..."');
   w.ir('home'); w.elegirChipHome([...w.document.querySelectorAll('#chips-home .chip')].find(c=>c.textContent==='Egresados'),'egresados'); await sleep(50);
   ok(/Egresados 2026/.test(txt($('lista-esta-noche'))) && /Egresados/.test(txt(w.document.querySelector('#lista-esta-noche .cat'))), 'el filtro "Egresados" la muestra con su etiqueta');
-  ok([...w.document.querySelectorAll('#chips-home .chip')].some(c=>c.textContent==='Peñas'), 'chip "Peñas"');
+  ok([...w.document.querySelectorAll('#chips-home .chip')].some(c=>c.textContent==='Música en vivo'), 'chip "Música en vivo" (incluye peñas)');
 
   // Mensaje nuevo: aviso dentro de la app
   w.ir('home'); put('dms/A_B',{miembros:['A','B'],ultimoMsg:'¿Vamos?',ultimoTs:Date.now(),ultimoDe:'B',vistoPor:{}});

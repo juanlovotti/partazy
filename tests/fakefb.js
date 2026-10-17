@@ -7,6 +7,7 @@ function makeFirebase(store, getUser, onAuthReady){
     const out = { ...(a || {}) };
     for(const [k, v] of Object.entries(b)){
       if(v && typeof v === 'object' && v.__inc !== undefined){ out[k] = (out[k] || 0) + v.__inc; continue; }
+      if(v && typeof v === 'object' && v.__del){ delete out[k]; continue; }
       out[k] = (v && typeof v === 'object' && !Array.isArray(v) && out[k] && typeof out[k] === 'object') ? deepMerge(out[k], v) : v;
     }
     return out;
@@ -85,7 +86,7 @@ function makeFirebase(store, getUser, onAuthReady){
   return {
     initializeApp(){},
     auth: Object.assign(() => authObj, { GoogleAuthProvider: function(){ this.setCustomParameters = () => {}; } }),
-    firestore: Object.assign(() => db, { FieldValue: { increment: n => ({ __inc: n }) } })
+    firestore: Object.assign(() => db, { FieldValue: { increment: n => ({ __inc: n }), delete: () => ({ __del: true }) } })
   };
 }
 module.exports = { crearStore, makeFirebase };

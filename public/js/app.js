@@ -258,6 +258,23 @@ const DataService = {
     await batch.commit();
   },
 
+  // ---------- VISTAS (para las estadísticas de quien organiza) ----------
+  // Cada persona cuenta una sola vez por evento: registro + contador en la misma escritura.
+  async registrarVista(eventId, uid){
+    const ref = this._ev(eventId).collection('vistas').doc(uid);
+    if((await ref.get()).exists) return false;
+    const b = db.batch();
+    b.set(ref, { ts: Date.now() });
+    b.update(this._ev(eventId), { vistasCount: firebase.firestore.FieldValue.increment(1) });
+    await b.commit();
+    return true;
+  },
+  // Amigos de una persona (amistades aceptadas). Las ve cualquiera con cuenta.
+  async amigosDe(uid){
+    const snap = await db.collection('friendships').where('users', 'array-contains', uid).where('estado', '==', 'aceptada').limit(500).get();
+    return snap.docs.map(d => (d.data().users || []).find(x => x !== uid)).filter(Boolean);
+  },
+
   // ---------- VOTOS DE AMBIENTE (en vivo) ----------
   async listVotos(eventId){
     const snap = await this._ev(eventId).collection('votos').get();
@@ -3024,8 +3041,37 @@ function pintarMailContacto(){
 function volverLegal(){ if(state.invitado) return volver('home'); ir(state.perfil ? 'perfil' : 'bienvenida'); }
 
 // Etiqueta de cupo ("Últimos lugares", "Lleno"...).
+// Cuenta una vista única del evento (no cuenta al organizador ni a quien mira sin cuenta).
+function contarVista(ev){
+  if(!state.uid || state.invitado || ev.creador === state.uid) return;
+  const clave = 'partazy_vista_' + ev.id;
+  try{ if(localStorage.getItem(clave)) return; localStorage.setItem(clave, '1'); } catch(e){}
+  DataService.registrarVista(ev.id, state.uid).then(nueva => { const c = eventoEnCache(ev.id); if(nueva && c) c.vistasCount = (c.vistasCount || 0) + 1; }).catch(e => console.warn('vista', e));
+}
+// Estadísticas para quien organiza: alcance y conversión.
+function estadisticasHTML(ev){
+  const vistas = ev.vistasCount || 0, anot = Math.max(0, (ev.confirmadosCount || 0) - 1), comp = ev.repostsCount || 0;
+  const conv = vistas ? Math.min(100, Math.round(anot / vistas * 100)) : 0;
+  const caja = (n, t, s) => `<div class="stat"><b>${n}</b><span>${t}</span>${s ? `<small>${s}</small>` : ''}</div>`;
+  return `<div class="bloque"><h3 class="titulo-bloque">📊 Estadísticas</h3>
+    <div class="stats-grid">${caja(vistas, vistas === 1 ? 'persona lo vio' : 'personas lo vieron', 'vistas únicas')}${caja(anot, ev.privacidad === 'privada' ? 'aprobados' : 'anotados', 'sin contarte')}${caja(conv + '%', 'se anotaron', 'de los que lo vieron')}${caja(comp, comp === 1 ? 'lo compartió' : 'lo compartieron', 'con sus amigos')}</div>
+    <div class="ayuda" style="margin-top:10px;">Solo vos ves esto. Cuentan las personas con cuenta (cada una una sola vez).</div></div>`;
+}
+// ¿Ya cerró la inscripción? (el organizador puede poner "anotate hasta el...")
+function inscripcionCerrada(ev){ return typeof ev?.inscripcionHasta === 'number' && Date.now() > ev.inscripcionHasta; }
+// "Quedan 3 días" / "Cierra hoy a las 23:59" / "Cerró el 23/11"
+function textoInscripcion(ev){
+  if(typeof ev?.inscripcionHasta !== 'number') return '';
+  const d = new Date(ev.inscripcionHasta), falta = ev.inscripcionHasta - Date.now();
+  const dia = `${d.getDate()}/${d.getMonth() + 1}`, hora = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  if(falta <= 0) return `Cerró el ${dia}`;
+  if(falta < 24 * HORA) return `Cierra hoy a las ${hora}`;
+  const dias = Math.ceil(falta / (24 * HORA));
+  return `Hasta el ${dia} · ${dias === 1 ? 'queda 1 día' : `quedan ${dias} días`}`;
+}
 // Íconos de la lista de detalles del evento.
 const II = {
+  reloj: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
   cuando: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>',
   donde: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg>',
   edad: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="9" cy="11" r="2"/><path d="M6 16c.6-1.4 1.7-2 3-2s2.4.6 3 2M14 10h4M14 13h3"/></svg>',
@@ -3242,7 +3288,7 @@ function abrirAmigos(enfocar, texto){
 
 // Invitar a alguien que todavía no usa Partazy (WhatsApp, Instagram, etc.)
 async function invitarAmigos(){
-  const link = 'https://partazy.web.app' + (state.uid ? '/#/u/' + state.uid : '');
+  const link = location.origin + (state.uid ? '/#/u/' + state.uid : '');
   const texto = `Sumate a PARTAZY 🎉 la app de fiestas, previas y boliches. Agregame: ${link}`;
   if(navigator.share){
     try{ await navigator.share({ title: 'PARTAZY', text: texto }); return; } catch(e){ if(e && e.name === 'AbortError') return; }
@@ -3255,6 +3301,7 @@ function renderCtaAmigos(){
   const el = document.getElementById('home-amigos-cta');
   if(!el) return;
   const n = amigosUids().length;
+  pintarFilaAmigos();
   el.innerHTML = n >= 3 ? '' : `<div class="cta-amigos">
       <div class="ico">👥</div>
       <div><b>${n ? 'Sumá más amigos' : 'Encontrá a tus amigos'}</b><span>Mirá a qué fiestas van y armen el plan juntos.</span></div>
@@ -3262,6 +3309,30 @@ function renderCtaAmigos(){
     </div>`;
 }
 
+// Fila "Tus amigos" en el inicio: a dónde va cada uno (como historias). Tocar → su perfil.
+function pintarFilaAmigos(){
+  const el = document.getElementById('home-amigos-fila');
+  if(!el) return;
+  const todos = amigosUids().filter(u => !state.bloqueados.has(u));
+  const faltan = todos.filter(u => !state.usuarios[u]).slice(0, 30);
+  if(faltan.length && !pintarFilaAmigos._cargando){   // traemos los perfiles que falten y repintamos
+    pintarFilaAmigos._cargando = true;
+    Promise.all(faltan.map(u => getUsuario(u).catch(() => null))).finally(() => { pintarFilaAmigos._cargando = false; if(faltan.some(u => state.usuarios[u])) pintarFilaAmigos(); });
+  }
+  const amigos = todos.filter(u => state.usuarios[u]);
+  if(state.invitado || !amigos.length){ el.innerHTML = ''; el.style.display = 'none'; return; }
+  const plan = u => {
+    const ev = (state.red.planes[u]?.eventos || []).map(eventoEnCache).filter(e => e && !esCancelado(e) && e.fechaTs > Date.now() - 6 * HORA).sort((a, b) => a.fechaTs - b.fechaTs)[0];
+    return ev ? { txt: ev.nombre, ev } : null;
+  };
+  const datos = amigos.map(u => ({ u, p: plan(u), on: !!estadoLinea(state.usuarios[u])?.on }))
+    .sort((a, b) => (!!b.p - !!a.p) || (b.on - a.on)).slice(0, 20);
+  el.style.display = '';
+  el.innerHTML = `<div class="seccion-titulo"><h2>Tus amigos</h2><span onclick="abrirAmigos()">Ver todos</span></div>
+    <div class="fila-amigos">${datos.map(({ u, p, on }) => `<button class="amigo-burbuja${p ? ' con-plan' : ''}" ${p ? `data-abrir="${esc(p.ev.id)}"` : `data-usuario="${esc(u)}"`} aria-label="${esc(nombreVisible(state.usuarios[u]))}">
+      <span class="ab-foto">${avatarMini(state.usuarios[u])}${on ? '<i class="ab-on"></i>' : ''}</span>
+      <b>${esc(nombreCorto(state.usuarios[u]))}</b><small>${p ? '🎉 ' + esc(p.txt) : on ? 'En línea' : '—'}</small></button>`).join('')}</div>`;
+}
 // Personas en el buscador de Explorar
 let _debExplorarPersonas;
 // Buscador de personas en Explorar.
@@ -3424,6 +3495,7 @@ async function renderUsuario(uid){
       ${esOrganizacion(u) ? `<div class="tags" style="justify-content:center; margin-top:8px;"><span class="tag">🎪 Organizador de eventos</span>${(u.califN || 0) ? `<span class="tag">${califOrgTxt(u)}</span>` : ''}<span class="tag">${u.seguidores || 0} ${(u.seguidores || 0) === 1 ? 'seguidor' : 'seguidores'}</span></div>` : ''}
       <div class="ubic">${esc([u.apodo ? u.nombre : '', u.ciudad].filter(Boolean).join(' · '))}</div>
       ${lineaEstadoHTML(u)}
+      ${!org && !bloqueado ? '<div id="perfil-amigos-resumen" class="amigos-resumen"></div>' : ''}
       ${!org && u.bio && !bloqueado ? `<p class="bio">${esc(u.bio)}</p>` : ''}
       ${bloqueado ? '<div class="tags" style="justify-content:center; margin-top:10px;"><span class="tag no">Bloqueaste a esta persona</span></div>' : ''}
       ${f?.estado === 'aceptada' ? '<div class="tags" style="justify-content:center; margin-top:10px;"><span class="tag si">✓ Amigos</span></div>' : ''}
@@ -3437,6 +3509,7 @@ async function renderUsuario(uid){
       </div>`}
     </div>
     ${org && !bloqueado ? bloquesOrganizacion(u) : ''}
+    <div id="perfil-amigos-lista"></div>
     ${intereses.length ? `<div class="subtitulo"><h3 class="titulo-bloque">Intereses</h3></div>
       <div class="interes-pills">${intereses.map(i => `<span class="chip activo">${esc(i)}</span>`).join('')}</div>` : ''}
     ${(() => {
@@ -3450,6 +3523,30 @@ async function renderUsuario(uid){
         <div class="foto-mini" style="background-image:${cssFoto(e)}"></div>
         <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs</span></div>
       </div>`).join('') : emptyState('No está organizando eventos próximos.')}</div>`;
+  if(!bloqueado && !org) cargarAmigosDePerfil(uid, tok);   // después de pintar (si ya está en caché se completa al toque)
+}
+
+// Amigos de otra persona: cuántos son, cuántos en común y quiénes.
+state.amigosDeCache = {};
+async function cargarAmigosDePerfil(uid, tok){
+  let lista = state.amigosDeCache[uid];
+  if(!lista){
+    try{ lista = await DataService.amigosDe(uid); } catch(e){ console.warn('amigos de', e); return; }
+    state.amigosDeCache[uid] = lista;
+  }
+  if(tok !== state.tok) return;
+  lista = lista.filter(x => !state.bloqueados.has(x));
+  const mios = new Set(amigosUids()), comun = lista.filter(x => mios.has(x));
+  const res = document.getElementById('perfil-amigos-resumen'), cont = document.getElementById('perfil-amigos-lista');
+  if(!res || !cont) return;
+  res.innerHTML = `<button class="link-amigos" onclick="document.getElementById('perfil-amigos-lista').scrollIntoView({behavior:'smooth', block:'start'})"><b>${lista.length}</b> ${lista.length === 1 ? 'amigo' : 'amigos'}${comun.length ? ` · <b>${comun.length}</b> en común` : ''}</button>`;
+  if(!lista.length){ cont.innerHTML = ''; return; }
+  const orden = [...comun, ...lista.filter(x => !mios.has(x))].slice(0, 60);
+  await Promise.all(orden.map(x => getUsuario(x).catch(() => null)));
+  if(tok !== state.tok) return;
+  cont.innerHTML = `<div class="subtitulo"><h3 class="titulo-bloque">Amigos · ${lista.length}</h3></div>
+    <div class="grilla-amigos">${orden.map(x => { const v = state.usuarios[x]; if(!v) return '';
+      return `<button class="amigo-mini" data-usuario="${esc(x)}">${avatarMini(v)}<span>${esc(nombreCorto(v))}</span>${mios.has(x) ? '<small>en común</small>' : ''}</button>`; }).join('')}</div>`;
 }
 
 // ---------- Bandeja de chats ----------
@@ -4063,7 +4160,12 @@ const OCASION_PORTADA = {
   after:        { c1:'#0C0A09', c2:'#7C2D12', ac:'#FDBA74', pat:'sol',     mot:'sol',     w:'AFTER' },
   pena:         { c1:'#2A1406', c2:'#9A3412', ac:'#FCD34D', pat:'guarda',  mot:'guitarra',w:'PEÑA' },
   musical:      { c1:'#0A0F2C', c2:'#4338CA', ac:'#A5B4FC', pat:'circulos',mot:'microfono',w:'EN VIVO' },
-  gastronomico: { c1:'#1C1A0B', c2:'#3F6212', ac:'#FDE68A', pat:'puntos',  mot:'plato',   w:'GASTRO' }
+  gastronomico: { c1:'#1C1A0B', c2:'#3F6212', ac:'#FDE68A', pat:'puntos',  mot:'plato',   w:'GASTRO' },
+  charla:       { c1:'#0B1220', c2:'#1E3A5F', ac:'#7DD3FC', pat:'grid',    mot:'charla',  w:'CHARLA' },
+  taller:       { c1:'#1A1206', c2:'#78350F', ac:'#FCD34D', pat:'puntos',  mot:'brillo',  w:'TALLER' },
+  cultural:     { c1:'#1E0B24', c2:'#86198F', ac:'#F0ABFC', pat:'circulos',mot:'mascara', w:'CULTURA' },
+  deportivo:    { c1:'#06210F', c2:'#15803D', ac:'#BEF264', pat:'rayas',   mot:'pelota',  w:'DEPORTE' },
+  feria:        { c1:'#2A1006', c2:'#C2410C', ac:'#FDE68A', pat:'confeti', mot:'toldo',   w:'FERIA' }
 };
 // Número estable a partir de un texto (para variar las portadas).
 function hashTxt(t){ let h = 7; for(const ch of String(t)) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; }
@@ -4121,6 +4223,9 @@ function motivoSVG(m, ac){
       <g stroke-width="7" opacity=".75"><path d="M118 150v-44"/><circle cx="108" cy="152" r="11"/><path d="M118 106l20 8"/></g>
       <path d="M96 30c16-18 30-22 44-20" stroke-width="4" stroke-dasharray="4 10" opacity=".7"/></g>`;
     case 'plato': return `<g ${t} ${st}><circle cx="100" cy="110" r="66"/><circle cx="100" cy="110" r="36"/><path d="M8 20v54a16 16 0 0 0 16 16v100M24 20v40M196 20c-14 10-18 28-18 56h18v114"/></g>`;
+    case 'charla': return `<g ${t} ${st}><path d="M10 30h170v110H70l-50 40v-40H10z"/><path d="M50 70h90M50 100h60"/></g>`;
+    case 'pelota': return `<g ${t} ${st}><circle cx="100" cy="100" r="80"/><path d="m100 50 40 30-15 45H75L60 80z"/></g>`;
+    case 'toldo': return `<g ${t} ${st}><path d="M10 70 30 20h140l20 50"/><path d="M10 70c0 18 14 30 30 30s30-12 30-30c0 18 14 30 30 30s30-12 30-30c0 18 14 30 30 30s30-12 30-30"/><path d="M30 100v90h140v-90M80 190v-50h40v50"/></g>`;
     case 'mascara': return `<g ${t} ${st}><path d="M10 60c40-20 70-20 90 0 20-20 50-20 90 0-6 70-40 100-72 80-10-6-18-10-18-10s-8 4-18 10C50 160 16 130 10 60z"/><circle cx="62" cy="88" r="12"/><circle cx="138" cy="88" r="12"/></g>`;
   }
   return '';
@@ -4720,6 +4825,7 @@ async function cargarRed(){
   state.red = { amigosVan, compartidoPor, fof, notas, planes: mapa, listo: true };
   await Promise.all(Object.keys(mapa).map(getUsuario));
   if(typeof renderHome === 'function'){ renderHome(); renderExplorar(); }
+  pintarFilaAmigos();
   sincronizarPlanes();
 }
 
@@ -5030,6 +5136,13 @@ function avisarAmigosEvento(id, nombre, yaAvisados){
 function filtrarPorChip(eventos, filtro){
   switch(filtro){
     case 'hoy':            return eventos.filter(e => esEstaNoche(e.fechaTs));
+    case 'fiestas':        return eventos.filter(e => e.tipo !== 'previa' && OCASIONES_FIESTA.has(e.ocasion || ''));
+    case 'previas':        return eventos.filter(e => e.tipo === 'previa' || e.ocasion === 'previa');
+    case 'musica':         return eventos.filter(e => e.ocasion === 'musical' || e.ocasion === 'pena');
+    case 'gastro':         return eventos.filter(e => e.ocasion === 'gastronomico' || e.ocasion === 'feria');
+    case 'charlas':        return eventos.filter(e => e.ocasion === 'charla' || e.ocasion === 'taller');
+    case 'cultura':        return eventos.filter(e => e.ocasion === 'cultural');
+    case 'deportes':       return eventos.filter(e => e.ocasion === 'deportivo');
     case 'paravos':        return eventos.filter(e => afinidad(e).puntos > 0).sort((a, b) => afinidad(b).puntos - afinidad(a).puntos || a.fechaTs - b.fechaTs);
     case 'electronica':    return eventos.filter(e => ['techno','electronica'].includes(e.categoria));
     case 'cachengue':      return eventos.filter(e => e.categoria==='cachengue');
@@ -5114,7 +5227,8 @@ function renderHome(){
     titulo1.textContent = 'Más cerca tuyo 📍';
   } else {
     filtrados = filtrarPorChip(base, state.filtroActivoHome);
-    titulo1.textContent = state.filtroActivoHome==='hoy' ? 'Esta noche 🔥' : state.filtroActivoHome==='paravos' ? 'Para vos 🎧' : 'Recomendados ✨';
+    const TIT = { hoy: 'Hoy 🔥', paravos: 'Para vos 🎧', fiestas: 'Fiestas 🪩', previas: 'Previas 🍾', musica: 'Música en vivo 🎤', gastro: 'Gastronomía y ferias 🍽️', charlas: 'Charlas y talleres 💬', cultura: 'Arte y cultura 🎭', deportes: 'Deporte y aire libre ⚽', privadas: 'Privadas abiertas 🔒' };
+    titulo1.textContent = TIT[state.filtroActivoHome] || 'Recomendados ✨';
     // Nada esta noche: arriba va lo próximo (así lo recién publicado se ve primero)
     if(state.filtroActivoHome === 'hoy' && !filtrados.length && futuros.length){
       const ocultar = (...ids) => ids.forEach(id => { document.getElementById(id).style.display = 'none'; });
@@ -5247,6 +5361,7 @@ async function renderDetalle(id){
     else if(estado === 'rechazado')   { accionTxt = 'Solicitud rechazada'; deshabilitado = true; }
     else if(estado === 'en-espera')   { if(lleno){ accionTxt = 'En lista de espera ⏳'; deshabilitado = true; } else accionTxt = '¡Se liberó un lugar! Confirmar'; }
     else if(esCreador && esPrivada)   { accionTxt = 'Sos el anfitrión'; deshabilitado = true; }
+    else if(!esCreador && inscripcionCerrada(ev)) { accionTxt = 'Inscripción cerrada'; deshabilitado = true; }
     else if(esPrivada)                 accionTxt = 'Solicitar unirme';
     else if(ventaExterna && !esCreador) accionTxt = 'Comprar en ' + ventaExterna.texto + ' ↗';
     else if(lleno)                     accionTxt = 'Anotarme en lista de espera';
@@ -5344,6 +5459,7 @@ async function renderDetalle(id){
         <div class="info-lista">
           <div class="info-item"><span class="ii-ico">${II.cuando}</span><div class="ii-txt"><small>Cuándo</small><b>${esc(horarioEvento(ev))}</b></div></div>
           <div class="info-item"><span class="ii-ico">${II.donde}</span><div class="ii-txt"><small>Dónde</small><b>${esc(lugarMostrado)}</b></div>${comoLlegar ? `<span class="ii-accion">${comoLlegar}</span>` : ''}</div>
+          ${typeof ev.inscripcionHasta === 'number' ? `<div class="info-item${inscripcionCerrada(ev) ? ' insc-cerrada' : ''}"><span class="ii-ico">${II.reloj}</span><div class="ii-txt"><small>Inscripción</small><b>${esc(textoInscripcion(ev))}</b>${inscripcionCerrada(ev) ? '<span class="ii-sub">Ya no se puede anotar gente nueva</span>' : ''}</div></div>` : ''}
           <div class="info-item"><span class="ii-ico">${II.edad}</span><div class="ii-txt"><small>Edad</small><b>${esc(clasificacion(ev))}</b></div></div>
           ${ventaExterna
             ? `<div class="info-item"><span class="ii-ico">${II.gente}</span><div class="ii-txt"><small>Capacidad</small><b>${ev.capacidadDesconocida ? 'Según la venta' : `${cap} personas`}</b><span class="ii-sub cupo-ext">${cupo} ${cupo === 1 ? 'avisó' : 'avisaron'} que van por Partazy · el cupo lo maneja ${esc(ventaExterna.texto)}</span></div></div>`
@@ -5382,6 +5498,7 @@ async function renderDetalle(id){
         ${(ev.repostsCount || 0) > 0 ? `<div class="contador-repost">${ICO_REPOST}${esc(textoCompartidoPor(ev))}</div>` : ''}
       </div>
 
+      ${esCreador ? estadisticasHTML(ev) : ''}
       ${bloquePrensaHTML(ev, esCreador, miAcred)}
 
       <div class="bloque">${bloqueChat}</div>
@@ -5407,6 +5524,7 @@ async function renderDetalle(id){
     document.getElementById('btn-compartir-evento').onclick = () => compartirEvento(ev);
     document.getElementById('btn-enviar-amigos').onclick = () => enviarEventoAAmigos(ev);
     pintarBotonCompartir(ev, tok);
+    contarVista(ev);
     if(ev.fotoGrande && !fotosGrandes.has(ev.id)) fotoGrandeDe(ev).then(f => {
       const h = document.getElementById('hero-img');
       if(!f || tok !== state.tok || !h) return;
@@ -5452,6 +5570,7 @@ async function accionDetalle(ev, estado, lleno, adentro, yaCompro){
   // En lista de espera y se liberó un lugar: sale de la lista y confirma
   const desdeEspera = estado === 'en-espera' && !lleno;
   if(estado && !desdeEspera) return;
+  if(inscripcionCerrada(ev) && ev.creador !== state.uid){ toast('La inscripción para este evento ya cerró'); return; }
   // Venta en otra plataforma: se compra allá (salvo que ya la haya comprado)
   const externa = (!yaCompro && ev.privacidad !== 'privada' && ev.linkEntradas && ev.creador !== state.uid) ? linkWeb(ev.linkEntradas, true) : null;
   if(externa){ abrirExterno(externa.url); return; }
@@ -5786,7 +5905,7 @@ function elegirTipo(tipo){
   document.getElementById('fila-vip').style.display = previa ? 'none' : '';
   document.getElementById('campo-tipos').style.display = previa ? 'none' : '';
   if(previa) elegirOcasion('previa');
-  else if(document.getElementById('f-ocasion').value === 'previa') elegirOcasion('fiesta');
+  else elegirOcasion(document.getElementById('f-ocasion').value === 'previa' ? 'fiesta' : document.getElementById('f-ocasion').value);
   actualizarCampoVip();
   actualizarCamposPrivacidad();
   actualizarFilaQR();
@@ -5893,9 +6012,13 @@ const ESTILOS = {
 function etiquetaEstilo(cat){ return ESTILOS[cat] || cat || ''; }
 // Tipos de evento (los de "universitaria" y "temática" quedan solo para eventos viejos)
 const OCASIONES = { fiesta: 'Fiesta', previa: 'Previa', after: 'After', pena: 'Peña', egresados: 'Egresados', cumple: 'Cumpleaños',
-  musical: 'Evento musical', gastronomico: 'Evento gastronómico', universitaria: 'Fiesta universitaria', tematica: 'Fiesta temática' };
-const TIPOS_NUEVOS = ['fiesta', 'previa', 'after', 'pena', 'egresados', 'cumple', 'musical', 'gastronomico'];
-const ICONOS_TIPO = {"fiesta": "<circle cx=\"12\" cy=\"13\" r=\"7\"/><path d=\"M12 6V2M5.5 10.5h13M5.5 15.5h13M12 6c-2 2.2-2.8 4.6-2.8 7s.8 4.8 2.8 7M12 6c2 2.2 2.8 4.6 2.8 7s-.8 4.8-2.8 7\"/>", "previa": "<path d=\"M6.5 2h3v2h-3zM7 4v3c0 1.3-3 2-3 4.5V21h8v-9.5C12 9 9 8.3 9 7V4\"/><path d=\"M13 12.5l1-.8 1 .8 1-.8 1 .8 1-.8 1 .8V21h-6z\"/><path d=\"M13 15.5h6\"/>", "after": "<path d=\"M3 18h18M5 21h14\"/><path d=\"M7 18a5 5 0 0 1 10 0\"/><path d=\"M12 7V4M5.6 10.6 3.8 8.8M18.4 10.6l1.8-1.8\"/>", "pena": "<path d=\"M14 3l4 4-2 2-4-4z\"/><path d=\"M13.5 7.5 9 12\"/><path d=\"M10.5 10.5c-2.5-1-5 0-6 2.5s0 5.5 2.5 6.5 5.5 0 6.5-2.5c.6-1.5.3-3-.5-4.2\"/><circle cx=\"8.5\" cy=\"15.5\" r=\"1.4\"/>", "egresados": "<path d=\"M2 9l10-5 10 5-10 5z\"/><path d=\"M6 11v5c3.5 2.5 8.5 2.5 12 0v-5\"/><path d=\"M22 9v6\"/>", "cumple": "<path d=\"M4 21h16v-8H4z\"/><path d=\"M4 16c2 1.5 4 1.5 6 0s4-1.5 6 0 3 1.5 4 0\"/><path d=\"M8 13V9M12 13V9M16 13V9\"/><path d=\"M8 6.5c0-1 .8-1.5.8-2.5M12 6.5c0-1 .8-1.5.8-2.5M16 6.5c0-1 .8-1.5.8-2.5\"/>", "musical": "<rect x=\"6\" y=\"3\" width=\"5\" height=\"10\" rx=\"2.5\"/><path d=\"M3.5 10.5a5 5 0 0 0 10 0M8.5 15.5V20M6 20h5\"/><path d=\"M17 11V4l4-1v6\"/><circle cx=\"16\" cy=\"11.2\" r=\"1.6\"/><circle cx=\"20\" cy=\"9.2\" r=\"1.6\"/>", "gastronomico": "<circle cx=\"12\" cy=\"13\" r=\"6\"/><circle cx=\"12\" cy=\"13\" r=\"3\"/><path d=\"M3 3v6a2 2 0 0 0 2 2v10M5 3v4M21 3c-1.5 1-2 3-2 6h2v12\"/>"};
+  musical: 'Música en vivo', gastronomico: 'Gastronomía', charla: 'Charla / Seminario', taller: 'Taller / Curso', cultural: 'Arte y cultura',
+  deportivo: 'Deporte / Aire libre', feria: 'Feria / Mercado', universitaria: 'Fiesta universitaria', tematica: 'Fiesta temática' };
+const TIPOS_NUEVOS = ['fiesta', 'previa', 'after', 'pena', 'egresados', 'cumple', 'musical', 'gastronomico', 'charla', 'taller', 'cultural', 'deportivo', 'feria'];
+// Tipos "de joda" (piden estilo de música y lista VIP). El resto son eventos generales (charlas, ferias, etc.).
+const OCASIONES_FIESTA = new Set(['', 'fiesta', 'previa', 'after', 'egresados', 'cumple', 'universitaria', 'tematica']);
+function esDeFiesta(ev){ return OCASIONES_FIESTA.has(ev?.ocasion || ''); }
+const ICONOS_TIPO = {"fiesta": "<circle cx=\"12\" cy=\"13\" r=\"7\"/><path d=\"M12 6V2M5.5 10.5h13M5.5 15.5h13M12 6c-2 2.2-2.8 4.6-2.8 7s.8 4.8 2.8 7M12 6c2 2.2 2.8 4.6 2.8 7s-.8 4.8-2.8 7\"/>", "previa": "<path d=\"M6.5 2h3v2h-3zM7 4v3c0 1.3-3 2-3 4.5V21h8v-9.5C12 9 9 8.3 9 7V4\"/><path d=\"M13 12.5l1-.8 1 .8 1-.8 1 .8 1-.8 1 .8V21h-6z\"/><path d=\"M13 15.5h6\"/>", "after": "<path d=\"M3 18h18M5 21h14\"/><path d=\"M7 18a5 5 0 0 1 10 0\"/><path d=\"M12 7V4M5.6 10.6 3.8 8.8M18.4 10.6l1.8-1.8\"/>", "pena": "<path d=\"M14 3l4 4-2 2-4-4z\"/><path d=\"M13.5 7.5 9 12\"/><path d=\"M10.5 10.5c-2.5-1-5 0-6 2.5s0 5.5 2.5 6.5 5.5 0 6.5-2.5c.6-1.5.3-3-.5-4.2\"/><circle cx=\"8.5\" cy=\"15.5\" r=\"1.4\"/>", "egresados": "<path d=\"M2 9l10-5 10 5-10 5z\"/><path d=\"M6 11v5c3.5 2.5 8.5 2.5 12 0v-5\"/><path d=\"M22 9v6\"/>", "cumple": "<path d=\"M4 21h16v-8H4z\"/><path d=\"M4 16c2 1.5 4 1.5 6 0s4-1.5 6 0 3 1.5 4 0\"/><path d=\"M8 13V9M12 13V9M16 13V9\"/><path d=\"M8 6.5c0-1 .8-1.5.8-2.5M12 6.5c0-1 .8-1.5.8-2.5M16 6.5c0-1 .8-1.5.8-2.5\"/>", "musical": "<rect x=\"6\" y=\"3\" width=\"5\" height=\"10\" rx=\"2.5\"/><path d=\"M3.5 10.5a5 5 0 0 0 10 0M8.5 15.5V20M6 20h5\"/><path d=\"M17 11V4l4-1v6\"/><circle cx=\"16\" cy=\"11.2\" r=\"1.6\"/><circle cx=\"20\" cy=\"9.2\" r=\"1.6\"/>", "gastronomico": "<circle cx=\"12\" cy=\"13\" r=\"6\"/><circle cx=\"12\" cy=\"13\" r=\"3\"/><path d=\"M3 3v6a2 2 0 0 0 2 2v10M5 3v4M21 3c-1.5 1-2 3-2 6h2v12\"/>", "charla": "<path d=\"M4 5h16v10H9l-5 4z\"/><path d=\"M8 9h8M8 12h5\"/>", "taller": "<path d=\"M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z\"/>", "cultural": "<path d=\"M4 7c5-3 11-3 16 0-1 8-4 12-8 12s-7-4-8-12z\"/><circle cx=\"9\" cy=\"10.5\" r=\"1\"/><circle cx=\"15\" cy=\"10.5\" r=\"1\"/><path d=\"M9 14.5c2 1.5 4 1.5 6 0\"/>", "deportivo": "<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"m12 7 4 3-1.5 4.5h-5L8 10z\"/><path d=\"M12 3v4M21 10l-5 0M17.5 19l-3-4.5M6.5 19l3-4.5M3 10l5 0\"/>", "feria": "<path d=\"M3 9l2-5h14l2 5\"/><path d=\"M3 9c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3\"/><path d=\"M5 12v8h14v-8M10 20v-5h4v5\"/>"};
 // Nombre del tipo de evento (Fiesta, Previa, Peña...).
 function etiquetaTipo(ev){ return OCASIONES[ev.ocasion] || ev.tipoLugar || ''; }
 // Clave del ícono según el tipo de evento.
@@ -5906,6 +6029,11 @@ function iconoTipo(ev){ return `<svg class="ico-tipo" viewBox="0 0 24 24" fill="
 function elegirOcasion(k){
   document.getElementById('f-ocasion').value = OCASIONES[k] ? k : '';
   document.querySelectorAll('#tipos-grid .tipo-op').forEach(b => { const on = b.dataset.ocasion === k; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+  // Charlas, ferias, talleres, etc.: no tiene sentido pedir estilo de música ni lista VIP
+  const fiesta = OCASIONES_FIESTA.has(k || '') || k === 'musical', previa = state.tipoEventoActivo === 'previa';
+  const ce = document.getElementById('campo-estilo'), fv = document.getElementById('fila-vip');
+  if(ce) ce.style.display = previa || !fiesta ? 'none' : '';
+  if(fv) fv.style.display = previa || !OCASIONES_FIESTA.has(k || '') ? 'none' : '';
 }
 // Tocar "Previa" en los tipos lleva a la sección Previa (arriba)
 function irAPrevia(){
@@ -5945,6 +6073,14 @@ async function publicarEvento(){
   const evEdit = state.editandoId ? state.editandoEv : null;
   if(isNaN(fechaTs) || (fechaTs < Date.now() - 60000 && !(evEdit && fechaTs === evEdit.fechaTs))){ toast('La fecha ya pasó'); return; }
 
+  // Fecha límite para anotarse (opcional): tiene que ser antes del evento
+  let inscripcionHasta = null;
+  const inscF = val('f-insc-fecha');
+  if(inscF){
+    const [iy, im, id] = inscF.split('-').map(Number), [ih, imi] = (val('f-insc-hora') || '23:59').split(':').map(Number);
+    inscripcionHasta = new Date(iy, im - 1, id, ih, imi, 0, 0).getTime();
+    if(isNaN(inscripcionHasta) || inscripcionHasta > fechaTs){ toast('La fecha límite para anotarse tiene que ser antes del evento'); return; }
+  }
   const capStr = val('f-capacidad');
   const sinTope = !capStr && document.getElementById('switch-pago').classList.contains('on') && !!val('f-link-entradas');
   const capacidad = sinTope ? 20000 : parseInt(capStr, 10);
@@ -5988,7 +6124,7 @@ async function publicarEvento(){
     categoria: estilo, musica, dresscode: val('f-dresscode') || 'Libre', ocasion: OCASIONES[val('f-ocasion')] ? val('f-ocasion') : '', vip,
     bebida: tipo === 'previa' && document.getElementById('switch-bebida').classList.contains('on'),
     tipo, privacidad: privada ? 'privada' : 'publica',
-    listaVip: conVip,
+    listaVip: conVip, inscripcionHasta,
     imagen: state.imagenMini || state.imagenNueva || '', imagenGrande: state.imagenMini ? state.imagenNueva : null,
     descripcion: val('f-descripcion') || 'Evento creado desde Partazy.',
     reglas: reglas || 'Respetar el lugar y a los demás asistentes.'
@@ -6008,7 +6144,8 @@ async function publicarEvento(){
     horaFin, lineup, linkEntradas: linkVenta ? linkVenta.url.slice(0, 300) : '',
     deOrganizacion: esOrganizacion(state.perfil),
     conQR: esOrganizacion(state.perfil) && document.getElementById('switch-qr').classList.contains('on'),
-    capacidad, capacidadDesconocida: sinTope, confirmadosCount: 1, edadMinima,
+    capacidad, capacidadDesconocida: sinTope, confirmadosCount: 1, edadMinima, vistasCount: 0,
+    ...(inscripcionHasta ? { inscripcionHasta } : {}),
     dresscode: val('f-dresscode') || 'Libre', musica,
     bebida: tipo === 'previa' && document.getElementById('switch-bebida').classList.contains('on'),
     listaVip: conVip,
@@ -6049,7 +6186,7 @@ async function publicarEvento(){
 
 // Deja el formulario de Crear vacío.
 function resetFormularioCrear(){
-  ['f-nombre','f-lugar','f-direccion','f-fecha','f-hora','f-capacidad','f-edad','f-dresscode','f-estilo','f-musica','f-descripcion','f-reglas','f-precio','f-pago-info','f-hora-fin','f-lineup','f-link-entradas','f-ocasion','f-vip'].forEach(id=>{
+  ['f-nombre','f-lugar','f-direccion','f-fecha','f-hora','f-capacidad','f-edad','f-dresscode','f-estilo','f-musica','f-descripcion','f-reglas','f-precio','f-pago-info','f-hora-fin','f-lineup','f-link-entradas','f-ocasion','f-vip','f-insc-fecha','f-insc-hora'].forEach(id=>{
     const el = document.getElementById(id); if(el) el.value='';
   });
   const setSwitch = (id, on) => { const el = document.getElementById(id); el.classList.toggle('on', on); el.setAttribute('aria-checked', on ? 'true' : 'false'); };
@@ -6667,6 +6804,7 @@ async function editarEvento(ev){
   setv('f-nombre', ev.nombre); setv('f-lugar', ev.lugar);
   state._lugarIni = ev.lugar; state._dirIni = null;
   setv('f-fecha', fechaInput(ev.fechaTs)); setv('f-hora', ev.hora); setv('f-hora-fin', ev.horaFin);
+  if(typeof ev.inscripcionHasta === 'number'){ const di = new Date(ev.inscripcionHasta); setv('f-insc-fecha', fechaInput(ev.inscripcionHasta)); setv('f-insc-hora', `${String(di.getHours()).padStart(2, '0')}:${String(di.getMinutes()).padStart(2, '0')}`); }
   setv('f-capacidad', ev.capacidadDesconocida ? '' : ev.capacidad); setv('f-edad', ev.edadMinima);
   setv('f-dresscode', ev.dresscode === 'Libre' ? '' : ev.dresscode);
   setv('f-estilo', ESTILOS[ev.categoria] ? (ev.categoria === 'universitaria' ? 'variado' : ev.categoria) : '');
@@ -6728,8 +6866,11 @@ async function guardarEdicion(ev, d){
     capacidad: d.capacidad, capacidadDesconocida: d.capacidadDesconocida, edadMinima: d.edadMinima, precio: d.precio, pagoInfo: d.pagoInfo,
     linkEntradas: d.linkEntradas, lineup: d.lineup, categoria: d.categoria, musica: d.musica, ocasion: d.ocasion,
     dresscode: d.dresscode, bebida: d.bebida, listaVip: d.listaVip, imagen: d.imagen, ...(d.imagenGrande ? { fotoGrande: true } : {}),
-    descripcion: d.descripcion, reglas: d.reglas, editadoTs: Date.now()
+    descripcion: d.descripcion, reglas: d.reglas, editadoTs: Date.now(),
   };
+  // Fecha límite: se guarda, se cambia o se borra (solo si cambió)
+  if(d.inscripcionHasta) cambios.inscripcionHasta = d.inscripcionHasta;
+  else if(typeof ev.inscripcionHasta === 'number') cambios.inscripcionHasta = firebase.firestore.FieldValue.delete();
   const privadaAhora = d.privacidad === 'privada';
   if(state.ubicacionMapa){
     const exacta = !privadaAhora, j = () => exacta ? 0 : (Math.random() - 0.5) * 0.008;

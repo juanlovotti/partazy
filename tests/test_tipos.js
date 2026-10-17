@@ -17,8 +17,8 @@ const publicar=async(nombre, tipoKey, estilo, previa)=>{
 (async()=>{
   await sleep(800); w.cerrarTutorial(); w.ir('crear'); await sleep(50);
   const ops=[...w.document.querySelectorAll('#tipos-grid .tipo-op')].map(b=>b.textContent.trim());
-  ok(JSON.stringify(ops)===JSON.stringify(['Fiesta','Previa','After','Peña','Egresados','Cumpleaños','Evento musical','Evento gastronómico']), 'los 8 tipos con su ícono: '+ops.join(', '));
-  ok(w.document.querySelectorAll('#tipos-grid svg').length===8, 'cada tipo tiene su logito');
+  ok(JSON.stringify(ops)===JSON.stringify(['Fiesta','Previa','After','Peña','Egresados','Cumpleaños','Música en vivo','Gastronomía','Charla / Seminario','Taller / Curso','Arte y cultura','Deporte / Aire libre','Feria / Mercado']), 'los 13 tipos (fiestas y eventos generales) con su ícono: '+ops.join(', '));
+  ok(w.document.querySelectorAll('#tipos-grid svg').length===13, 'cada tipo tiene su logito');
   ok($('f-ocasion').value==='fiesta' && w.document.querySelector('[data-ocasion="fiesta"]').classList.contains('on'), 'arranca en "Fiesta"');
   w.elegirTipo('previa'); ok($('f-ocasion').value==='previa', 'al tocar "Previa" arriba, el tipo pasa a Previa');
   w.elegirTipo('fiesta');

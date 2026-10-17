@@ -72,7 +72,7 @@ const llenar=(n)=>{ $('f-nombre').value=n; $('f-lugar').value='Belgrano 800, Gü
   const pie=w.document.querySelector('.pie-ig');
   ok(pie && /instagram\.com\/partazy/.test(pie.getAttribute('href')), 'footer con el logo de Instagram que lleva a @partazy');
   ok(w.document.querySelectorAll('[data-idioma]').length>=3 && [...w.document.querySelectorAll('[data-idioma]')].some(x=>x.dataset.idioma==='pt'), 'selector de idioma (español / inglés / portugués)');
-  const marcas=[...w.document.querySelectorAll('.marca-bandera:not(.nav-logo-mini)')]; ok(marcas.length>=3 && marcas.every(m=>m.textContent.trim()==='PARTAZY') && !w.document.querySelector('.punto-beat'), 'el logo ya no tiene el puntito');
-  const mini=w.document.querySelector('.nav-logo-mini'); ok(mini && mini.textContent.trim()==='P' && mini.classList.contains('marca-bandera'), 'el menú achicado muestra la P sola con las rayas de la marca');
+  const logos=[...w.document.querySelectorAll('.lv')]; ok(logos.length>=3 && logos.every(m=>m.querySelector('.lv-ico .lv-disco') && m.querySelector('.lv-txt').textContent==='partazy') && !w.document.querySelector('.punto-beat'), 'el logo nuevo (P con vinilo + partazy) está en la carga, el inicio y el menú');
+  ok(!w.document.querySelector('#loader .spinner'), 'en la carga gira el vinilo en vez de la ruedita');
   console.log(f?'\nFALLAS: '+f:'\nTODO OK'); process.exit(f?1:0);
 })();

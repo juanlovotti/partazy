@@ -59,9 +59,10 @@ Buscá el nombre para saltar. En orden:
 | `events/{id}/calificaciones/{uid}` | Nota de cada persona (anónima; los totales están en el evento) | Solo la persona |
 | `events/{id}/reposts/{uid}` | Quién lo compartió | Logueados |
 | `events/{id}/votos/{uid}` | Voto de ambiente en vivo | Logueados |
+| `events/{id}/vistas/{uid}` | Vista única (va junto con el +1 a `vistasCount`) | Solo la persona (get) |
 | `events/{id}/acreditaciones/{uid}` | Pedidos de prensa | La persona y quien organiza |
 | `chats/{eventId}/messages` | Grupo del evento | Quien organiza y aprobados/confirmados |
-| `friendships/{a_b}` | Amistades (ids ordenados) | Los dos |
+| `friendships/{a_b}` | Amistades (ids ordenados). Las aceptadas se pueden listar ("amigos" en los perfiles; índice `users`+`estado`) | Los dos; aceptadas: logueados |
 | `dms/{a_b}` y `/mensajes` | Mensajes directos y solicitudes de mensaje | Los dos |
 | `notificaciones/{uid}/items` | Avisos internos | El destinatario |
 | `planes/{uid}` | A qué eventos va, qué compartió y su comentario opcional (`notas`, hasta 15 palabras) | El dueño y sus amigos |
@@ -71,7 +72,7 @@ Buscá el nombre para saltar. En orden:
 
 ### Contadores
 
-`confirmadosCount`, `repostsCount`, `califN/califJoda/califAnf` (evento) y `seguidores`, `califN/califSuma` (usuario) se actualizan desde el cliente **en la misma escritura** que el documento que los justifica. Las reglas comparan antes/después (`get` / `getAfter`) para que nadie pueda inflarlos.
+`confirmadosCount`, `repostsCount`, `vistasCount`, `califN/califJoda/califAnf` (evento) y `seguidores`, `califN/califSuma` (usuario) se actualizan desde el cliente **en la misma escritura** que el documento que los justifica. Las reglas comparan antes/después (`get` / `getAfter`) para que nadie pueda inflarlos.
 
 ### Privacidad de las previas privadas
 
@@ -109,3 +110,9 @@ Buscá el nombre para saltar. En orden:
 - Las miniaturas de los eventos pesan ~20-30 KB (`LIMITE_MINI`); la foto grande se baja solo al abrir el evento.
 - Librerías pesadas (mapas, PDF, QR, filtro de fotos) se cargan **recién cuando se usan**.
 - Mayor peso que queda: el SDK de Firebase "compat" (~200 KB comprimido). Migrar al SDK modular (con un empaquetador) lo reduce bastante; conviene hacerlo junto con la migración a React.
+
+## Eventos
+
+- `ocasion`: tipo de evento. De fiesta: fiesta, previa, after, egresados, cumple. Generales: musical, pena, gastronomico, charla, taller, cultural, deportivo, feria. Los generales no piden estilo de música ni lista VIP.
+- `inscripcionHasta` (opcional): fecha límite para anotarse. La regla `inscripcionAbierta()` rechaza solicitudes, confirmaciones y lista de espera después de esa fecha.
+- Estadísticas (solo quien organiza): vistas únicas, anotados, conversión y compartidos.
