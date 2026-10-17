@@ -201,6 +201,7 @@ service cloud.firestore {
         && request.resource.data.get('denuncias', 0) == 0
         && sinCalif(request.resource.data)
         && texto(request.resource.data.get('pagoInfo', ''), 200)
+        && texto(request.resource.data.get('pagoTitular', ''), 60)
         && request.resource.data.get('verificado', false) == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('verificado', false)
         && qrPermitido()
         && extrasEventoValidos()
@@ -222,6 +223,7 @@ service cloud.firestore {
         && request.resource.data.get('estado', 'publicado') in ['publicado', 'cancelado']
         && texto(request.resource.data.get('motivoCancelacion', ''), 200)
         && texto(request.resource.data.get('pagoInfo', ''), 200)
+        && texto(request.resource.data.get('pagoTitular', ''), 60)
         && request.resource.data.get('denuncias', 0) == resource.data.get('denuncias', 0)
         && request.resource.data.get('verificado', false) == resource.data.get('verificado', false)
         && request.resource.data.get('repostsCount', 0) == resource.data.get('repostsCount', 0)

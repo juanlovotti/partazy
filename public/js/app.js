@@ -3306,7 +3306,7 @@ function personaHTML(u, acciones, sub){
   if(!u) return '';
   return `<div class="persona">
       <div class="avatar" data-usuario="${esc(u.uid)}">${avatarHTML(u)}${puntoLinea(u)}</div>
-      <div class="txt" data-usuario="${esc(u.uid)}" role="button" tabindex="0"><h5>${esc(nombreVisible(u))}${insignia(u)}</h5><span>${esc(sub ?? (estadoLinea(u)?.on ? 'En línea' : (u.usuario ? '@' + u.usuario + (u.ciudad ? ' · ' + u.ciudad : '') : (u.ciudad ?? ''))))}</span></div>
+      <div class="txt" data-usuario="${esc(u.uid)}" role="button" tabindex="0"><h5><i class="nom">${esc(nombreVisible(u))}</i>${insignia(u)}</h5><span>${esc(sub ?? (estadoLinea(u)?.on ? 'En línea' : (u.usuario ? '@' + u.usuario + (u.ciudad ? ' · ' + u.ciudad : '') : (u.ciudad ?? ''))))}</span></div>
       <div class="acciones-p">${acciones || ''}</div>
     </div>`;
 }
@@ -3372,16 +3372,36 @@ function pintarFilaAmigos(){
   const amigos = todos.filter(u => state.usuarios[u]);
   if(state.invitado || !amigos.length){ el.innerHTML = ''; el.style.display = 'none'; return; }
   const plan = u => {
-    const ev = (state.red.planes[u]?.eventos || []).map(eventoEnCache).filter(e => e && !esCancelado(e) && e.fechaTs > Date.now() - 6 * HORA).sort((a, b) => a.fechaTs - b.fechaTs)[0];
-    return ev ? { txt: ev.nombre, ev } : null;
+    const ev = (state.red.planes[u]?.eventos || []).map(eventoEnCache).filter(e => e && !esCancelado(e) && Date.now() <= finEvento(e)).sort((a, b) => a.fechaTs - b.fechaTs)[0];
+    return ev ? { ev, ...planDeAmigo(ev, u) } : null;
   };
+  const peso = p => !p ? 0 : p.ahora ? 3 : p.hoy ? 2 : 1;
   const datos = amigos.map(u => ({ u, p: plan(u), on: !!estadoLinea(state.usuarios[u])?.on }))
-    .sort((a, b) => (!!b.p - !!a.p) || (b.on - a.on)).slice(0, 20);
+    .sort((a, b) => (peso(b.p) - peso(a.p)) || (b.on - a.on)).slice(0, 20);
   el.style.display = '';
   el.innerHTML = `<div class="seccion-titulo"><h2>Tus amigos</h2><span onclick="abrirAmigos()">Ver todos</span></div>
-    <div class="fila-amigos">${datos.map(({ u, p, on }) => `<button class="amigo-burbuja${p ? ' con-plan' : ''}" ${p ? `data-abrir="${esc(p.ev.id)}"` : `data-usuario="${esc(u)}"`} aria-label="${esc(nombreVisible(state.usuarios[u]))}">
-      <span class="ab-foto">${avatarMini(state.usuarios[u])}${on ? '<i class="ab-on"></i>' : ''}</span>
-      <b>${esc(nombreCorto(state.usuarios[u]))}</b><small>${p ? '🎉 ' + esc(p.txt) : on ? 'En línea' : '—'}</small></button>`).join('')}</div>`;
+    <div class="fila-amigos">${datos.map(({ u, p, on }) => { const nom = nombreCorto(state.usuarios[u]); return `<button class="amigo-burbuja${p ? ' con-plan' : ''}${p?.ahora ? ' en-vivo' : ''}" ${p ? `data-abrir="${esc(p.ev.id)}"` : `data-usuario="${esc(u)}"`} aria-label="${esc(p ? `${nom} ${p.frase} ${p.ev.nombre}` : nombreVisible(state.usuarios[u]))}">
+      <span class="ab-foto">${avatarMini(state.usuarios[u])}${on ? '<i class="ab-on"></i>' : ''}${p ? `<i class="ab-emoji">${p.emoji}</i>` : ''}</span>
+      <b>${esc(nom)}</b>${p ? `<small class="ab-cuando">${p.ahora ? '<i class="ab-vivo"></i>' : ''}${esc(p.cuando)}</small><small class="ab-ev">${esc(p.ev.nombre)}</small>` : on ? '<small>En línea</small>' : ''}</button>`; }).join('')}</div>`;
+}
+// Emoji según el tipo de evento (para la fila de amigos y avisos cortos).
+const EMOJI_TIPO = { fiesta: '🎉', previa: '🍻', after: '🌅', pena: '🎸', egresados: '🎓', cumple: '🎂', musical: '🎤', gastronomico: '🍽️',
+  charla: '🎙️', taller: '🛠️', cultural: '🎨', deportivo: '⚽', feria: '🛍️', universitaria: '🎓', tematica: '🎭' };
+function emojiTipo(ev){ return EMOJI_TIPO[ev?.ocasion] || (ev?.tipo === 'previa' ? '🍻' : '🎉'); }
+// Qué hace un amigo con un evento, en pocas palabras: "Ahora en", "Hoy 23:00", "Mañana", "Organiza"...
+function planDeAmigo(ev, u){
+  const ahora = Date.now(), org = ev.creador === u;
+  const enCurso = ahora >= ev.fechaTs && ahora <= finEvento(ev);
+  const d = new Date(ev.fechaTs), hoy = new Date();
+  const dias = Math.round((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate())) / 864e5);
+  const hora = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const DS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const cuandoTxt = enCurso ? 'Ahora' : dias <= 0 ? 'Hoy ' + hora : dias === 1 ? 'Mañana' : dias < 7 ? DS[d.getDay()] + ' ' + hora : DS[d.getDay()] + ' ' + d.getDate();
+  return {
+    emoji: emojiTipo(ev), ahora: enCurso, hoy: dias <= 0, org,
+    cuando: org ? (enCurso ? 'Organizando' : 'Organiza · ' + (dias <= 0 ? 'hoy' : cuandoTxt.split(' ')[0].toLowerCase())) : (enCurso ? 'Ahora en' : cuandoTxt),
+    frase: org ? (enCurso ? 'está organizando' : 'organiza') : (enCurso ? 'está en' : 'va a'),
+  };
 }
 // Personas en el buscador de Explorar
 let _debExplorarPersonas;
@@ -5001,7 +5021,7 @@ function notaAmigoHTML(ev, sinMia){
 function nombreCorto(u){ return String(nombreVisible(u) || '').trim().split(/\s+/)[0] || 'Alguien'; }
 // Amigos que van a un evento.
 function amigosQueVan(ev){
-  return (state.red.amigosVan[ev.id] || []).filter(u => !state.bloqueados.has(u) && u !== state.uid);
+  return (state.red.amigosVan[ev.id] || []).filter(u => !state.bloqueados.has(u) && u !== state.uid && u !== ev.creador);
 }
 // "Juan, Ivo y 2 amigos más van"
 function frasePersonas(uids, verboUno, verboVarios){
@@ -5019,7 +5039,7 @@ function carasHTML(uids){
 // "Juan, Ivo y 2 amigos más van".
 function amigosVanHTML(ev, largo){
   const van = amigosQueVan(ev);
-  const destino = ev.tipo === 'previa' ? 'a esta previa' : 'a esta fiesta';
+  const destino = ev.tipo === 'previa' || ev.ocasion === 'previa' ? 'a esta previa' : esDeFiesta(ev) ? 'a esta fiesta' : 'a este evento';
   if(van.length) return `<div class="amigos-van">${carasHTML(van)}<span>${frasePersonas(van, largo ? 'va ' + destino : 'va', largo ? 'van ' + destino : 'van')}</span></div>${notaAmigoHTML(ev, largo)}`;
   const comp = (state.red.compartidoPor[ev.id] || []).filter(u => !state.bloqueados.has(u));
   if(comp.length) return `<div class="amigos-van">${carasHTML(comp)}<span>${frasePersonas(comp, 'lo compartió', 'lo compartieron')}</span></div>${notaAmigoHTML(ev, largo)}`;
@@ -5445,13 +5465,16 @@ async function renderDetalle(id){
     const bloquePago = ev.precio > 0 ? `
       <div class="bloque">
         <h3 class="titulo-bloque">Pago de la entrada · ${esc(money(ev.precio))}</h3>
-        <div class="pago-destacado">
+        <div class="pago-destacado${verPago && ev.pagoTitular ? ' con-titular' : ''}">
           <div class="pago-monto"><small>Entrada</small><b>${esc(money(ev.precio))}</b></div>
+          ${verPago && ev.pagoTitular ? `<div class="pago-como"><small>Le pagás a</small><b>${esc(ev.pagoTitular)}</b><em>Titular de la cuenta · publicado por ${esc(nombreOrg)}</em></div>` : ''}
           <div class="pago-como"><small>Cómo pagar</small><b>${esc(verPago ? (ev.pagoInfo || 'El organizador te indica cómo pagar.') : 'Se muestra cuando el anfitrión te aprueba.')}</b></div>
           ${verPago && datoPago(ev.pagoInfo) ? `<button class="btn btn-primario btn-copiar-pago" onclick="copiarDatoPago(this, ${esc(JSON.stringify(datoPago(ev.pagoInfo)))})">📋 Copiar ${/^\d+$/.test(datoPago(ev.pagoInfo)) ? 'CBU / CVU' : 'alias'}: ${esc(datoPago(ev.pagoInfo))}</button>` : ''}
         </div>
         <div class="aviso aviso-pago">
-          <span>El pago se hace directamente a ${esc(nombreOrg)}. Partazy no cobra comisiones ni hace devoluciones: cualquier reintegro lo coordinás con el organizador.</span>
+          <span>${ev.pagoTitular && verPago
+            ? `El pago va directo a la cuenta de ${esc(ev.pagoTitular)}, que indicó ${esc(nombreOrg)} al publicar. Partazy no cobra comisiones ni hace devoluciones: cualquier reintegro lo coordinás con ${esc(nombreOrg)}.`
+            : `El pago se hace directamente a ${esc(nombreOrg)}. Partazy no cobra comisiones ni hace devoluciones: cualquier reintegro lo coordinás con el organizador.`}</span>
           <span>${esc(AVISO_DEVOLUCIONES)}</span>
         </div>
       </div>` : '';
@@ -5663,8 +5686,8 @@ async function accionDetalle(ev, estado, lleno, adentro, yaCompro){
     }
 
     if(ev.precio > 0 && !yaCompro){
-      const como = ev.pagoInfo ? ` Cómo pagar: ${ev.pagoInfo}.` : '';
-      const ok = await confirmar('Reservar entrada', `Entrada: ${money(ev.precio)}.${como} El pago es directo al organizador: Partazy no cobra ni hace devoluciones, el reintegro lo coordinás con el organizador. ${AVISO_DEVOLUCIONES}`, 'Reservar mi lugar');
+      const como = (ev.pagoInfo ? ` Cómo pagar: ${ev.pagoInfo}.` : '') + (ev.pagoTitular ? ` Le pagás a ${ev.pagoTitular}.` : '');
+      const ok = await confirmar('Reservar entrada', `Entrada: ${money(ev.precio)}.${como} El pago es directo${ev.pagoTitular ? ' a esa cuenta' : ' al organizador'}: Partazy no cobra ni hace devoluciones, el reintegro lo coordinás con el organizador. ${AVISO_DEVOLUCIONES}`, 'Reservar mi lugar');
       if(!ok) return;
     }
 
@@ -5843,7 +5866,8 @@ async function renderTicket(id){
       ${ev.precio > 0 && !esCancelado(ev) && !ext ? `<div style="padding:0 20px 6px;"><div class="aviso">
         <b>💳 Pago: ${esc(money(ev.precio))}</b>
         <span>${esc(ev.pagoInfo || 'El organizador te indica cómo pagar.')}</span>
-        <span>El pago es directo al organizador. ${esc(AVISO_DEVOLUCIONES)}</span>
+        ${ev.pagoTitular ? `<span>Le pagás a <b>${esc(ev.pagoTitular)}</b> (titular de la cuenta).</span>` : ''}
+        <span>El pago es directo${ev.pagoTitular ? ' a esa cuenta' : ' al organizador'}. ${esc(AVISO_DEVOLUCIONES)}</span>
       </div></div>` : ''}
 
       ${esCancelado(ev) ? `<div style="padding:0 20px;"><div class="aviso aviso-rojo">
@@ -5969,7 +5993,7 @@ function prepararLugarEvento(){
   inp.addEventListener('input', () => { if(state._ubicDeSugerencia){ state.ubicacionMapa = null; state._ubicDeSugerencia = false; const me = document.getElementById('mapa-elegido'); if(me) me.textContent = ''; } });
 }
 function irAPasoCrear(n){
-  prepararLugarEvento();
+  prepararLugarEvento(); refrescarCajasFecha();
   state.pasoCrear = n;
   const form = document.getElementById('form-crear');
   if(!form) return;
@@ -6314,6 +6338,8 @@ async function publicarEvento(){
   const precio = pago ? parseInt(val('f-precio'), 10) : 0;
   if(pago && (!precio || precio < 1)){ toast('Ingresá un precio válido'); return; }
   const pagoInfo = pago ? val('f-pago-info') : '';
+  const pagoTitular = pago && quienCobra() === 'otro' ? val('f-pago-titular').slice(0, 60) : '';
+  if(pago && quienCobra() === 'otro' && !pagoTitular){ toast('Poné el nombre del titular de la cuenta'); irAPasoCrear(3); document.getElementById('f-pago-titular').focus(); return; }
   const horaFin = val('f-hora-fin');
   if(horaFin && !/^\d{2}:\d{2}$/.test(horaFin)){ toast('Hora de cierre inválida'); return; }
   const lineup = val('f-lineup').slice(0, 600);
@@ -6340,7 +6366,7 @@ async function publicarEvento(){
   const exacta = !!state.ubicacionMapa && !privada;  // en previas privadas el pin público siempre es aproximado
   if(evEdit) return guardarEdicion(evEdit, {
     nombre, lugar, direccion: privada ? direccion : null, fechaTs, hora: horaStr, horaFin, capacidad, capacidadDesconocida: sinTope, edadMinima,
-    precio, pagoInfo, linkEntradas: linkVenta ? linkVenta.url.slice(0, 300) : '', lineup,
+    precio, pagoInfo, pagoTitular, linkEntradas: linkVenta ? linkVenta.url.slice(0, 300) : '', lineup,
     categoria: estilo, musica, dresscode: val('f-dresscode') || 'Libre', ocasion: OCASIONES[val('f-ocasion')] ? val('f-ocasion') : '', vip,
     bebida: tipo === 'previa' && document.getElementById('switch-bebida').classList.contains('on'),
     tipo, privacidad: privada ? 'privada' : 'publica',
@@ -6360,7 +6386,7 @@ async function publicarEvento(){
     fechaTs, hora: horaStr,
     lugar, lat: exacta ? coords.lat : coords.lat + jitter(), lng: exacta ? coords.lng : coords.lng + jitter(), ubicacionExacta: exacta,
     ciudad: (coords.ciudad || ciudadReferencia() || '').slice(0, 60),
-    precio, pagoInfo, estado: 'publicado',
+    precio, pagoInfo, estado: 'publicado', ...(pagoTitular ? { pagoTitular } : {}),
     horaFin, lineup, linkEntradas: linkVenta ? linkVenta.url.slice(0, 300) : '',
     deOrganizacion: esOrganizacion(state.perfil),
     conQR: esOrganizacion(state.perfil) && document.getElementById('switch-qr').classList.contains('on'),
@@ -6406,12 +6432,19 @@ async function publicarEvento(){
 }
 
 // Deja el formulario de Crear vacío.
+// Pago: ¿la plata la recibe quien publica o otra persona? (productoras que publican para un tercero)
+function quienCobra(){ return document.querySelector('#pago-quien .op.activo')?.dataset.quien || 'yo'; }
+function elegirQuienCobra(q){
+  document.querySelectorAll('#pago-quien .op').forEach(o => o.classList.toggle('activo', o.dataset.quien === q));
+  const c = document.getElementById('campo-titular'); if(c) c.style.display = q === 'otro' ? 'block' : 'none';
+}
 function resetFormularioCrear(){
-  ['f-nombre','f-lugar','f-direccion','f-fecha','f-hora','f-capacidad','f-edad','f-dresscode','f-estilo','f-musica','f-descripcion','f-reglas','f-precio','f-pago-info','f-hora-fin','f-lineup','f-link-entradas','f-ocasion','f-vip','f-insc-fecha','f-insc-hora'].forEach(id=>{
+  ['f-nombre','f-lugar','f-direccion','f-fecha','f-hora','f-capacidad','f-edad','f-dresscode','f-estilo','f-musica','f-descripcion','f-reglas','f-precio','f-pago-info','f-pago-titular','f-hora-fin','f-lineup','f-link-entradas','f-ocasion','f-vip','f-insc-fecha','f-insc-hora'].forEach(id=>{
     const el = document.getElementById(id); if(el) el.value='';
   });
   const setSwitch = (id, on) => { const el = document.getElementById(id); el.classList.toggle('on', on); el.setAttribute('aria-checked', on ? 'true' : 'false'); };
   setSwitch('switch-pago', false); setSwitch('switch-vip', false); setSwitch('switch-qr', true);
+  elegirQuienCobra('yo');
   setSwitch('switch-bebida', true); setSwitch('switch-privacidad', true);
   document.getElementById('campo-precio').style.display = 'none';
   document.getElementById('ayuda-capacidad').style.display = 'none';
@@ -7050,6 +7083,8 @@ async function editarEvento(ev){
   document.getElementById('campo-precio').style.display = pago ? 'block' : 'none';
   document.getElementById('ayuda-capacidad').style.display = pago ? '' : 'none';
   setv('f-precio', pago ? ev.precio : ''); setv('f-pago-info', ev.pagoInfo); setv('f-link-entradas', ev.linkEntradas);
+  setTimeout(refrescarCajasFecha, 0);
+  setv('f-pago-titular', ev.pagoTitular || ''); elegirQuienCobra(ev.pagoTitular ? 'otro' : 'yo');
   setSwitch('switch-vip', ev.listaVip); setSwitch('switch-bebida', ev.bebida);
   state.vipOriginal = [];
   document.getElementById('f-vip').value = '';
@@ -7098,7 +7133,7 @@ async function guardarEdicion(ev, d){
   const cambios = {
     tipo: d.tipo, tipoLugar: d.tipo === 'previa' ? 'Previa' : 'Fiesta', privacidad: d.privacidad,
     nombre: d.nombre, lugar: d.lugar, fechaTs: d.fechaTs, hora: d.hora, horaFin: d.horaFin,
-    capacidad: d.capacidad, capacidadDesconocida: d.capacidadDesconocida, edadMinima: d.edadMinima, precio: d.precio, pagoInfo: d.pagoInfo,
+    capacidad: d.capacidad, capacidadDesconocida: d.capacidadDesconocida, edadMinima: d.edadMinima, precio: d.precio, pagoInfo: d.pagoInfo, ...(d.pagoTitular || ev.pagoTitular ? { pagoTitular: d.pagoTitular || '' } : {}),
     linkEntradas: d.linkEntradas, lineup: d.lineup, categoria: d.categoria, musica: d.musica, ocasion: d.ocasion,
     dresscode: d.dresscode, bebida: d.bebida, listaVip: d.listaVip, imagen: d.imagen, ...(d.imagenGrande ? { fotoGrande: true } : {}),
     descripcion: d.descripcion, reglas: d.reglas, editadoTs: Date.now(),
@@ -7437,4 +7472,22 @@ async function init(){
   });
 }
 
+// En iPhone los <input type="date/time"> se pasan del ancho de su casillero. Los envolvemos en una caja
+// que tiene el borde y recorta lo que sobre; y como iPhone no muestra nada si están vacíos, ponemos una guía.
+function envolverCajasFecha(){
+  if(esIphone()) document.documentElement.classList.add('es-ios');
+  document.querySelectorAll('input[type=date], input[type=time]').forEach(inp => {
+    if(inp.parentElement?.classList.contains('caja-fecha')) return;
+    const caja = document.createElement('span');
+    caja.className = 'caja-fecha';
+    caja.dataset.ph = inp.type === 'date' ? 'dd/mm/aaaa' : (inp.getAttribute('placeholder') || '--:--');
+    inp.parentNode.insertBefore(caja, inp); caja.appendChild(inp);
+    ['input', 'change', 'blur'].forEach(e => inp.addEventListener(e, refrescarCajasFecha));
+  });
+  refrescarCajasFecha();
+}
+function refrescarCajasFecha(){
+  document.querySelectorAll('.caja-fecha').forEach(c => { const i = c.querySelector('input'); c.classList.toggle('vacia', !!i && !i.value); });
+}
+envolverCajasFecha();
 init();
