@@ -1367,8 +1367,8 @@ function salirDeInvitado(){
 // Ventana "Sumate / Necesitás una cuenta" (con el motivo).
 function pedirCuenta(motivo){
   const t = document.getElementById('cuenta-titulo'), x = document.getElementById('cuenta-texto');
-  t.textContent = motivo ? 'Necesitás una cuenta' : 'Sumate a la noche';
-  x.textContent = motivo ? motivo + ' Es gratis y tarda un minuto.' : 'Creá tu cuenta gratis para confirmar a fiestas, armar previas, chatear y ver a dónde van tus amigos.';
+  t.textContent = motivo ? 'Necesitás una cuenta' : 'Sumate a Partazy';
+  x.textContent = motivo ? motivo + ' Es gratis y tarda un minuto.' : 'Creá tu cuenta gratis para anotarte a fiestas, recitales, charlas y todo lo que pasa cerca tuyo, armar tus propios eventos y ver qué hacen tus amigos.';
   const h = document.getElementById('hoja-cuenta');
   if(h.classList.contains('show')) return;
   h.classList.add('show');
@@ -5322,7 +5322,7 @@ function renderHome(){
     titulo1.textContent = 'Más cerca tuyo 📍';
   } else {
     filtrados = filtrarPorChip(base, state.filtroActivoHome);
-    const TIT = { hoy: 'Hoy 🔥', paravos: 'Para vos 🎧', fiestas: 'Fiestas 🪩', previas: 'Previas 🍾', musica: 'Música en vivo 🎤', gastro: 'Gastronomía y ferias 🍽️', charlas: 'Charlas y talleres 💬', cultura: 'Arte y cultura 🎭', deportes: 'Deporte y aire libre ⚽', privadas: 'Privadas abiertas 🔒' };
+    const TIT = { hoy: 'Hoy 🔥', paravos: 'Para vos 🎧', fiestas: 'Fiestas 🪩', previas: 'Previas 🍾', musica: 'Música en vivo 🎤', gastro: 'Gastronomía y ferias 🍽️', charlas: 'Charlas y talleres 💬', cultura: 'Arte y cultura 🎭', deportes: 'Deporte y aire libre ⚽', privadas: 'Con invitación 🔒' };
     titulo1.textContent = TIT[state.filtroActivoHome] || 'Recomendados ✨';
     // Nada esta noche: arriba va lo próximo (así lo recién publicado se ve primero)
     if(state.filtroActivoHome === 'hoy' && !filtrados.length && futuros.length){

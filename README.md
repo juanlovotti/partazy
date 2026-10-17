@@ -2,7 +2,7 @@
 
 Red social de fiestas, previas y boliches: ver qué hay cerca, a dónde van tus amigos, confirmar, armar previas (públicas o privadas), chatear y calificar.
 
-- **En producción:** https://partazy.web.app (dominio propio https://partazy.com en configuración)
+- **En producción:** https://partazy.com (también en https://partazy.web.app)
 - **Stack:** HTML + CSS + JavaScript sin frameworks ni build, sobre **Firebase** (Hosting, Authentication y Cloud Firestore), plan gratuito **Spark**.
 - **Idioma del código y de la app:** español (rioplatense).
 

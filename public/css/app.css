@@ -1540,3 +1540,9 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 .tuto-rayas i:nth-child(3){background:var(--verde); height:3px; animation-delay:.49s;}
 @keyframes tuto-raya{to{transform:none;}}
 @media (prefers-reduced-motion: reduce){ .tuto-rayas i{animation:none; transform:none;} }
+
+/* Cartel "Sumate": logo nuevo con las rayas de colores */
+.cuenta-marca{display:flex; flex-direction:column; align-items:center; gap:10px; margin:2px 0 14px;}
+.lv-cuenta{font-size:30px; --aro:var(--negro-2);}
+.cuenta-marca .tuto-rayas{width:120px; transform:skewX(-14deg); transform-origin:center;}
+.cuenta-marca .tuto-rayas i{transform-origin:center;}

@@ -174,7 +174,7 @@
       <div class="chip" onclick="elegirChipHome(this,'charlas')">Charlas y talleres</div>
       <div class="chip" onclick="elegirChipHome(this,'cultura')">Arte y cultura</div>
       <div class="chip" onclick="elegirChipHome(this,'deportes')">Deportes</div>
-      <div class="chip" onclick="elegirChipHome(this,'privadas')">Privadas abiertas</div>
+      <div class="chip" onclick="elegirChipHome(this,'privadas')">Con invitación 🔒</div>
     </div>
     <div id="home-amigos-fila" style="display:none;"></div>
     <div id="home-aviso-rango"></div>
@@ -1026,10 +1026,10 @@ Ivo Paz +1"></textarea>
 <!-- "Sumate / Necesitás una cuenta": modo invitado -->
 <div class="hoja-bg" id="hoja-cuenta" role="dialog" aria-modal="true" aria-labelledby="cuenta-titulo" onclick="if(event.target===this) cerrarPedirCuenta()"><div class="hoja hoja-cuenta">
   <button class="icon-btn cerrar" onclick="cerrarPedirCuenta()" aria-label="Cerrar">✕</button>
-  <span class="marca-bandera notranslate" translate="no">PARTAZY</span>
-  <h3 id="cuenta-titulo">Sumate a la noche</h3>
-  <p id="cuenta-texto">Creá tu cuenta gratis para confirmar a fiestas, armar previas, chatear y ver a dónde van tus amigos.</p>
-  <div class="ventajas"><span>🎟️ Confirmá tu lugar</span><span>🍾 Armá tu previa</span><span>💬 Chateá</span><span>👥 Mirá a dónde van tus amigos</span></div>
+  <div class="cuenta-marca"><span class="lv lv-cuenta" role="img" aria-label="PARTAZY"><svg class="lv-ico " viewBox="0 0 64 64" aria-hidden="true"><path class="lv-p" d="M10 9a3 3 0 0 1 3-3h21a18 18 0 0 1 0 36H24v13a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3z"/><g class="lv-disco"><circle cx="34" cy="24" r="13.6" class="lv-aro"/><circle cx="34" cy="24" r="12" fill="#0d0b0c"/><circle cx="34" cy="24" r="10.2" fill="none" stroke="#3a3335" stroke-width=".7"/><circle cx="34" cy="24" r="8.4" fill="none" stroke="#3a3335" stroke-width=".7"/><circle cx="34" cy="24" r="6.6" fill="none" stroke="#3a3335" stroke-width=".7"/><path d="M34 24 L40 13.6 A12 12 0 0 1 45.4 20.3 Z" fill="#fff" opacity=".16"/><circle cx="34" cy="24" r="4.3" fill="#F26A1B"/><circle cx="34" cy="24" r="1" fill="#0d0b0c"/></g><path class="lv-onda o1" d="M44 4.5a22 22 0 0 1 12.5 12" /><path class="lv-onda o2" d="M47 -1a28 28 0 0 1 15.5 15"/></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span></span><span class="tuto-rayas" aria-hidden="true"><i></i><i></i><i></i></span></div>
+  <h3 id="cuenta-titulo">Sumate a Partazy</h3>
+  <p id="cuenta-texto">Creá tu cuenta gratis para anotarte a fiestas, recitales, charlas y todo lo que pasa cerca tuyo, armar tus propios eventos y ver qué hacen tus amigos.</p>
+  <div class="ventajas"><span>🎟️ Anotate en un toque</span><span>🎧 Planes para vos</span><span>🎉 Armá tu evento</span><span>👥 Mirá qué hacen tus amigos</span><span>💬 Chateá</span></div>
   <button class="btn btn-primario" onclick="irALogin('crear')">Crear cuenta gratis</button>
   <button class="btn btn-secundario" onclick="irALogin('ingresar')">Ya tengo cuenta · Iniciar sesión</button>
   <button class="seguir" onclick="cerrarPedirCuenta()">Seguir mirando</button>
