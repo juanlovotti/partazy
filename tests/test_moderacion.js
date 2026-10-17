@@ -28,8 +28,8 @@ let fallos = 0; const check = (c, m) => { console.log((c ? '✔ ' : '✘ ') + m)
 (async () => {
   // ---------- Bienvenida animada ----------
   const N = abrir(null); await sleep(300); N.irALogin('ingresar'); await sleep(150);
-  const logo = N.document.querySelector('.logo-anim');
-  check(act(N) === 'bienvenida' && N.document.body.classList.contains('modo-invitado') && logo && logo.querySelectorAll('span').length === 7 && logo.getAttribute('aria-label') === 'PARTAZY', 'sin cuenta mira la app; al ir a ingresar: logo animado P-A-R-T-A-Z-Y sin punto');
+  const logo = N.document.querySelector('#pantalla-bienvenida .lv-login');
+  check(act(N) === 'bienvenida' && N.document.body.classList.contains('modo-invitado') && logo && logo.querySelector('.lv-ico') && logo.querySelector('.lv-txt').textContent === 'artazy' && logo.getAttribute('aria-label') === 'PARTAZY', 'sin cuenta mira la app; al ir a ingresar: el logo nuevo animado');
   check(N.document.querySelectorAll('.eq i').length === 9, 'bienvenida: ecualizador de 9 barras');
 
   // ---------- Registro con @usuario, apodo y normas ----------

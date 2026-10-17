@@ -1,6 +1,6 @@
 # PARTAZY
 
-Red social de eventos: fiestas, previas, recitales, charlas, talleres, ferias, partidos y más. Ver qué hay cerca, a dónde van tus amigos, confirmar, armar eventos (públicos o privados), chatear y calificar.
+Red social de fiestas, previas y boliches: ver qué hay cerca, a dónde van tus amigos, confirmar, armar previas (públicas o privadas), chatear y calificar.
 
 - **En producción:** https://partazy.com (también en https://partazy.web.app)
 - **Stack:** HTML + CSS + JavaScript sin frameworks ni build, sobre **Firebase** (Hosting, Authentication y Cloud Firestore), plan gratuito **Spark**.
@@ -63,4 +63,9 @@ Hay dos sitios de Hosting: `partazy` (el real) y `partazy-5555d` (redirige al re
 ## Reglas de trabajo
 
 1. **Toda lectura y escritura a Firestore pasa por `DataService`** (en `js/app.js`). Nunca llamar a `firebase.firestore()` directo desde la interfaz.
-2. **Todo texto que viene de usuarios se escapa con `esc()`** antes de meterlo en
+2. **Todo texto que viene de usuarios se escapa con `esc()`** antes de meterlo en `innerHTML`.
+3. **La seguridad está en `firestore.rules`.** La app puede ocultar botones, pero lo que realmente se permite o no lo deciden las reglas. Cualquier función nueva que escriba en la base necesita su regla.
+4. **Si agregás una función, agregá su prueba** en `tests/` y corré `npm test` antes de publicar.
+5. Las funciones de `app.js` son globales a propósito: el HTML las llama con `onclick="..."`.
+
+Más detalle en [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md). Lo que falta hacer, en [docs/PENDIENTES.md](docs/PENDIENTES.md).

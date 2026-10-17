@@ -4467,19 +4467,7 @@ function cerrarReferencias(){ document.getElementById('modal-referencias').class
 
 // ---------- Tutorial de bienvenida ----------
 const LOGO_TUTO = `<div class="tuto-logo-wrap" aria-hidden="true">
-  <svg class="tuto-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><filter id="grano-tuto"><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0"/><feComposite in2="SourceGraphic" operator="in"/></filter><clipPath id="marco-tuto"><rect width="64" height="64" rx="15"/></clipPath></defs>
-<rect width="64" height="64" rx="15" fill="#0A0809"/><g><g clip-path="url(#marco-tuto)"><g transform="skewX(-14) translate(9 0)">
-<rect class="raya r1" x="-14" y="36" width="96" height="7.5" fill="#F26A1B"/>
-<rect class="raya r2" x="-14" y="45.5" width="96" height="2.8" fill="#F4EFEC"/>
-<rect class="raya r3" x="-14" y="50.3" width="96" height="2.8" fill="#4CB944"/></g></g>
-<g class="ico-p" transform="translate(5.5 9.5) scale(.8)">
-<path d="M10 9a3 3 0 0 1 3-3h21a18 18 0 0 1 0 36H24v13a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3z" fill="#F4EFEC" stroke="#0A0809" stroke-width="4.5" paint-order="stroke" stroke-linejoin="round"/>
-<g class="ico-disco"><circle cx="34" cy="24" r="13.6" fill="#F4EFEC"/><circle cx="34" cy="24" r="12" fill="#0d0b0c"/>
-<circle cx="34" cy="24" r="10.2" fill="none" stroke="#3a3335" stroke-width=".7"/><circle cx="34" cy="24" r="8.4" fill="none" stroke="#3a3335" stroke-width=".7"/><circle cx="34" cy="24" r="6.6" fill="none" stroke="#3a3335" stroke-width=".7"/>
-<path d="M34 24 L40 13.6 A12 12 0 0 1 45.4 20.3 Z" fill="#fff" opacity=".16"/><circle cx="34" cy="24" r="4.3" fill="#F26A1B"/><circle cx="34" cy="24" r="1" fill="#0d0b0c"/></g>
-<path class="ico-onda o1" d="M44 4.5a22 22 0 0 1 12.5 12" fill="none" stroke="#F26A1B" stroke-width="4.6" stroke-linecap="round"/>
-<path class="ico-onda o2" d="M47 -1a28 28 0 0 1 15.5 15" fill="none" stroke="#4CB944" stroke-width="4.6" stroke-linecap="round"/></g></g>
-<rect width="64" height="64" rx="15" fill="#fff" filter="url(#grano-tuto)" opacity=".16"/></svg>
+  <svg class="tuto-logo" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0E0C0D"/><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg>
   <span class="tuto-chispa c1">✦</span><span class="tuto-chispa c2">✦</span><span class="tuto-chispa c3">✦</span>
 </div>`;
 // ¿Se está viendo en compu (menú a la izquierda) o en celu (barra abajo)?

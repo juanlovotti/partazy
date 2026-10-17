@@ -14,24 +14,26 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<!-- Una sola dirección: si entran por partazy.web.app (o las otras de Firebase), los mandamos a partazy.com -->
+<script>(function(){var h=location.hostname;if(h==='partazy.web.app'||h==='partazy.firebaseapp.com'||h==='www.partazy.com'){location.replace('https://partazy.com'+location.pathname+location.search+location.hash);}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="theme-color" content="#141214">
 <!-- La app es oscura: así el "modo oscuro" de Samsung/Chrome no le cambia los colores (logo, naranja) -->
 <meta name="color-scheme" content="dark only">
 <meta name="darkreader-lock">
-<title>PARTAZY · Fiestas, previas y boliches cerca tuyo</title>
-<meta name="description" content="Encontrá fiestas, previas y boliches cerca tuyo, mirá a dónde van tus amigos y armá tu plan de esta noche. Para mayores de 18.">
+<title>PARTAZY · Todo lo que pasa cerca tuyo</title>
+<meta name="description" content="Fiestas, previas, recitales, charlas, ferias y todo lo que pasa cerca tuyo. Mirá a dónde van tus amigos y armá tu plan.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="PARTAZY">
-<meta property="og:title" content="PARTAZY · Fiestas, previas y boliches cerca tuyo">
-<meta property="og:description" content="Mirá qué hay esta noche, a dónde van tus amigos y armá tu previa. Sumate gratis.">
-<meta property="og:url" content="https://partazy.web.app/">
-<meta property="og:image" content="https://partazy.web.app/og-partazy.png">
+<meta property="og:title" content="PARTAZY · Todo lo que pasa cerca tuyo">
+<meta property="og:description" content="Fiestas, recitales, charlas y más. Mirá a dónde van tus amigos y armá tu plan. Sumate gratis.">
+<meta property="og:url" content="https://partazy.com/">
+<meta property="og:image" content="https://partazy.com/og-partazy.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="es_AR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://partazy.web.app/og-partazy.png">
+<meta name="twitter:image" content="https://partazy.com/og-partazy.png">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="/icono-180.png">
@@ -49,12 +51,22 @@
 <link rel="stylesheet" href="/css/app.css">
 </head>
 <body>
+<!-- Logo: formas compartidas (la P, el punto, el degradé y el difuminado del tornasol) -->
+<svg class="defs-logo" width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+  <defs>
+    <clipPath id="ptz-p"><path d="M20 13a2 2 0 0 1 2-2h12a14 14 0 0 1 0 28h-4v12a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2z M34 19.5a5.5 5.5 0 1 1 0 11h-4v-11z" clip-rule="evenodd"/></clipPath>
+    <clipPath id="ptz-c"><circle cx="10" cy="10" r="10"/></clipPath>
+    <linearGradient id="ptz-base" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8B411"/><stop offset=".55" stop-color="#F26A1B"/><stop offset="1" stop-color="#4CB944"/></linearGradient>
+    <filter id="ptz-blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4.5"/></filter>
+    <filter id="ptz-blur2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+</svg>
 <div id="gt-oculto" style="display:none"></div>
 
 <!-- Loader inicial -->
 <div class="loader" id="loader">
   <!-- Logo animado: el vinilo de la P gira mientras carga y las letras aparecen de a una -->
-  <div class="lv lv-carga" role="img" aria-label="PARTAZY"><svg class="lv-ico " viewBox="0 0 64 64" aria-hidden="true"><path class="lv-p" d="M10 9a3 3 0 0 1 3-3h21a18 18 0 0 1 0 36H24v13a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3z"/><g class="lv-disco"><circle cx="34" cy="24" r="13.6" class="lv-aro"/><circle cx="34" cy="24" r="12" fill="#0d0b0c"/><circle cx="34" cy="24" r="10.2" fill="none" stroke="#3a3335" stroke-width=".7"/><circle cx="34" cy="24" r="8.4" fill="none" stroke="#3a3335" stroke-width=".7"/><circle cx="34" cy="24" r="6.6" fill="none" stroke="#3a3335" stroke-width=".7"/><path d="M34 24 L40 13.6 A12 12 0 0 1 45.4 20.3 Z" fill="#fff" opacity=".16"/><circle cx="34" cy="24" r="4.3" fill="#F26A1B"/><circle cx="34" cy="24" r="1" fill="#0d0b0c"/></g><path class="lv-onda o1" d="M44 4.5a22 22 0 0 1 12.5 12" /><path class="lv-onda o2" d="M47 -1a28 28 0 0 1 15.5 15"/></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span></div>
+  <div class="lv lv-carga" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></div>
   <div style="font-family:var(--font-mono); font-size:11px; color:var(--gris); letter-spacing:2px;" id="loader-txt">CONECTANDO...</div>
 </div>
 
@@ -65,9 +77,9 @@
     <div class="auth-wrap">
       <button class="link-btn btn-seguir-mirando" onclick="seguirMirando()" style="align-self:flex-start; margin-bottom:8px; color:var(--gris); font-weight:600;">‹ Seguir mirando sin cuenta</button>
       <div class="auth-hero">
-        <h1 class="logo-anim marca-bandera notranslate" translate="no" aria-label="PARTAZY"><span style="--i:0">P</span><span style="--i:1">A</span><span style="--i:2">R</span><span style="--i:3">T</span><span style="--i:4">A</span><span style="--i:5">Z</span><span style="--i:6">Y</span></h1>
+        <h1 class="logo-ingreso" aria-label="PARTAZY"><span class="lv lv-login" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></span></h1>
         <div class="eq" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i><i style="--i:8"></i></div>
-        <p class="tagline">Fiestas, boliches y previas cerca tuyo.<br>Encontrá tu plan de esta noche.</p>
+        <p class="tagline">Fiestas, recitales, charlas y todo lo que pasa cerca tuyo.<br>Encontrá tu plan de hoy.</p>
       </div>
       <button class="btn btn-google" id="btn-google">
         <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.6 13.2l7.8 6C12.3 13.4 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.8c-.5-1.5-.8-3.1-.8-4.8s.3-3.3.8-4.8l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.6 10.8l7.8-6z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.7-4.2-13.6-9.9l-7.8 6C6.6 42.6 14.6 48 24 48z"/></svg>
@@ -141,7 +153,7 @@
   <!-- ============ HOME ============ -->
   <div class="screen" id="pantalla-home">
     <div class="topbar">
-      <div class="logo"><span class="lv lv-inicio" role="img" aria-label="PARTAZY"><svg class="lv-ico " viewBox="0 0 64 64" aria-hidden="true"><path class="lv-p" d="M10 9a3 3 0 0 1 3-3h21a18 18 0 0 1 0 36H24v13a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3z"/><g class="lv-disco"><circle cx="34" cy="24" r="13.6" class="lv-aro"/><circle cx="34" cy="24" r="12" fill="#0d0b0c"/><circle cx="34" cy="24" r="10.2" fill="none" stroke="#3a3335" stroke-width=".7"/><circle cx="34" cy="24" r="8.4" fill="none" stroke="#3a3335" stroke-width=".7"/><circle cx="34" cy="24" r="6.6" fill="none" stroke="#3a3335" stroke-width=".7"/><path d="M34 24 L40 13.6 A12 12 0 0 1 45.4 20.3 Z" fill="#fff" opacity=".16"/><circle cx="34" cy="24" r="4.3" fill="#F26A1B"/><circle cx="34" cy="24" r="1" fill="#0d0b0c"/></g><path class="lv-onda o1" d="M44 4.5a22 22 0 0 1 12.5 12" /><path class="lv-onda o2" d="M47 -1a28 28 0 0 1 15.5 15"/></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span></span></div>
+      <div class="logo"><span class="lv lv-inicio" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></span></div>
       <div class="buscador-mini" role="button" tabindex="0" onclick="irABuscar()" aria-label="Buscar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>Buscar eventos, fiestas, charlas...</span></div>
       <div class="topbar-acciones">
         <div class="icon-btn btn-buscar-mini" role="button" tabindex="0" onclick="irABuscar()" aria-label="Buscar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
@@ -742,7 +754,7 @@ Ivo Paz +1"></textarea>
       <p><b>Identificación del proveedor</b> (art. 4 Ley 24.240 y art. 1100 CCyC): PARTAZY, Ciudad de Córdoba, República Argentina, correo de contacto <span class="mail-contacto"></span> (en adelante, "PARTAZY").</p>
       <p class="legal-aviso">LEA ATENTAMENTE ESTOS TÉRMINOS Y CONDICIONES (en adelante, los "Términos"). EL REGISTRO Y EL USO DE LA PLATAFORMA IMPLICAN SU ACEPTACIÓN ÍNTEGRA. QUIEN NO ESTÉ DE ACUERDO DEBERÁ ABSTENERSE DE USARLA.</p>
       <h3>1. DEFINICIONES</h3>
-      <p><b class="num">1.1.</b> Plataforma: el sitio web y aplicación web accesible en partazy.web.app y sus subdominios, funcionalidades, chats, notificaciones y herramientas.</p>
+      <p><b class="num">1.1.</b> Plataforma: el sitio web y aplicación web accesible en partazy.com y sus subdominios, funcionalidades, chats, notificaciones y herramientas.</p>
       <p><b class="num">1.2.</b> Usuario: toda persona que accede a la Plataforma o se registra, ya sea como Persona o como Organizador.</p>
       <p><b class="num">1.3.</b> Asistente: Usuario que confirma, solicita o adquiere acceso a un Evento.</p>
       <p><b class="num">1.4.</b> Organizador: Usuario que publica o gestiona un Evento, sea persona humana o jurídica (productoras, boliches, bares, salones, centros de estudiantes, DJs/artistas u otros), incluyendo al Anfitrión que ofrece su domicilio o espacio particular.</p>
@@ -929,7 +941,7 @@ Ivo Paz +1"></textarea>
 
   <!-- ============ NAVBAR ============ -->
   <nav class="navbar" aria-label="Navegación principal">
-    <div class="nav-marca solo-escritorio" role="button" tabindex="0" onclick="ir('home')" aria-label="PARTAZY · Inicio"><span class="lv lv-nav"><svg class="lv-ico " viewBox="0 0 64 64" aria-hidden="true"><path class="lv-p" d="M10 9a3 3 0 0 1 3-3h21a18 18 0 0 1 0 36H24v13a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3z"/><g class="lv-disco"><circle cx="34" cy="24" r="13.6" class="lv-aro"/><circle cx="34" cy="24" r="12" fill="#0d0b0c"/><circle cx="34" cy="24" r="10.2" fill="none" stroke="#3a3335" stroke-width=".7"/><circle cx="34" cy="24" r="8.4" fill="none" stroke="#3a3335" stroke-width=".7"/><circle cx="34" cy="24" r="6.6" fill="none" stroke="#3a3335" stroke-width=".7"/><path d="M34 24 L40 13.6 A12 12 0 0 1 45.4 20.3 Z" fill="#fff" opacity=".16"/><circle cx="34" cy="24" r="4.3" fill="#F26A1B"/><circle cx="34" cy="24" r="1" fill="#0d0b0c"/></g><path class="lv-onda o1" d="M44 4.5a22 22 0 0 1 12.5 12" /><path class="lv-onda o2" d="M47 -1a28 28 0 0 1 15.5 15"/></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span></span></div>
+    <div class="nav-marca solo-escritorio" role="button" tabindex="0" onclick="ir('home')" aria-label="PARTAZY · Inicio"><span class="lv lv-nav"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></span></div>
     <button class="nav-toggle solo-escritorio" id="nav-toggle" onclick="alternarNav()" aria-label="Achicar el menú" title="Achicar el menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
     <button class="nav-item activo" data-nav="home" onclick="ir('home')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
@@ -1026,7 +1038,7 @@ Ivo Paz +1"></textarea>
 <!-- "Sumate / Necesitás una cuenta": modo invitado -->
 <div class="hoja-bg" id="hoja-cuenta" role="dialog" aria-modal="true" aria-labelledby="cuenta-titulo" onclick="if(event.target===this) cerrarPedirCuenta()"><div class="hoja hoja-cuenta">
   <button class="icon-btn cerrar" onclick="cerrarPedirCuenta()" aria-label="Cerrar">✕</button>
-  <div class="cuenta-marca"><span class="lv lv-cuenta" role="img" aria-label="PARTAZY"><svg class="lv-ico " viewBox="0 0 64 64" aria-hidden="true"><path class="lv-p" d="M10 9a3 3 0 0 1 3-3h21a18 18 0 0 1 0 36H24v13a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3z"/><g class="lv-disco"><circle cx="34" cy="24" r="13.6" class="lv-aro"/><circle cx="34" cy="24" r="12" fill="#0d0b0c"/><circle cx="34" cy="24" r="10.2" fill="none" stroke="#3a3335" stroke-width=".7"/><circle cx="34" cy="24" r="8.4" fill="none" stroke="#3a3335" stroke-width=".7"/><circle cx="34" cy="24" r="6.6" fill="none" stroke="#3a3335" stroke-width=".7"/><path d="M34 24 L40 13.6 A12 12 0 0 1 45.4 20.3 Z" fill="#fff" opacity=".16"/><circle cx="34" cy="24" r="4.3" fill="#F26A1B"/><circle cx="34" cy="24" r="1" fill="#0d0b0c"/></g><path class="lv-onda o1" d="M44 4.5a22 22 0 0 1 12.5 12" /><path class="lv-onda o2" d="M47 -1a28 28 0 0 1 15.5 15"/></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span></span><span class="tuto-rayas" aria-hidden="true"><i></i><i></i><i></i></span></div>
+  <div class="cuenta-marca"><span class="lv lv-cuenta" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></span></div>
   <h3 id="cuenta-titulo">Sumate a Partazy</h3>
   <p id="cuenta-texto">Creá tu cuenta gratis para anotarte a fiestas, recitales, charlas y todo lo que pasa cerca tuyo, armar tus propios eventos y ver qué hacen tus amigos.</p>
   <div class="ventajas"><span>🎟️ Anotate en un toque</span><span>🎧 Planes para vos</span><span>🎉 Armá tu evento</span><span>👥 Mirá qué hacen tus amigos</span><span>💬 Chateá</span></div>

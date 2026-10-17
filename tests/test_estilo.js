@@ -72,7 +72,7 @@ const llenar=(n)=>{ $('f-nombre').value=n; $('f-lugar').value='Belgrano 800, Gü
   const pie=w.document.querySelector('.pie-ig');
   ok(pie && /instagram\.com\/partazy/.test(pie.getAttribute('href')), 'footer con el logo de Instagram que lleva a @partazy');
   ok(w.document.querySelectorAll('[data-idioma]').length>=3 && [...w.document.querySelectorAll('[data-idioma]')].some(x=>x.dataset.idioma==='pt'), 'selector de idioma (español / inglés / portugués)');
-  const logos=[...w.document.querySelectorAll('.lv')]; ok(logos.length>=3 && logos.every(m=>m.querySelector('.lv-ico .lv-disco') && m.querySelector('.lv-txt').textContent==='artazy') && !w.document.querySelector('.punto-beat'), 'el logo nuevo (la P con vinilo + "artazy") está en la carga, el inicio y el menú');
-  ok(!w.document.querySelector('#loader .spinner'), 'en la carga gira el vinilo en vez de la ruedita');
+  const logos=[...w.document.querySelectorAll('.lv')]; ok(logos.length>=3 && logos.every(m=>m.querySelector('.lv-ico .lv-b') && m.querySelector('.lv-punto') && m.querySelector('.lv-txt').textContent==='artazy') && w.document.getElementById('ptz-p'), 'el logo nuevo (la P tornasol + "artazy" + punto verde) está en la carga, el inicio y el menú');
+  ok(!w.document.querySelector('#loader .spinner'), 'en la carga se anima el logo en vez de la ruedita');
   console.log(f?'\nFALLAS: '+f:'\nTODO OK'); process.exit(f?1:0);
 })();

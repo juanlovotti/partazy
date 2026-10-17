@@ -52,7 +52,7 @@
       "redirects": [
         {
           "source": "**",
-          "destination": "https://partazy.web.app/",
+          "destination": "https://partazy.com/",
           "type": 301
         }
       ]

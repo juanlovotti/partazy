@@ -267,15 +267,7 @@
   @keyframes luz-izq{from{transform:rotate(28deg); opacity:.45;} to{transform:rotate(-6deg); opacity:.95;}}
   @keyframes luz-der{from{transform:rotate(-30deg); opacity:.9;} to{transform:rotate(4deg); opacity:.4;}}
   #pantalla-bienvenida .auth-wrap{position:relative; z-index:1;}
-  .logo-anim{font-family:var(--font-display); text-transform:uppercase; font-weight:700; font-weight:400; font-size:64px; letter-spacing:2px; line-height:1; display:flex; justify-content:center; animation:neon 4s 1.6s infinite;}
-  .logo-anim span{display:inline-block; opacity:0; transform:translateY(-46px) scale(1.25); filter:blur(8px);
-    animation:caer .62s cubic-bezier(.2,1.5,.4,1) forwards; animation-delay:calc(var(--i) * 85ms + 150ms);}
-  .logo-anim .punto-beat{color:var(--rojo);
-    animation:caer .62s cubic-bezier(.2,1.5,.4,1) forwards, latido .5s ease-out infinite;
-    animation-delay:calc(var(--i) * 85ms + 150ms), 1.2s;}
   @keyframes caer{to{opacity:1; transform:none; filter:none;}}
-  @keyframes latido{0%{transform:scale(1.55); text-shadow:0 0 22px rgba(242,106,27,.95), 0 0 6px #fff;} 60%{transform:scale(1); text-shadow:0 0 6px rgba(242,106,27,.5);} 100%{transform:scale(1);}}
-  @keyframes neon{0%,18%,22%,62%,64%,100%{text-shadow:0 0 18px rgba(242,106,27,.35);} 20%,63%{text-shadow:none; opacity:.85;}}
   .eq{display:flex; justify-content:center; align-items:flex-end; gap:5px; height:26px; margin:14px auto 4px; opacity:0; animation:aparecer .5s 1s forwards;}
   .eq i{width:5px; height:100%; border-radius:3px; background:linear-gradient(180deg, var(--verde), var(--rojo)); transform-origin:bottom;
     animation:eq .9s ease-in-out infinite; animation-delay:calc(var(--i) * -0.17s);}
@@ -284,8 +276,8 @@
   @keyframes aparecer{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
   .punto-late{display:inline-block; animation:latido .5s ease-out infinite;}
   @media (prefers-reduced-motion: reduce){
-    #pantalla-bienvenida::before, #pantalla-bienvenida::after, .logo-anim, .eq i, .punto-late{animation:none;}
-    .logo-anim span, .logo-anim .punto-beat, .eq, .tagline{animation:none; opacity:1; transform:none; filter:none;}
+    #pantalla-bienvenida::before, #pantalla-bienvenida::after, .eq i, .punto-late{animation:none;}
+    .eq, .tagline{animation:none; opacity:1; transform:none; filter:none;}
   }
 
   /* Perfil: foto, @usuario, apodo */
@@ -493,11 +485,12 @@
   /* Entrada escalonada de las casillas al abrir cada pantalla */
   @keyframes subir{from{opacity:0; transform:translateY(18px) scale(.97);} to{opacity:1; transform:none;}}
   @keyframes deslizar{from{opacity:0; transform:translateX(46px);} to{opacity:1; transform:none;}}
-  .screen.entrando .fila-scroll{animation:deslizar .7s var(--ease) both;}
+  /* las tarjetas entran deslizando DENTRO de su fila (antes se movía la fila entera y la pantalla se ensanchaba un instante) */
+  .screen.entrando .fila-scroll > *{animation:deslizar .7s var(--ease) both;}
   .screen.entrando .saludo,.screen.entrando .buscador,.screen.entrando .chips,.screen.entrando .ticker,
   .screen.entrando .tarjeta-h,.screen.entrando .item-simple,.screen.entrando .bloque,.screen.entrando .campo,.screen.entrando .switch-row{animation:subir .6s var(--ease) both;}
   .screen.entrando .buscador{animation-delay:.05s;} .screen.entrando .ticker{animation-delay:.1s;} .screen.entrando .chips{animation-delay:.14s;}
-  .screen.entrando .fila-scroll{animation-delay:.18s;}
+  .screen.entrando .fila-scroll > *{animation-delay:.18s;}
   .screen.entrando :is(.tarjeta-h,.item-simple,.bloque,.campo,.switch-row):nth-child(2){animation-delay:.06s;}
   .screen.entrando :is(.tarjeta-h,.item-simple,.bloque,.campo,.switch-row):nth-child(3){animation-delay:.12s;}
   .screen.entrando :is(.tarjeta-h,.item-simple,.bloque,.campo,.switch-row):nth-child(4){animation-delay:.18s;}
@@ -619,11 +612,6 @@
     40%{transform:translateY(0) rotate(0) scale(1.05,.95);}
     60%{transform:translateY(-9px) rotate(7deg) scale(.97,1.04);}
     80%{transform:translateY(0) rotate(0) scale(1.05,.95);}}
-  .tuto-logo .raya{transform:translateX(-110%); animation:raya-entra .55s var(--ease) forwards;}
-  .tuto-logo .raya.r1{animation-delay:.35s;} .tuto-logo .raya.r2{animation-delay:.47s;} .tuto-logo .raya.r3{animation-delay:.59s;}
-  @keyframes raya-entra{to{transform:none;}}
-  .tuto-logo .trazo{stroke-dasharray:100; stroke-dashoffset:100; animation:dibujar .7s ease-out .5s forwards;}
-  @keyframes dibujar{to{stroke-dashoffset:0;}}
   .tuto-chispa{position:absolute; color:var(--rojo); font-size:16px; opacity:0; animation:chispa 1.3s ease-out infinite;}
   .tuto-chispa.c1{top:-4px; right:-6px; animation-delay:1s;}
   .tuto-chispa.c2{bottom:8px; left:-14px; color:var(--verde); font-size:12px; animation-delay:1.45s;}
@@ -742,9 +730,6 @@
     .navbar{transition:width .45s cubic-bezier(.4,0,.2,1), padding .45s cubic-bezier(.4,0,.2,1);}
     .phone{transition:padding-left .45s cubic-bezier(.4,0,.2,1);}
     /* Logo del menú achicado: la P sola con las rayas de la marca */
-    .nav-marca .nav-logo-mini{display:none;}
-    .nav-logo-mini{font-family:var(--font-display); font-weight:800; font-size:40px; line-height:1; letter-spacing:0;}
-    .nav-logo-mini.marca-bandera::before{left:-.38em; right:-.22em; top:52%; height:.4em;}
     .nav-toggle{position:absolute; top:34px; right:-15px; width:30px; height:30px; border-radius:50%; background:var(--negro-2); border:1px solid var(--gris-linea); color:var(--hueso); align-items:center; justify-content:center; cursor:pointer; z-index:3; box-shadow:0 4px 12px rgba(0,0,0,.4); padding:0;}
     .nav-toggle:hover{background:var(--negro-3); color:var(--rojo);}
     .nav-toggle svg{width:15px; height:15px; transition:transform .45s cubic-bezier(.4,0,.2,1);}
@@ -753,9 +738,6 @@
     .phone.nav-mini.sin-nav{padding-left:0;}
     .phone.nav-mini .navbar{width:88px; padding:22px 12px 20px;}
     .phone.nav-mini .nav-marca{padding:0 0 22px; display:flex !important; justify-content:center;}
-    .phone.nav-mini .nav-marca .marca-bandera:not(.nav-logo-mini){display:none;}
-    .phone.nav-mini .nav-marca .nav-logo-mini{display:inline-flex; animation:aparece-suave .45s .12s both;}
-    .phone:not(.nav-mini) .nav-marca .marca-bandera, .phone:not(.nav-mini) .nav-pie{animation:aparece-suave .4s .2s both;}
     /* Los textos del menú se achican y agrandan junto con el ancho, sin saltos */
     .navbar .nav-item{white-space:nowrap; overflow:hidden; transition:font-size .45s cubic-bezier(.4,0,.2,1), gap .45s cubic-bezier(.4,0,.2,1), padding .45s cubic-bezier(.4,0,.2,1), background-color var(--t-rapida), opacity var(--t-rapida);}
     .navbar .nav-item.crear{overflow:visible;}
@@ -799,7 +781,6 @@
     #pantalla-bienvenida .auth-wrap{display:grid; grid-template-columns:minmax(0, 1.15fr) 400px; column-gap:90px; row-gap:14px; align-content:center; padding:40px 60px;}
     #pantalla-bienvenida .auth-hero{grid-column:1; grid-row:1 / span 9; text-align:left; align-self:center; margin:0;}
     #pantalla-bienvenida .auth-wrap > *:not(.auth-hero){grid-column:2;}
-    #pantalla-bienvenida .logo-anim{font-size:118px; justify-content:flex-start;}
     #pantalla-bienvenida .eq{justify-content:flex-start; margin-left:4px;}
     #pantalla-bienvenida .tagline{font-size:19px; max-width:460px;}
     #pantalla-registro .auth-wrap{max-width:560px;}
@@ -921,19 +902,6 @@
   .gente-vacio{margin:0 20px 14px; font-size:12.5px; color:var(--gris);}
   input[type="search"]::-webkit-search-cancel-button{-webkit-appearance:none;}
 
-  /* Bandera de la marca: las rayas del ícono detrás de PARTAZY */
-  .marca-bandera{position:relative; display:inline-flex; align-items:baseline; isolation:isolate; padding:0 .12em 0 .04em; color:var(--hueso);
-    -webkit-text-stroke:.05em var(--negro); paint-order:stroke fill;}
-  .marca-bandera::before{content:""; position:absolute; z-index:-1; left:-.22em; right:-.5em; top:50%; height:.52em; transform:skewX(-14deg);
-    background:linear-gradient(to bottom, var(--rojo) 0 54%, transparent 54% 64%, var(--hueso) 64% 76%, transparent 76% 86%, var(--verde) 86% 100%);
-    -webkit-mask-image:linear-gradient(90deg, transparent, #000 10%, #000 88%, transparent); mask-image:linear-gradient(90deg, transparent, #000 10%, #000 88%, transparent);
-    animation:bandera-entra .9s var(--ease) both;}
-  .marca-bandera .punto{-webkit-text-stroke:0; color:var(--rojo);}
-  .nav-marca span.marca-bandera{color:var(--hueso);} .nav-marca .marca-bandera .punto{color:var(--rojo);}
-  @keyframes bandera-entra{from{clip-path:inset(0 100% 0 0);} to{clip-path:inset(0 0 0 0);}}
-  .logo-anim.marca-bandera::before{top:56%; height:.42em; animation-delay:1.3s;}
-  .logo-anim.marca-bandera{-webkit-text-stroke:0; padding:0 .2em;}
-  @media (prefers-reduced-motion: reduce){ .marca-bandera::before{animation:none;} }
 
   /* Tipo de evento: tarjetitas con ícono */
   .tipos-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:8px;}
@@ -1059,7 +1027,6 @@
   .hoja-cuenta{padding:26px 22px calc(22px + env(safe-area-inset-bottom)); text-align:center; position:relative; overflow:hidden;}
   .hoja-cuenta::before{content:""; position:absolute; inset:-40% -20% auto; height:220px; background:radial-gradient(closest-side, rgba(242,106,27,.28), transparent); pointer-events:none;}
   .hoja-cuenta .cerrar{position:absolute; top:12px; right:12px;}
-  .hoja-cuenta .marca-bandera{font-family:var(--font-display); font-size:34px; letter-spacing:2px; display:inline-block; margin:6px 0 14px;}
   .hoja-cuenta h3{font-family:var(--font-display); font-size:26px; letter-spacing:.5px; text-transform:uppercase; margin:0 0 8px; line-height:1.05;}
   .hoja-cuenta p{color:var(--gris); font-size:13.5px; line-height:1.55; margin:0 auto 20px; max-width:330px;}
   .hoja-cuenta .ventajas{display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin:0 0 22px;}
@@ -1292,7 +1259,6 @@
 #rango-estado b{color:var(--blanco);}
 #rango-estado{line-height:1.5;}
 /* Bienvenida: las letras caen sin desenfoque (en algunos celus el blur quedaba trabado en algunas letras) */
-.logo-anim span{filter:none !important; will-change:transform, opacity;}
 @keyframes caer{to{opacity:1; transform:none;}}
 html, body{overflow-x:hidden;}
 
@@ -1320,24 +1286,10 @@ html, body{overflow-x:hidden;}
    ========================================================= */
 .lv{display:inline-flex; align-items:center; gap:.3em; font-family:'Unbounded', var(--font-display); font-weight:800; letter-spacing:-.02em; color:var(--hueso); line-height:1; text-transform:none; --aro:var(--negro);}
 .lv-ico{width:1.45em; height:1.45em; flex:none; overflow:visible; animation:lv-ico .7s cubic-bezier(.2,.9,.3,1.3) both;}
-.lv-ico .lv-p{fill:var(--hueso);}
-.lv-ico .lv-aro{fill:var(--aro);}
-.lv-ico .lv-disco{transform-box:view-box; transform-origin:34px 24px; animation:lv-gira 1.4s cubic-bezier(.3,.6,.4,1) .15s 1 both;}
-.lv-ico .lv-onda{fill:none; stroke-width:4.2; stroke-linecap:round; opacity:0; animation:lv-onda .5s ease-out both;}
-.lv-ico .o1{stroke:var(--rojo); animation-delay:.75s;} .lv-ico .o2{stroke:var(--verde); animation-delay:.9s;}
 .lv-txt{display:inline-flex; font-size:1em;}
-.lv-txt i{font-style:normal; display:inline-block; animation:lv-letra .55s cubic-bezier(.2,.9,.3,1.25) both; animation-delay:calc(var(--i) * 55ms + 250ms);}
-@keyframes lv-ico{from{opacity:0; transform:scale(.3) rotate(-35deg);} to{opacity:1; transform:none;}}
-@keyframes lv-gira{from{transform:rotate(-540deg);} to{transform:rotate(0);}}
-@keyframes lv-onda{from{opacity:0; transform:translate(-3px, 3px);} to{opacity:1; transform:none;}}
-@keyframes lv-letra{from{opacity:0; transform:translateY(.55em) scale(.85);} to{opacity:1; transform:none;}}
 /* Carga: el disco sigue girando y las ondas laten */
 .loader .lv-carga{font-size:38px; --aro:var(--fondo);}
-.loader .lv-carga .lv-disco{animation:lv-gira-loop 1.1s linear infinite;}
-.loader .lv-carga .lv-onda{animation:lv-late 1.1s ease-in-out infinite;}
 .loader .lv-carga .o2{animation-delay:.25s;}
-@keyframes lv-gira-loop{to{transform:rotate(360deg);}}
-@keyframes lv-late{0%,100%{opacity:.25;} 50%{opacity:1;}}
 #loader-txt{margin-top:6px;}
 /* Inicio (celu) y menú (compu) */
 .topbar .logo .lv-inicio{font-size:21px;}
@@ -1387,8 +1339,6 @@ html, body{overflow-x:hidden;}
 .lv{gap:.04em;}
 .lv-txt i{animation:lv-baile .7s cubic-bezier(.3,1.6,.5,1) both; animation-delay:calc(var(--i) * 70ms + 80ms);}
 .lv-ico{animation:lv-llega .75s cubic-bezier(.2,1.2,.3,1) .55s both; margin-right:.02em;}
-.lv-ico .lv-disco{animation-delay:.6s;}
-.lv-ico .o1{animation-delay:1.15s;} .lv-ico .o2{animation-delay:1.3s;}
 @keyframes lv-baile{0%{opacity:0; transform:translateY(-.9em) rotate(-25deg) scale(.6);} 45%{opacity:1; transform:translateY(.18em) rotate(12deg) scale(1.08);} 70%{transform:translateY(-.08em) rotate(-6deg);} 100%{opacity:1; transform:none;}}
 @keyframes lv-llega{0%{opacity:0; transform:translateX(-2.2em) rotate(-200deg) scale(.4);} 70%{opacity:1; transform:translateX(.08em) rotate(10deg) scale(1.06);} 100%{opacity:1; transform:none;}}
 /* En la carga, después de entrar, las letras siguen moviéndose suave (como bailando) */
@@ -1511,7 +1461,6 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 
 /* ===== Ronda 17/10 (2) ===== */
 /* La P va pegada a "artazy" (la caja del ícono tiene aire a la derecha) */
-.lv-ico{margin-right:-.2em;}
 /* Instagram y Facebook juntos en el pie */
 .pie-redes{display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:0 auto;}
 .pie-redes .pie-ig{margin:0;}
@@ -1519,10 +1468,6 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 .nav-pie .pie-redes{justify-content:flex-start; margin:0 0 4px;}
 .nav-pie .pie-redes .pie-ig{align-self:auto;}
 /* Logo del tutorial: el disco gira y las ondas laten */
-.tuto-logo .ico-disco{transform-box:view-box; transform-origin:34px 24px; animation:lv-gira 1.4s cubic-bezier(.3,.6,.4,1) .4s 1 both;}
-.tuto-logo .ico-onda{animation:lv-late 1.4s ease-in-out 1s infinite;}
-.tuto-logo .ico-onda.o2{animation-delay:1.2s;}
-@media (prefers-reduced-motion: reduce){ .tuto-logo .ico-disco, .tuto-logo .ico-onda{animation:none !important;} }
 
 /* ===== Tutorial 17/10 (3) ===== */
 /* el buscador escribe palabra por palabra (sin espacio de más): el cursor va pegado al texto */
@@ -1546,3 +1491,41 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 .lv-cuenta{font-size:30px; --aro:var(--negro-2);}
 .cuenta-marca .tuto-rayas{width:120px; transform:skewX(-14deg); transform-origin:center;}
 .cuenta-marca .tuto-rayas i{transform-origin:center;}
+
+
+/* =========================================================
+   LOGO NUEVO: P tornasol (verde, amarillo y naranja mezclados) + "artazy" + punto verde
+   - Entra: las letras bailan, llega la P y cae el punto
+   - Carga e ingreso: los colores de la P se van moviendo y late suave
+   ========================================================= */
+.lv{display:inline-flex; align-items:baseline; gap:0; font-family:'Unbounded', var(--font-display); font-weight:800; letter-spacing:-.02em; color:var(--hueso); line-height:1; text-transform:none;}
+.lv-ico{height:1.08em; width:.78em; flex:none; overflow:visible; margin-right:.06em; transform-origin:50% 60%; animation:lv-llega .75s cubic-bezier(.2,1.2,.3,1) .55s both;}
+.lv-punto{width:.24em; height:.24em; flex:none; margin:0 0 0 .05em; opacity:0; animation:lv-cae .9s cubic-bezier(.3,0,.4,1) 1.2s forwards;}
+@keyframes lv-cae{0%{opacity:1; transform:translateY(-3em);} 55%{transform:translateY(0) scale(1.25,.75);} 70%{transform:translateY(-.4em) scale(.92,1.08);} 85%{transform:translateY(0) scale(1.08,.92);} 93%{transform:translateY(-.06em);} 100%{opacity:1; transform:none;}}
+/* colores en movimiento (carga, ingreso y tutorial) */
+.loader .lv-b, .lv-login .lv-b, .tuto-logo .lv-b, .loader .lv-q, .lv-login .lv-q{animation:lv-m1 5s ease-in-out infinite;}
+.loader .b2, .lv-login .b2, .tuto-logo .b2, .loader .q2, .lv-login .q2{animation-name:lv-m2;}
+.loader .b3, .lv-login .b3, .tuto-logo .b3{animation-name:lv-m3;}
+@keyframes lv-m1{0%,100%{transform:translate(0,0);} 33%{transform:translate(18px,22px);} 66%{transform:translate(4px,34px);}}
+@keyframes lv-m2{0%,100%{transform:translate(0,0);} 33%{transform:translate(16px,-26px);} 66%{transform:translate(22px,-8px);}}
+@keyframes lv-m3{0%,100%{transform:translate(0,0);} 33%{transform:translate(-20px,10px);} 66%{transform:translate(-8px,-18px);}}
+.loader .lv-carga .lv-ico, .lv-login .lv-ico{animation:lv-llega .75s cubic-bezier(.2,1.2,.3,1) .55s both, lv-lateP 3s ease-in-out 1.6s infinite;}
+@keyframes lv-lateP{0%,60%,100%{transform:scale(1); filter:drop-shadow(0 0 2px rgba(255,255,255,.2));} 15%{transform:scale(1.035); filter:drop-shadow(0 0 7px rgba(255,255,255,.6)) drop-shadow(0 0 18px rgba(255,255,255,.22));}}
+/* tamaños */
+.loader .lv-carga{font-size:40px;}
+.topbar .logo .lv-inicio{font-size:24px;}
+.nav-marca .lv-nav{font-size:26px;}
+.lv-cuenta{font-size:32px;}
+.logo-ingreso{display:flex; justify-content:center; margin:4px 0 2px;}
+.lv-login{font-size:50px;}
+@media (min-width:900px){ #pantalla-bienvenida .logo-ingreso{justify-content:flex-start;} .lv-login{font-size:64px;} }
+.phone.nav-mini .nav-marca .lv-punto{display:none;}
+.phone.nav-mini .nav-marca .lv-nav{font-size:34px;}
+.phone.nav-mini .nav-marca .lv-ico{margin-right:0;}
+.tuto-logo{filter:drop-shadow(0 14px 26px rgba(76,185,68,.25));}
+@media (prefers-reduced-motion: reduce){ .lv-ico, .lv-punto, .lv-b, .lv-q, .lv-txt i{animation:none !important; opacity:1 !important; transform:none !important;} }
+
+/* Listas debajo de la barra de arriba: un poco de aire (Chats, Amigos, Notificaciones...) */
+.screen:not(#pantalla-home) > .topbar + .lista-simple{padding-top:16px;}
+.lv-txt i{font-style:normal; display:inline-block;}
+.phone:not(.nav-mini) .nav-marca .lv, .phone:not(.nav-mini) .nav-pie{animation:aparece-suave .4s .2s both;}
