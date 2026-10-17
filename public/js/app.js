@@ -4467,22 +4467,19 @@ function cerrarReferencias(){ document.getElementById('modal-referencias').class
 
 // ---------- Tutorial de bienvenida ----------
 const LOGO_TUTO = `<div class="tuto-logo-wrap" aria-hidden="true">
-  <svg class="tuto-logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <filter id="grano-tuto"><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0"/><feComposite in2="SourceGraphic" operator="in"/></filter>
-      <clipPath id="marco-tuto"><rect width="64" height="64" rx="15"/></clipPath>
-    </defs>
-    <rect width="64" height="64" rx="15" fill="#0A0809"/>
-    <g clip-path="url(#marco-tuto)"><g transform="skewX(-14) translate(8 0)">
-      <rect class="raya r1" x="-12" y="30" width="90" height="9" fill="#F26A1B"/>
-      <rect class="raya r2" x="-12" y="41.5" width="90" height="3.5" fill="#F4EFEC"/>
-      <rect class="raya r3" x="-12" y="47.5" width="90" height="3" fill="#4CB944"/>
-      <path class="trazo" pathLength="100" d="M24 50V14h11a11 11 0 0 1 0 22H24" transform="translate(2.6 2.6)" fill="none" stroke="#F26A1B" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-      <path class="trazo" pathLength="100" d="M24 50V14h11a11 11 0 0 1 0 22H24" fill="none" stroke="#0A0809" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
-      <path class="trazo" pathLength="100" d="M24 50V14h11a11 11 0 0 1 0 22H24" fill="none" stroke="#F4EFEC" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-    </g></g>
-    <rect width="64" height="64" rx="15" fill="#fff" filter="url(#grano-tuto)" opacity=".16"/>
-  </svg>
+  <svg class="tuto-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><filter id="grano-tuto"><feTurbulence type="fractalNoise" baseFrequency="1.6" numOctaves="2" seed="7"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 .55 0"/><feComposite in2="SourceGraphic" operator="in"/></filter><clipPath id="marco-tuto"><rect width="64" height="64" rx="15"/></clipPath></defs>
+<rect width="64" height="64" rx="15" fill="#0A0809"/><g><g clip-path="url(#marco-tuto)"><g transform="skewX(-14) translate(9 0)">
+<rect class="raya r1" x="-14" y="36" width="96" height="7.5" fill="#F26A1B"/>
+<rect class="raya r2" x="-14" y="45.5" width="96" height="2.8" fill="#F4EFEC"/>
+<rect class="raya r3" x="-14" y="50.3" width="96" height="2.8" fill="#4CB944"/></g></g>
+<g class="ico-p" transform="translate(5.5 9.5) scale(.8)">
+<path d="M10 9a3 3 0 0 1 3-3h21a18 18 0 0 1 0 36H24v13a3 3 0 0 1-3 3h-8a3 3 0 0 1-3-3z" fill="#F4EFEC" stroke="#0A0809" stroke-width="4.5" paint-order="stroke" stroke-linejoin="round"/>
+<g class="ico-disco"><circle cx="34" cy="24" r="13.6" fill="#F4EFEC"/><circle cx="34" cy="24" r="12" fill="#0d0b0c"/>
+<circle cx="34" cy="24" r="10.2" fill="none" stroke="#3a3335" stroke-width=".7"/><circle cx="34" cy="24" r="8.4" fill="none" stroke="#3a3335" stroke-width=".7"/><circle cx="34" cy="24" r="6.6" fill="none" stroke="#3a3335" stroke-width=".7"/>
+<path d="M34 24 L40 13.6 A12 12 0 0 1 45.4 20.3 Z" fill="#fff" opacity=".16"/><circle cx="34" cy="24" r="4.3" fill="#F26A1B"/><circle cx="34" cy="24" r="1" fill="#0d0b0c"/></g>
+<path class="ico-onda o1" d="M44 4.5a22 22 0 0 1 12.5 12" fill="none" stroke="#F26A1B" stroke-width="4.6" stroke-linecap="round"/>
+<path class="ico-onda o2" d="M47 -1a28 28 0 0 1 15.5 15" fill="none" stroke="#4CB944" stroke-width="4.6" stroke-linecap="round"/></g></g>
+<rect width="64" height="64" rx="15" fill="#fff" filter="url(#grano-tuto)" opacity=".16"/></svg>
   <span class="tuto-chispa c1">✦</span><span class="tuto-chispa c2">✦</span><span class="tuto-chispa c3">✦</span>
 </div>`;
 // ¿Se está viendo en compu (menú a la izquierda) o en celu (barra abajo)?
@@ -4495,17 +4492,17 @@ function pasosTutorial(){
   const dedo = '<span class="tm-dedo" aria-hidden="true"></span>';
   return [
     { logo: true, t: nombre ? `¡Hola, ${esc(nombre)}!` : '¡Bienvenido/a!',
-      p: 'Partazy es para encontrar <b>fiestas, previas y boliches</b>, ver a dónde van tus amigos y anotarte. Son 5 pasos cortitos.' },
+      p: 'Partazy es para encontrar <b>planes cerca tuyo</b>: fiestas, previas, recitales, charlas, talleres, ferias, partidos... Ver a dónde van tus amigos y anotarte. Son 5 pasos cortitos.' },
     { t: 'Encontrá un plan',
-      p: `Arriba en <b>Inicio</b> está lo de esta noche y la semana. Para buscar algo puntual, usá el buscador o tocá un filtro.`,
+      p: `En <b>Inicio</b> tenés lo de hoy y <b>Para vos</b>, armado con tus gustos. Filtrá por tipo (fiestas, charlas, deportes...) o buscá algo puntual.`,
       dibujo: `<div class="tm tm-buscar">
-        <div class="tm-barra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="tm-tipeo">cachengue</span></div>
-        <div class="tm-chips"><i class="on">Hoy</i><i>Cerca tuyo</i><i>Gratis</i><i>Electrónica</i></div></div>` },
+        <div class="tm-barra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="tm-tipeo">recital</span></div>
+        <div class="tm-chips"><i>Hoy</i><i class="on">Para vos 🎧</i><i>Charlas</i><i>Deportes</i></div></div>` },
     { t: 'Anotate en un toque',
-      p: `Abrí cualquier evento y tocá <b>Confirmar asistencia</b> (o <b>Reservar</b> si es pago). Tu entrada queda en <b>Mis entradas</b> 🎟️, ${compu ? 'en el menú de la izquierda' : 'el ícono del ticket arriba'}.`,
+      p: `Abrí un evento y tocá <b>Confirmar asistencia</b> (o <b>Reservar</b> si es pago: ahí ves a quién pagarle y copiás el alias). Algunos tienen <b>fecha límite</b> para anotarse. Tu entrada queda en <b>Mis entradas</b> 🎟️, ${compu ? 'en el menú de la izquierda' : 'el ícono del ticket arriba'}.`,
       dibujo: `<div class="tm tm-evento">
         <div class="tm-foto"></div>
-        <div class="tm-info"><small>FIESTA · SÁB 23:30</small><b>Noche de prueba</b><span><i class="punto-ambiente amb-verde"></i>Hay lugar</span></div>
+        <div class="tm-info"><small>CHARLA · SÁB 18:00</small><b>Charla de prueba</b><span><i class="punto-ambiente amb-verde"></i>Hay lugar</span></div>
         <div class="tm-boton">Confirmar asistencia${dedo}</div></div>` },
     { t: 'El punto te dice cómo viene', p: 'Todos los eventos tienen un punto de color:',
       extra: `<div class="tuto-mini">
@@ -4513,15 +4510,15 @@ function pasosTutorial(){
         <div><span class="punto-ambiente amb-amarillo"></span><b>Amarillo</b> se está llenando</div>
         <div><span class="punto-ambiente amb-rojo"></span><b>Rojo</b> lleno o cancelado</div>
         <div><span class="punto-ambiente amb-verde amb-vivo"></span><b>Si late</b> está pasando ahora</div></div>` },
-    { t: 'Mirá a dónde van tus amigos',
-      p: `Agregalos con el ícono de <b>personas</b> ${compu ? '(arriba a la derecha)' : '(arriba)'}. En cada evento vas a ver quién va, y podés <b>compartirlo</b> con un comentario para armar el plan.`,
+    { t: 'Mirá qué hacen tus amigos',
+      p: `Agregalos con el ícono de <b>personas</b> ${compu ? '(arriba a la derecha)' : '(arriba)'}. En <b>Tus amigos</b>, en Inicio, ves quién está en un evento <b>ahora</b>, quién va hoy y quién organiza. Compartí eventos con un comentario y <b>@arrobá</b> a quien quieras.`,
       dibujo: `<div class="tm tm-amigos">
         <div class="tm-caras"><i>SG</i><i>IP</i><i>MR</i></div>
-        <div class="tm-txt"><b>Sofía</b> e <b>Ivo</b> van</div>
-        <div class="tm-nota">¡Vamos a esta! 🔥 <span>— Sofía</span></div></div>` },
-    { t: 'Armá tu previa o fiesta',
-      p: `Tocá el <b>+ naranja</b> ${compu ? '(<b>Crear evento</b>, en el menú de la izquierda)' : 'abajo en el medio'}, completá los datos y listo. Si es privada, elegís quién entra y la dirección solo la ven los aprobados.`,
-      dibujo: `<div class="tm tm-crear"><div class="tm-mas">+${dedo}</div><div class="tm-crear-txt"><b>Crear evento</b><span>Previa · Fiesta · Boliche</span></div></div>`,
+        <div class="tm-txt">🎤 <b>Sofía</b> está ahora en un recital</div>
+        <div class="tm-nota">¡Vamos a esta! 🔥 <b>@ivo</b> <span>— Sofía</span></div></div>` },
+    { t: 'Armá tu evento',
+      p: `Tocá el <b>+ naranja</b> ${compu ? '(<b>Crear evento</b>, en el menú de la izquierda)' : 'abajo en el medio'}. Son 3 pasos: <b>lo básico</b>, <b>qué tipo de evento</b> (fiesta, charla, deporte, feria...) y <b>los detalles</b>, que cambian según el tipo. Si es privado, elegís quién entra y la dirección solo la ven los aprobados.`,
+      dibujo: `<div class="tm tm-crear"><div class="tm-mas">+${dedo}</div><div class="tm-crear-txt"><b>Crear evento</b><span>1 Lo básico · 2 Tipo · 3 Detalles</span></div></div>`,
       pie: `¿Te perdiste? Volvé a ver esto desde <b>Perfil → ☰ → Tutorial</b>.` }
   ];
 }

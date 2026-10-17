@@ -1308,7 +1308,8 @@ html, body{overflow-x:hidden;}
 }
 /* Compu: el fondo aparece recién al bajar (así no queda una franja ancha arriba) */
 @media (min-width:900px){
-  .screen:not(#pantalla-home) > .topbar{transition:background-color .25s var(--ease), box-shadow .25s var(--ease);}
+  /* sin transición: el "fondo ancho" se pone y se saca de una (si se animaba, al subir quedaba un recuadro gris un instante) */
+  .screen:not(#pantalla-home) > .topbar{transition:none;}
   .screen.con-scroll:not(#pantalla-home) > .topbar{background:#141214; box-shadow:0 0 0 100vmax #141214, 0 1px 0 100vmax var(--gris-linea); clip-path:inset(-40px -100vmax -1px -100vmax);}
 }
 
@@ -1507,3 +1508,18 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 /* Pago: a quién le pagás */
 .pago-destacado .pago-como em{display:block; font-style:normal; font-size:11.5px; color:var(--gris); margin-top:3px;}
 @media (min-width:421px){ .pago-destacado.con-titular .pago-monto{grid-row:span 2;} .pago-destacado .pago-como{grid-column:2;} }
+
+/* ===== Ronda 17/10 (2) ===== */
+/* La P va pegada a "artazy" (la caja del ícono tiene aire a la derecha) */
+.lv-ico{margin-right:-.2em;}
+/* Instagram y Facebook juntos en el pie */
+.pie-redes{display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:0 auto;}
+.pie-redes .pie-ig{margin:0;}
+.pie-fb:hover{border-color:#1877F2;}
+.nav-pie .pie-redes{justify-content:flex-start; margin:0 0 4px;}
+.nav-pie .pie-redes .pie-ig{align-self:auto;}
+/* Logo del tutorial: el disco gira y las ondas laten */
+.tuto-logo .ico-disco{transform-box:view-box; transform-origin:34px 24px; animation:lv-gira 1.4s cubic-bezier(.3,.6,.4,1) .4s 1 both;}
+.tuto-logo .ico-onda{animation:lv-late 1.4s ease-in-out 1s infinite;}
+.tuto-logo .ico-onda.o2{animation-delay:1.2s;}
+@media (prefers-reduced-motion: reduce){ .tuto-logo .ico-disco, .tuto-logo .ico-onda{animation:none !important;} }
