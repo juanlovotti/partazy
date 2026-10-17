@@ -23,12 +23,12 @@ let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
   ok(/Ajustes/.test(txt($('rango-estado'))) && /Safari/.test(txt($('rango-estado'))), 'en iPhone con la ubicación bloqueada explica cómo activarla');
   // sugerencias
   const inp=$('rango-ciudad'); inp.value='villa zoila'; inp.dispatchEvent(new A.Event('input')); await sleep(600);
-  const sug=A.document.querySelector('.sug-lugares');
+  const sug=A.document.querySelector('#modal-rango .sug-lugares');
   ok(sug && sug.style.display==='block' && /Villa Zoila, Río Tercero/.test(txt(sug)), 'al escribir aparecen lugares reales para elegir');
   sug.querySelector('.sug-lugar').dispatchEvent(new A.MouseEvent('mousedown',{bubbles:true})); await sleep(50);
   ok(A.eval('state.ciudadActual')==='Villa Zoila, Río Tercero' && /Mostrando eventos cerca de Villa Zoila/.test(txt($('rango-estado'))), 'elegir uno lo usa como ubicación');
   inp.value='asdfqwer'; inp.dispatchEvent(new A.Event('input')); await sleep(600);
-  ok(/No encontramos ese lugar/.test(txt(A.document.querySelector('.sug-lugares'))), 'si el lugar no existe, lo avisa');
+  ok(/No encontramos ese lugar/.test(txt(A.document.querySelector('#modal-rango .sug-lugares'))), 'si el lugar no existe, lo avisa');
   // perfil: no deja guardar un lugar que no existe
   A.cerrarRango(); A.ir('perfil'); A.editarPerfil(); await sleep(100);
   $('ep-ciudad').value='asdfqwer'; $('ep-ciudad').dataset.ok='';

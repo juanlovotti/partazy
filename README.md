@@ -36,7 +36,7 @@ npm install
 npm test
 ```
 
-Corre 35 archivos de prueba (más de 450 comprobaciones) contra la app real, con una base de datos falsa en memoria (`tests/fakefb.js`). Para correr una sola: `node tests/test_calif.js`.
+Corre 36 archivos de prueba (más de 450 comprobaciones) contra la app real, con una base de datos falsa en memoria (`tests/fakefb.js`). Para correr una sola: `node tests/test_calif.js`.
 
 > Las pruebas **no** verifican `firestore.rules` (la base falsa no aplica reglas). Cualquier cambio en las reglas se prueba a mano o con el emulador de Firebase (`firebase emulators:start`).
 

@@ -1301,8 +1301,16 @@ html, body{overflow-x:hidden;}
    ========================================================= */
 .screen{overflow-x:hidden; overscroll-behavior-x:none;}
 .screen:not(#pantalla-home) > .topbar{position:sticky; top:0; z-index:30;}
-.screen:not(#pantalla-home) > .topbar{transition:background-color .25s var(--ease), box-shadow .25s var(--ease);}
-.screen.con-scroll:not(#pantalla-home) > .topbar{background:#141214; box-shadow:0 0 0 100vmax #141214, 0 1px 0 100vmax var(--gris-linea); clip-path:inset(-40px -100vmax -1px -100vmax);}
+/* Celu: la barra siempre tiene fondo (así no parpadea al subir y bajar) y se achica al bajar */
+@media (max-width:899px){
+  .screen:not(#pantalla-home) > .topbar{background:#141214; box-shadow:0 1px 0 var(--gris-linea); transition:padding .25s var(--ease);}
+  .screen.con-scroll:not(#pantalla-home) > .topbar{padding-top:10px; padding-bottom:10px;}
+}
+/* Compu: el fondo aparece recién al bajar (así no queda una franja ancha arriba) */
+@media (min-width:900px){
+  .screen:not(#pantalla-home) > .topbar{transition:background-color .25s var(--ease), box-shadow .25s var(--ease);}
+  .screen.con-scroll:not(#pantalla-home) > .topbar{background:#141214; box-shadow:0 0 0 100vmax #141214, 0 1px 0 100vmax var(--gris-linea); clip-path:inset(-40px -100vmax -1px -100vmax);}
+}
 
 /* =========================================================
    LOGO VIVO: la P con el vinilo + "partazy" en Unbounded
@@ -1439,3 +1447,24 @@ html, body{overflow-x:hidden;}
 .perfil-header h2{overflow-wrap:anywhere; line-height:1.05;}
 
 .paso[data-paso="2"] #campo-tipos > label{display:none;}
+
+/* Celu: el último botón de cada pantalla nunca queda tapado por la barra de abajo */
+@media (max-width:899px){
+  .phone:not(.sin-nav) .screen{padding-bottom:calc(118px + env(safe-area-inset-bottom, 0px));}
+  #pantalla-crear .nav-pasos, #pantalla-crear #btn-publicar{margin-bottom:12px;}
+}
+/* Fecha y hora: en iPhone ya no se salen de la caja */
+.fila-2 > *{min-width:0;}
+input[type=date], input[type=time]{min-width:0; max-width:100%; -webkit-appearance:none; appearance:none; min-height:48px; display:block;}
+input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-and-time-value{text-align:left;}
+/* Pago: llama la atención */
+.pago-destacado{display:grid; grid-template-columns:auto 1fr; gap:14px 18px; align-items:center; padding:18px; border-radius:18px;
+  background:linear-gradient(135deg, rgba(242,106,27,.22), rgba(232,180,17,.10)); border:1.5px solid rgba(242,106,27,.6); box-shadow:0 10px 30px rgba(242,106,27,.15);}
+.pago-destacado small{display:block; font-family:var(--font-mono); font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--hueso); opacity:.75; margin-bottom:4px;}
+.pago-monto b{font-family:var(--font-display); font-size:36px; line-height:1; color:var(--blanco);}
+.pago-como{padding-left:18px; border-left:1px solid rgba(242,106,27,.4); min-width:0;}
+.pago-como b{font-size:15.5px; line-height:1.35; overflow-wrap:anywhere;}
+.btn-copiar-pago{grid-column:1 / -1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.btn-copiar-pago.copiado{background:var(--verde);}
+.aviso-pago{margin-top:12px;}
+@media (max-width:420px){ .pago-destacado{grid-template-columns:1fr;} .pago-como{padding-left:0; border-left:none; padding-top:12px; border-top:1px solid rgba(242,106,27,.4);} }

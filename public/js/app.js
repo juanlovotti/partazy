@@ -881,39 +881,65 @@ function cercaDeCordoba(){
   const u = state.userCoords;
   return !!u && distanciaKm(u.lat, u.lng, CBA_CENTER.lat, CBA_CENTER.lng) < 40;
 }
-// Coordenadas aproximadas sin internet: barrios cargados de Córdoba o la ubicación del usuario.
-function coordsDeLugar(lugar){
-  if(cercaDeCordoba() || !state.userCoords){
-    const n = normalizar(lugar);
-    for(const [barrio, [lat, lng]] of Object.entries(BARRIOS)){
-      if(n.includes(normalizar(barrio))) return { lat, lng };
-    }
-  }
-  return state.userCoords ? { ...state.userCoords } : { ...CBA_CENTER };
+// Ciudad de referencia para ubicar direcciones: donde estás ahora o, si no, la de tu perfil.
+// "Villa Zoila, Río Tercero" → "Río Tercero"
+function ciudadReferencia(){
+  const c = state.ciudadActual || state.perfil?.ciudad || '';
+  const partes = c.split(',').map(x => x.trim()).filter(Boolean);
+  return partes[partes.length - 1] || '';
 }
-// Ubica el lugar del evento en cualquier ciudad de Argentina (busca cerca de donde estás)
-async function ubicarLugar(lugar){
-  if(cercaDeCordoba()){
+// ¿Estás en Córdoba capital? Solo ahí valen los barrios cargados ("Centro", "Güemes"...).
+// Antes se usaban aunque estuvieras en otra ciudad, y "Centro" de Río Tercero caía en Córdoba capital.
+function enCordobaCapital(){
+  if(state.userCoords) return cercaDeCordoba();
+  return normalizar(ciudadReferencia()) === 'cordoba';
+}
+// Coordenadas aproximadas sin internet: barrios de Córdoba (solo si estás ahí) o tu ubicación / tu ciudad.
+function coordsDeLugar(lugar){
+  if(enCordobaCapital()){
     const n = normalizar(lugar);
     for(const [barrio, [lat, lng]] of Object.entries(BARRIOS)) if(n.includes(normalizar(barrio))) return { lat, lng };
   }
-  if(typeof fetch === 'function' && lugar){
-    const u = state.userCoords;
-    const caja = u ? `&viewbox=${u.lng - 0.6},${u.lat + 0.6},${u.lng + 0.6},${u.lat - 0.6}` : '';
-    const ciudad = state.ciudadActual && !normalizar(lugar).includes(normalizar(state.ciudadActual)) ? ', ' + state.ciudadActual : '';
-    for(const q of [lugar + ciudad, lugar]){
-      try{
-        const ctl = typeof AbortController === 'function' ? new AbortController() : null;
-        const t = ctl && setTimeout(() => ctl.abort(), 4000);
-        const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=ar&accept-language=es${caja}&q=${encodeURIComponent(q)}`, ctl ? { signal: ctl.signal } : {});
-        clearTimeout(t);
-        const [x] = await r.json();
-        if(x) return { lat: parseFloat(x.lat), lng: parseFloat(x.lon) };
-      } catch(e){ break; }
-      if(!ciudad) break;
-    }
+  if(state.userCoords) return { ...state.userCoords };
+  const g = leerPref('geoPerfil');
+  return g && typeof g.lat === 'number' ? { lat: g.lat, lng: g.lng } : { ...CBA_CENTER };
+}
+// Ubica el lugar del evento en cualquier ciudad de Argentina, SIEMPRE cerca de donde estás:
+// 1) "lugar, tu ciudad" dentro de tu zona  2) "lugar" dentro de tu zona  3) si escribiste la ciudad, en cualquier lado
+// 4) si no aparece, el centro de tu ciudad (nunca otra ciudad con el mismo nombre de barrio)
+async function ubicarLugar(lugar){
+  if(enCordobaCapital()){
+    const n = normalizar(lugar);
+    for(const [barrio, [lat, lng]] of Object.entries(BARRIOS)) if(n.includes(normalizar(barrio))) return { lat, lng, ciudad: 'Córdoba' };
   }
-  return coordsDeLugar(lugar);
+  if(typeof fetch !== 'function' || !lugar) return coordsDeLugar(lugar);
+  const u = state.userCoords || (() => { const g = leerPref('geoPerfil'); return g && typeof g.lat === 'number' ? g : null; })();
+  const ref = ciudadReferencia();
+  const conCiudad = ref && !normalizar(lugar).includes(normalizar(ref)) ? `${lugar}, ${ref}` : lugar;
+  const escribioCiudad = lugar.includes(',');
+  const intentos = [];
+  if(u) intentos.push({ q: conCiudad, caja: true }, { q: lugar, caja: true });
+  intentos.push({ q: conCiudad, caja: false });
+  if(escribioCiudad) intentos.push({ q: lugar, caja: false });
+  for(const it of intentos){
+    try{
+      const ctl = typeof AbortController === 'function' ? new AbortController() : null;
+      const t = ctl && setTimeout(() => ctl.abort(), 4500);
+      const caja = it.caja && u ? `&viewbox=${u.lng - 0.45},${u.lat + 0.45},${u.lng + 0.45},${u.lat - 0.45}&bounded=1` : '';
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=ar&addressdetails=1&accept-language=es${caja}&q=${encodeURIComponent(it.q)}`, ctl ? { signal: ctl.signal } : {});
+      clearTimeout(t);
+      const [x] = await r.json();
+      if(!x) continue;
+      const c = { lat: parseFloat(x.lat), lng: parseFloat(x.lon) };
+      // Sin la ciudad escrita, no aceptamos un resultado a más de 60 km de donde estás
+      if(u && !escribioCiudad && distanciaKm(u.lat, u.lng, c.lat, c.lng) > 60) continue;
+      const a = x.address || {};
+      return { ...c, ciudad: a.city || a.town || a.village || a.municipality || ref };
+    } catch(e){ break; }
+  }
+  // No apareció: usamos el centro de tu ciudad (aproximado), nunca otra ciudad
+  if(ref){ const l = await buscarLugares(ref, 1); if(l && l.length) return { lat: l[0].lat, lng: l[0].lng, ciudad: l[0].ciudad || ref, aproximada: true }; }
+  return { ...coordsDeLugar(lugar), aproximada: true };
 }
 
 // Imágenes
@@ -1230,7 +1256,10 @@ function cargarEventosEnVivo(){
 }
 let _tFeed;
 // Las barras de arriba de cada pantalla toman fondo recién cuando bajás (así no queda una franja ancha arriba).
-document.querySelectorAll('.screen').forEach(sc => sc.addEventListener('scroll', () => sc.classList.toggle('con-scroll', sc.scrollTop > 6), { passive: true }));
+document.querySelectorAll('.screen').forEach(sc => sc.addEventListener('scroll', () => {
+  const y = sc.scrollTop, on = sc.classList.contains('con-scroll');
+  if(!on && y > 28) sc.classList.add('con-scroll'); else if(on && y < 4) sc.classList.remove('con-scroll');
+}, { passive: true }));
 // Repinta inicio/explorar cuando llegan cambios en vivo, sin perder el scroll.
 function refrescarFeed(){
   clearTimeout(_tFeed);
@@ -3076,6 +3105,19 @@ function textoInscripcion(ev){
   if(falta < 24 * HORA) return `Cierra hoy a las ${hora}`;
   const dias = Math.ceil(falta / (24 * HORA));
   return `Hasta el ${dia} · ${dias === 1 ? 'queda 1 día' : `quedan ${dias} días`}`;
+}
+// Saca el alias o CBU/CVU del texto de pago ("transferencia a: juli.mp.cumple" → "juli.mp.cumple").
+function datoPago(t){
+  const s = String(t || '');
+  const cbu = s.match(/\b\d{22}\b/); if(cbu) return cbu[0];
+  const alias = s.match(/\b[a-zA-Z0-9-]{2,}(?:\.[a-zA-Z0-9-]{2,}){1,3}\b/); 
+  return alias && !/^(www|https?)\b/i.test(alias[0]) && !/\.(com|ar|net|org)$/i.test(alias[0]) ? alias[0] : '';
+}
+// Copia el alias al portapapeles.
+async function copiarDatoPago(btn, dato){
+  try{ await navigator.clipboard.writeText(dato); toast('Copiado: ' + dato + ' ✓'); }
+  catch(e){ toast(dato); }
+  if(btn){ btn.classList.add('copiado'); setTimeout(() => btn.classList.remove('copiado'), 1500); }
 }
 // Íconos de la lista de detalles del evento.
 const II = {
@@ -5403,8 +5445,12 @@ async function renderDetalle(id){
     const bloquePago = ev.precio > 0 ? `
       <div class="bloque">
         <h3 class="titulo-bloque">Pago de la entrada · ${esc(money(ev.precio))}</h3>
-        <div class="aviso">
-          <b>${esc(verPago ? (ev.pagoInfo || 'El organizador te indica cómo pagar.') : 'La forma de pago se muestra cuando el anfitrión te aprueba.')}</b>
+        <div class="pago-destacado">
+          <div class="pago-monto"><small>Entrada</small><b>${esc(money(ev.precio))}</b></div>
+          <div class="pago-como"><small>Cómo pagar</small><b>${esc(verPago ? (ev.pagoInfo || 'El organizador te indica cómo pagar.') : 'Se muestra cuando el anfitrión te aprueba.')}</b></div>
+          ${verPago && datoPago(ev.pagoInfo) ? `<button class="btn btn-primario btn-copiar-pago" onclick="copiarDatoPago(this, ${esc(JSON.stringify(datoPago(ev.pagoInfo)))})">📋 Copiar ${/^\d+$/.test(datoPago(ev.pagoInfo)) ? 'CBU / CVU' : 'alias'}: ${esc(datoPago(ev.pagoInfo))}</button>` : ''}
+        </div>
+        <div class="aviso aviso-pago">
           <span>El pago se hace directamente a ${esc(nombreOrg)}. Partazy no cobra comisiones ni hace devoluciones: cualquier reintegro lo coordinás con el organizador.</span>
           <span>${esc(AVISO_DEVOLUCIONES)}</span>
         </div>
@@ -5912,7 +5958,18 @@ async function enviarMensaje(eventId){
 // =========================================================
 state.pasoCrear = 1;
 // Muestra un paso del formulario de crear.
+// Al elegir una sugerencia en "Lugar", guardamos ese punto (como si lo marcaras en el mapa).
+function prepararLugarEvento(){
+  const inp = document.getElementById('f-lugar');
+  if(!inp || inp.dataset.auto) return;
+  autocompletarLugar(inp, l => {
+    state.ubicacionMapa = { lat: l.lat, lng: l.lng }; state._ubicDeSugerencia = true;
+    const me = document.getElementById('mapa-elegido'); if(me) me.textContent = '📍 Ubicado: ' + l.nombre;
+  }, true);
+  inp.addEventListener('input', () => { if(state._ubicDeSugerencia){ state.ubicacionMapa = null; state._ubicDeSugerencia = false; const me = document.getElementById('mapa-elegido'); if(me) me.textContent = ''; } });
+}
 function irAPasoCrear(n){
+  prepararLugarEvento();
   state.pasoCrear = n;
   const form = document.getElementById('form-crear');
   if(!form) return;
@@ -6177,7 +6234,9 @@ function elegirOcasion(k){
   // La música siempre es opcional; la lista VIP y el dress code solo donde tienen sentido
   const previa = state.tipoEventoActivo === 'previa';
   const vis = (id, on) => { const el = document.getElementById(id); if(el) el.style.display = on ? '' : 'none'; };
-  vis('campo-estilo', !previa);
+  const sinMusica = ['charla', 'taller'].includes(k);
+  vis('campo-estilo', !previa && !sinMusica);
+  vis('campo-musica', !sinMusica);
   vis('fila-vip', !previa && OCASIONES_FIESTA.has(k || ''));
   vis('campo-dresscode', !['deportivo', 'feria', 'charla', 'taller'].includes(k));
   const ll = document.getElementById('label-lineup'), tl = document.getElementById('f-lineup');
@@ -6263,8 +6322,9 @@ async function publicarEvento(){
   if(linkTexto && !linkVenta){ toast('El link de venta tiene que ser una dirección https://'); return; }
 
   // El estilo de música es opcional (y en una previa no se pide)
-  const estilo = tipo === 'previa' || !ESTILOS[val('f-estilo')] ? '' : val('f-estilo');
-  const musica = (val('f-musica') || ESTILOS[estilo] || '').slice(0, 80);
+  const sinMusica = ['charla', 'taller'].includes(val('f-ocasion'));
+  const estilo = tipo === 'previa' || sinMusica || !ESTILOS[val('f-estilo')] ? '' : val('f-estilo');
+  const musica = sinMusica ? '' : (val('f-musica') || ESTILOS[estilo] || '').slice(0, 80);
   const conVip = tipo !== 'previa' && document.getElementById('switch-vip').classList.contains('on');
   const vip = conVip ? leerVip() : [];
   const reglas = val('f-reglas');
@@ -6299,7 +6359,7 @@ async function publicarEvento(){
     privacidad: privada ? 'privada' : 'publica',
     fechaTs, hora: horaStr,
     lugar, lat: exacta ? coords.lat : coords.lat + jitter(), lng: exacta ? coords.lng : coords.lng + jitter(), ubicacionExacta: exacta,
-    ciudad: (state.ciudadActual || '').slice(0, 60),
+    ciudad: (coords.ciudad || ciudadReferencia() || '').slice(0, 60),
     precio, pagoInfo, estado: 'publicado',
     horaFin, lineup, linkEntradas: linkVenta ? linkVenta.url.slice(0, 300) : '',
     deOrganizacion: esOrganizacion(state.perfil),
@@ -6613,9 +6673,13 @@ function usarMiUbicacion(){
 }
 // Busca lugares reales de Argentina (OpenStreetMap). Devuelve [{ nombre, detalle, lat, lng }].
 // Si no hay internet o falla el servicio, devuelve null (no es lo mismo que "no existe").
-async function buscarLugares(q, limite = 5){
+async function buscarLugares(q, limite = 5, cerca){
   try{
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=${limite}&countrycodes=ar&addressdetails=1&accept-language=es&q=${encodeURIComponent(q)}`);
+    const u = cerca ? (state.userCoords || leerPref('geoPerfil')) : null;
+    const caja = u && typeof u.lat === 'number' ? `&viewbox=${u.lng - 0.45},${u.lat + 0.45},${u.lng + 0.45},${u.lat - 0.45}&bounded=1` : '';
+    const ref = cerca ? ciudadReferencia() : '';
+    const qq = ref && !normalizar(q).includes(normalizar(ref)) && !q.includes(',') ? `${q}, ${ref}` : q;
+    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=${limite}&countrycodes=ar&addressdetails=1&accept-language=es${caja}&q=${encodeURIComponent(qq)}`);
     const lista = await r.json();
     const vistos = new Set();
     return (lista || []).map(x => {
@@ -6623,13 +6687,16 @@ async function buscarLugares(q, limite = 5){
       const barrio = a.suburb || a.neighbourhood || a.quarter || '';
       const ciudad = a.city || a.town || a.village || a.municipality || '';
       const prov = (a.state || '').replace(/^Provincia (de )?/i, '');
-      const nombre = barrio && ciudad && barrio !== ciudad ? `${barrio}, ${ciudad}` : (ciudad || barrio || x.name || '');
+      const calle = a.road ? `${a.road}${a.house_number ? ' ' + a.house_number : ''}` : '';
+      const lugarN = x.name && x.name !== a.road && x.name !== ciudad && x.name !== barrio ? x.name : '';
+      const nombre = cerca && (calle || lugarN) ? [lugarN, calle, barrio, ciudad].filter(Boolean).join(', ')
+        : barrio && ciudad && barrio !== ciudad ? `${barrio}, ${ciudad}` : (ciudad || barrio || x.name || '');
       return { nombre, detalle: prov, lat: parseFloat(x.lat), lng: parseFloat(x.lon), ciudad: ciudad || barrio || x.name || '' };
     }).filter(l => l.nombre && !vistos.has(l.nombre) && vistos.add(l.nombre));
   } catch(e){ return null; }
 }
 // Agrega sugerencias de lugares reales a un campo de texto. Al elegir una, guarda el lugar en el campo.
-function autocompletarLugar(input, alElegir){
+function autocompletarLugar(input, alElegir, cerca){
   if(!input || input.dataset.auto) return;
   input.dataset.auto = '1';
   input.removeAttribute('list');
@@ -6645,7 +6712,7 @@ function autocompletarLugar(input, alElegir){
     if(q.length < 3){ caja.style.display = 'none'; return; }
     t = setTimeout(async () => {
       const yo = ++pedido;
-      const lista = await buscarLugares(q);
+      const lista = await buscarLugares(q, 5, cerca);
       if(yo !== pedido) return;
       if(!lista){ caja.style.display = 'none'; return; }
       caja.innerHTML = lista.length
