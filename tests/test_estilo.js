@@ -19,18 +19,18 @@ const llenar=(n)=>{ $('f-nombre').value=n; $('f-lugar').value='Belgrano 800, Gü
   ok(vis('campo-estilo') && vis('fila-vip') && vis('campo-tipos'), 'fiesta: muestra estilo de música, lista VIP y tipos');
   const tp=w.document.querySelector('#tipos-grid [data-ocasion="previa"]'); ok(tp && tp.style.display!=='none', 'fiesta: "Previa" aparece entre los tipos');
   tp.click(); await sleep(30);
-  ok($('op-previa').classList.contains('activo') && $('f-ocasion').value==='previa' && !vis('campo-tipos') && /Previa/.test(txt($('toast'))), 'tocar "Previa" en los tipos lleva a la sección Previa');
+  ok($('op-previa').classList.contains('activo') && $('f-ocasion').value==='previa' && tp.classList.contains('on'), 'tocar "Previa" en los tipos la elige (Previa ahora es un tipo más del paso 2)');
   w.elegirTipo('fiesta');
   ok(txt($('op-previa'))==='Previa' || /^Previa\b/.test(txt($('op-previa'))) && !/en casa/i.test(txt($('op-previa'))), 'la opción de arriba dice "Previa" (sin "en casa")');
   // Previa: oculta estilo, VIP y tipos
   w.elegirTipo('previa');
-  ok(!vis('campo-estilo') && !vis('fila-vip') && !vis('campo-tipos') && $('f-ocasion').value==='previa', 'previa: sin estilo de música, sin lista VIP y tipo = Previa');
+  ok(!vis('campo-estilo') && !vis('fila-vip') && $('f-ocasion').value==='previa', 'previa: sin estilo de música, sin lista VIP y tipo = Previa');
   w.elegirTipo('fiesta');
   ok($('f-ocasion').value==='fiesta', 'volver a fiesta deja el tipo en Fiesta');
   // Escribir "previa" en el nombre redirige
   $('f-nombre').value='Previa del sábado'; $('f-nombre').dispatchEvent(new w.Event('input')); await sleep(750);
   ok($('op-previa').classList.contains('activo') && $('f-ocasion').value==='previa', 'escribir "previa" en el nombre pasa a la sección Previa');
-  ok(/Lo pasamos a Previa/.test(txt($('toast'))), 'y avisa con un toast');
+  ok(/Previa/.test(txt($('toast'))), 'y avisa con un toast');
   w.elegirTipo('fiesta');
   // Sin estilo: se publica igual, previsualización primero
   llenar('Fiesta sin estilo');
@@ -72,7 +72,7 @@ const llenar=(n)=>{ $('f-nombre').value=n; $('f-lugar').value='Belgrano 800, Gü
   const pie=w.document.querySelector('.pie-ig');
   ok(pie && /instagram\.com\/partazy/.test(pie.getAttribute('href')), 'footer con el logo de Instagram que lleva a @partazy');
   ok(w.document.querySelectorAll('[data-idioma]').length>=3 && [...w.document.querySelectorAll('[data-idioma]')].some(x=>x.dataset.idioma==='pt'), 'selector de idioma (español / inglés / portugués)');
-  const logos=[...w.document.querySelectorAll('.lv')]; ok(logos.length>=3 && logos.every(m=>m.querySelector('.lv-ico .lv-disco') && m.querySelector('.lv-txt').textContent==='partazy') && !w.document.querySelector('.punto-beat'), 'el logo nuevo (P con vinilo + partazy) está en la carga, el inicio y el menú');
+  const logos=[...w.document.querySelectorAll('.lv')]; ok(logos.length>=3 && logos.every(m=>m.querySelector('.lv-ico .lv-disco') && m.querySelector('.lv-txt').textContent==='artazy') && !w.document.querySelector('.punto-beat'), 'el logo nuevo (la P con vinilo + "artazy") está en la carga, el inicio y el menú');
   ok(!w.document.querySelector('#loader .spinner'), 'en la carga gira el vinilo en vez de la ruedita');
   console.log(f?'\nFALLAS: '+f:'\nTODO OK'); process.exit(f?1:0);
 })();

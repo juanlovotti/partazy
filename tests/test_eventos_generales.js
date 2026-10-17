@@ -43,7 +43,7 @@ let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
   A.abrirUsuario('B'); await sleep(700);
   ok(/3 amigos/.test(txt($('perfil-amigos-resumen'))) && /1 en común/.test(txt($('perfil-amigos-resumen'))), 'el perfil de Sofía dice "3 amigos · 1 en común" (la solicitud pendiente no cuenta)');
   const nombres=[...A.document.querySelectorAll('#perfil-amigos-lista .amigo-mini span')].map(s=>s.textContent);
-  ok(nombres[0]==='Ivo' && nombres.includes('Male') && nombres.includes('Juan'), 'lista sus amigos, primero los que tienen en común');
+  ok(nombres[0]==='Ivo Paz' && nombres.includes('Male Ruiz') && nombres.includes('Juan Lovotti'), 'lista sus amigos, primero los que tienen en común');
   // Estadísticas para quien organiza
   const O=mk('O'); await sleep(1300); O.cerrarTutorial(); O.abrirDetalle('ch'); await sleep(500);
   const est=txt(O.document.getElementById('detalle-contenido'));

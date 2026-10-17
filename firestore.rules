@@ -160,6 +160,7 @@ service cloud.firestore {
       return texto(d.get('lineup', ''), 600) && texto(d.get('horaFin', ''), 5)
         && d.get('ocasion', '') in ['', 'universitaria', 'egresados', 'tematica', 'cumple', 'after', 'fiesta', 'previa', 'pena', 'musical', 'gastronomico', 'charla', 'taller', 'cultural', 'deportivo', 'feria']
         && (!('inscripcionHasta' in d) || (d.inscripcionHasta is int && d.inscripcionHasta <= d.fechaTs))
+        && (!('extras' in d) || (d.extras is map && d.extras.size() <= 10))
         && d.get('ubicacionExacta', false) is bool
         && d.get('fotoGrande', false) is bool
         && texto(d.get('linkEntradas', ''), 300)

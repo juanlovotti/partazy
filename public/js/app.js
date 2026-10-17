@@ -962,7 +962,7 @@ function sumarConfirmadoEnCache(id){
 // Gustos de la persona, en dos grupos: la música que le gusta y los planes que le copan.
 // Se guardan juntos en users/{uid}.intereses (así las cuentas viejas siguen funcionando).
 const INTERESES_MUSICA = ['Techno','House','Electrónica','Cachengue','Reggaetón','Cumbia','Cuarteto','Rock','Pop','Trap'];
-const INTERESES_PLANES = ['Previas','After','Universitarias','Peñas','Egresados'];
+const INTERESES_PLANES = ['Previas','After','Universitarias','Peñas','Egresados','Música en vivo','Gastronomía','Charlas y talleres','Arte y cultura','Deportes','Ferias'];
 const INTERESES = [...INTERESES_MUSICA, ...INTERESES_PLANES];
 let modoAuth = 'ingresar'; // 'ingresar' | 'crear'
 
@@ -1087,12 +1087,15 @@ function edadDesde(fechaStr){
 function edadUsuario(){ return edadDesde(state.privado?.nacimiento); }
 
 // Selector de intereses (chips que se activan al tocarlos)
-function renderSelectorIntereses(contId, seleccion){
+function renderSelectorIntereses(contId, seleccion, esOrg){
   const sel = seleccion || [];
+  if(esOrg === undefined){ const op = document.querySelector(`#${contId.split('-')[0]}-tipo [data-tipo-cuenta].activo`); esOrg = op ? op.dataset.tipoCuenta === 'organizacion' : esOrganizacion(state.perfil); }
   const chip = i => `<div class="chip ${sel.includes(i) ? 'activo' : ''}" role="button" tabindex="0" aria-pressed="${sel.includes(i)}" data-interes="${esc(i)}">${esc(i)}</div>`;
   document.getElementById(contId).innerHTML = `
-    <div class="grupo-intereses" data-grupo="musica"><div class="grupo-tit">🎧 Música que te gusta</div><div class="grupo-chips">${INTERESES_MUSICA.map(chip).join('')}</div></div>
-    <div class="grupo-intereses" data-grupo="planes"><div class="grupo-tit">🎉 Planes que te copan</div><div class="grupo-chips">${INTERESES_PLANES.map(chip).join('')}</div></div>`;
+    <div class="grupo-intereses" data-grupo="musica"><div class="grupo-tit">🎧 ${esOrg ? '¿Qué música se escucha en tus eventos?' : 'Música que te gusta'}</div><div class="grupo-chips">${INTERESES_MUSICA.map(chip).join('')}</div></div>
+    <div class="grupo-intereses" data-grupo="planes"><div class="grupo-tit">🎉 ${esOrg ? '¿Qué tipo de eventos organizás?' : 'Planes que te copan'}</div><div class="grupo-chips">${INTERESES_PLANES.map(chip).join('')}</div></div>`;
+  const lab = document.getElementById(contId)?.closest('.campo')?.querySelector('label');
+  if(lab) lab.textContent = esOrg ? 'Tu propuesta' : (contId.startsWith('rg') ? '¿Qué te gusta?' : 'Tus gustos');
 }
 // Lee los intereses marcados en un selector.
 function interesesElegidos(contId){
@@ -1226,6 +1229,8 @@ function cargarEventosEnVivo(){
   });
 }
 let _tFeed;
+// Las barras de arriba de cada pantalla toman fondo recién cuando bajás (así no queda una franja ancha arriba).
+document.querySelectorAll('.screen').forEach(sc => sc.addEventListener('scroll', () => sc.classList.toggle('con-scroll', sc.scrollTop > 6), { passive: true }));
 // Repinta inicio/explorar cuando llegan cambios en vivo, sin perder el scroll.
 function refrescarFeed(){
   clearTimeout(_tFeed);
@@ -2358,6 +2363,9 @@ function elegirTipoCuenta(contId, tipo){
   if(apodo) apodo.closest('.campo').style.display = org ? 'none' : '';
   const bloqueOrg = document.getElementById(pref + '-org');
   if(bloqueOrg) bloqueOrg.style.display = org ? 'flex' : 'none';
+  const ints = document.getElementById(pref + '-intereses');
+  if(ints) renderSelectorIntereses(pref + '-intereses', interesesElegidos(pref + '-intereses'), org);
+  const nom = document.getElementById(pref + '-nombre'); if(nom) nom.maxLength = org ? 40 : 60;
   const ayuda = document.getElementById(pref + '-tipo-ayuda');
   if(ayuda) ayuda.textContent = org
     ? 'Para boliches, bares, productoras, centros de estudiantes y DJs. Después podés pedir la verificación ✓ desde tu perfil.'
@@ -3492,7 +3500,7 @@ async function renderUsuario(uid){
       <div class="avatar-grande">${avatarHTML(u)}</div>
       <h2>${esc(nombreVisible(u))}${insignia(u)}</h2>
       ${u.usuario ? `<div class="handle">@${esc(u.usuario)}</div>` : ''}
-      ${esOrganizacion(u) ? `<div class="tags" style="justify-content:center; margin-top:8px;"><span class="tag">🎪 Organizador de eventos</span>${(u.califN || 0) ? `<span class="tag">${califOrgTxt(u)}</span>` : ''}<span class="tag">${u.seguidores || 0} ${(u.seguidores || 0) === 1 ? 'seguidor' : 'seguidores'}</span></div>` : ''}
+      ${esOrganizacion(u) ? `<div class="tags" style="justify-content:center; margin-top:8px;"><span class="tag">🎪 Organizador de eventos</span>${(u.califN || 0) ? `<span class="tag">${califOrgTxt(u)}</span>` : ''}${u.ocultarSeguidores && !esYo ? '' : `<span class="tag">${u.seguidores || 0} ${(u.seguidores || 0) === 1 ? 'seguidor' : 'seguidores'}</span>`}</div>` : ''}
       <div class="ubic">${esc([u.apodo ? u.nombre : '', u.ciudad].filter(Boolean).join(' · '))}</div>
       ${lineaEstadoHTML(u)}
       ${!org && !bloqueado ? '<div id="perfil-amigos-resumen" class="amigos-resumen"></div>' : ''}
@@ -3523,7 +3531,8 @@ async function renderUsuario(uid){
         <div class="foto-mini" style="background-image:${cssFoto(e)}"></div>
         <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs</span></div>
       </div>`).join('') : emptyState('No está organizando eventos próximos.')}</div>`;
-  if(!bloqueado && !org) cargarAmigosDePerfil(uid, tok);   // después de pintar (si ya está en caché se completa al toque)
+  if(!bloqueado && !org && !u.ocultarAmigos) cargarAmigosDePerfil(uid, tok);   // después de pintar (si ya está en caché se completa al toque)
+  else if(!bloqueado && !org && u.ocultarAmigos){ const r = document.getElementById('perfil-amigos-resumen'); if(r) r.innerHTML = '<span class="link-amigos" style="cursor:default;">🔒 Lista de amigos privada</span>'; }
 }
 
 // Amigos de otra persona: cuántos son, cuántos en común y quiénes.
@@ -3546,7 +3555,7 @@ async function cargarAmigosDePerfil(uid, tok){
   if(tok !== state.tok) return;
   cont.innerHTML = `<div class="subtitulo"><h3 class="titulo-bloque">Amigos · ${lista.length}</h3></div>
     <div class="grilla-amigos">${orden.map(x => { const v = state.usuarios[x]; if(!v) return '';
-      return `<button class="amigo-mini" data-usuario="${esc(x)}">${avatarMini(v)}<span>${esc(nombreCorto(v))}</span>${mios.has(x) ? '<small>en común</small>' : ''}</button>`; }).join('')}</div>`;
+      return `<button class="amigo-mini" data-usuario="${esc(x)}" title="${esc(nombreVisible(v))}">${avatarMini(v)}<span>${esc(nombreVisible(v))}</span>${mios.has(x) ? '<small>en común</small>' : ''}</button>`; }).join('')}</div>`;
 }
 
 // ---------- Bandeja de chats ----------
@@ -3977,6 +3986,7 @@ function ir(nombre, opts){
     if(NAV.pila.length > 60) NAV.pila.shift();
     try{ history.pushState({ partazy: NAV.pila.length }, '', location.href); } catch(e){}
   }
+  if(NAV.actual === 'perfil' && nombre !== 'perfil' && document.getElementById('form-perfil')?.style.display === 'flex') cancelarEdicionPerfil();
   NAV.actual = nombre; NAV.clave = clave; NAV.abrir = opts?.abrir || null;
   state.tok++;
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('activa'));
@@ -4883,6 +4893,12 @@ function afinidad(ev, gustos = misGustos()){
     else if(g === 'after') pts = ev.ocasion === 'after' ? 2 : 0;
     else if(g === 'penas') pts = ev.ocasion === 'pena' ? 2 : 0;
     else if(g === 'egresados') pts = ev.ocasion === 'egresados' ? 2 : 0;
+    else if(g === 'musica en vivo') pts = ev.ocasion === 'musical' ? 2 : 0;
+    else if(g === 'gastronomia') pts = ev.ocasion === 'gastronomico' ? 2 : 0;
+    else if(g === 'charlas y talleres') pts = ev.ocasion === 'charla' || ev.ocasion === 'taller' ? 2 : 0;
+    else if(g === 'arte y cultura') pts = ev.ocasion === 'cultural' ? 2 : 0;
+    else if(g === 'deportes') pts = ev.ocasion === 'deportivo' ? 2 : 0;
+    else if(g === 'ferias') pts = ev.ocasion === 'feria' ? 2 : 0;
     else if(ev.categoria === g || (musica && musica.includes(g))) pts = 2;
     else if((PARECIDOS[g] || []).includes(ev.categoria)) pts = 1;
     if(pts > mejor.puntos) mejor = { puntos: pts, motivo: (state.perfil.intereses || []).find(i => normalizar(i) === g) || g };
@@ -5466,6 +5482,7 @@ async function renderDetalle(id){
             : `<div class="info-item"><span class="ii-ico">${II.gente}</span><div class="ii-txt"><small>Lugares</small><b>${cupo} de ${cap} anotados${lleno ? ' · lleno' : ''}</b>${lleno ? '' : `<span class="ii-sub">${cap - cupo === 1 ? 'Queda 1 lugar' : `Quedan ${cap - cupo} lugares`}</span>`}
                 <div class="barra-cupo ${nivelCupo(cupo, cap)}" role="img" aria-label="${cupo} de ${cap} lugares ocupados"><div class="fill" style="width:${Math.max(3, Math.min(100, (cupo/cap)*100))}%;"></div></div></div>${pillCupoHTML(ev) ? `<span class="ii-accion">${pillCupoHTML(ev)}</span>` : ''}</div>`}
         </div>
+        ${extrasHTML(ev)}
         ${ventaExterna && !esCreador && !estado && !cancelado ? `<button class="btn btn-secundario ya-compre" data-ya-compre="${esc(ev.id)}">✅ Ya compré mi entrada · Avisar que voy</button>` : ''}
         <div class="tags">
           <span class="tag">Dress code: ${esc(ev.dresscode||'Libre')}</span>
@@ -5890,8 +5907,51 @@ async function enviarMensaje(eventId){
 }
 
 // =========================================================
-//  CREAR EVENTO
+//  CREAR EVENTO (3 pasos: lo básico → tipo → dónde y detalles)
+//  Al editar se ve todo junto (clase .todo en el formulario).
 // =========================================================
+state.pasoCrear = 1;
+// Muestra un paso del formulario de crear.
+function irAPasoCrear(n){
+  state.pasoCrear = n;
+  const form = document.getElementById('form-crear');
+  if(!form) return;
+  form.dataset.paso = n;
+  document.querySelectorAll('#pasos-barra i').forEach((b, k) => b.classList.toggle('on', k < n));
+  if(!state.tipoElegido && !state.editandoId) document.querySelectorAll('#tipos-grid .tipo-op').forEach(b => { b.classList.remove('on'); b.setAttribute('aria-pressed', 'false'); });
+  const edit = !!state.editandoId;
+  document.getElementById('btn-paso-atras').style.display = !edit && n > 1 ? '' : 'none';
+  document.getElementById('btn-paso-sig').style.display = !edit && n < 3 ? '' : 'none';
+  document.getElementById('btn-publicar').style.display = edit || n === 3 ? '' : 'none';
+  document.getElementById('nav-pasos').style.display = edit ? 'none' : '';
+  const intro = document.getElementById('crear-intro'); if(intro) intro.style.display = n === 1 || edit ? '' : 'none';
+  pintarResumenPasos();
+  const sc = document.getElementById('pantalla-crear'); if(sc && sc.scrollTo) sc.scrollTo({ top: 0 });
+}
+// Lo que ya completaste, en chiquito arriba (tocás y volvés a ese paso).
+function pintarResumenPasos(){
+  const el = document.getElementById('resumen-pasos');
+  if(!el) return;
+  const n = state.pasoCrear, nom = document.getElementById('f-nombre').value.trim(), fe = document.getElementById('f-fecha').value, ho = document.getElementById('f-hora').value;
+  const oc = document.getElementById('f-ocasion').value;
+  const partes = [];
+  if(n > 1 && !state.editandoId){
+    const fecha = fe ? fe.split('-').reverse().slice(0, 2).join('/') : '';
+    partes.push(`<button type="button" class="res-chip" onclick="irAPasoCrear(1)">✏️ ${esc(nom || 'Sin nombre')}${fecha ? ' · ' + esc(fecha) : ''}${ho ? ' ' + esc(ho) : ''}</button>`);
+  }
+  if(n > 2 && !state.editandoId && oc) partes.push(`<button type="button" class="res-chip" onclick="irAPasoCrear(2)">${esc(OCASIONES[oc] || 'Tipo')} ✏️</button>`);
+  el.innerHTML = partes.join('');
+}
+// Botones Continuar / Atrás.
+function pasoCrear(d){
+  const n = state.pasoCrear;
+  if(d > 0 && n === 1){
+    if(!document.getElementById('f-nombre').value.trim()){ toast('Ponele un nombre al evento'); document.getElementById('f-nombre').focus(); return; }
+    if(!document.getElementById('f-fecha').value){ toast('Elegí la fecha'); document.getElementById('f-fecha').focus(); return; }
+  }
+  if(d > 0 && n === 2 && !state.tipoElegido){ toast('Elegí qué tipo de evento es'); return; }
+  irAPasoCrear(Math.max(1, Math.min(3, n + d)));
+}
 function elegirTipo(tipo){
   state.tipoEventoActivo = tipo;
   const oc = document.getElementById('f-ocasion')?.value;
@@ -5903,7 +5963,7 @@ function elegirTipo(tipo){
   const previa = tipo === 'previa';
   document.getElementById('campo-estilo').style.display = previa ? 'none' : '';
   document.getElementById('fila-vip').style.display = previa ? 'none' : '';
-  document.getElementById('campo-tipos').style.display = previa ? 'none' : '';
+  document.getElementById('campo-tipos').style.display = previa && state.editandoId ? 'none' : '';   // al editar no se cambia previa ⇄ evento
   if(previa) elegirOcasion('previa');
   else elegirOcasion(document.getElementById('f-ocasion').value === 'previa' ? 'fiesta' : document.getElementById('f-ocasion').value);
   actualizarCampoVip();
@@ -5965,8 +6025,8 @@ function revisarNombrePrevia(){
   const n = document.getElementById('f-nombre').value;
   if(state.tipoEventoActivo === 'fiesta' && /\bprevia\b/i.test(n) && !state.editandoId && state._avisoPrevia !== n.toLowerCase()){
     state._avisoPrevia = n.toLowerCase();
-    elegirTipo('previa');
-    toast('🍾 Lo pasamos a Previa');
+    elegirTipo('previa'); elegirOcasion('previa'); state.tipoElegido = true;
+    toast('🍾 Lo marcamos como Previa (lo podés cambiar en el paso 2)');
   }
 }
 // Interruptor de entrada paga (muestra precio y ayuda de capacidad).
@@ -6026,14 +6086,114 @@ function claveTipo(ev){ return ICONOS_TIPO[ev.ocasion] ? ev.ocasion : (ev.tipo =
 // Ícono SVG del tipo de evento.
 function iconoTipo(ev){ return `<svg class="ico-tipo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONOS_TIPO[claveTipo(ev)]}</svg>`; }
 // Selector de tipo en el formulario
+// Preguntas extra según el tipo de evento (se guardan en ev.extras y se muestran en el detalle).
+// tipo: 'text' | 'num' | 'sel' (ops) | 'multi' (ops, se guarda "a, b").
+const EXTRAS_TIPO = {
+  deportivo: [
+    { k: 'deporte', l: '¿Qué deporte o actividad?', ph: 'Ej: fútbol 5, running, vóley, pádel, trekking' },
+    { k: 'modalidad', l: 'Modalidad', t: 'sel', ops: ['Recreativo', 'Entrenamiento', 'Torneo / competencia', 'Clase'] },
+    { k: 'nivel', l: 'Nivel', t: 'sel', ops: ['Para todos', 'Principiante', 'Intermedio', 'Avanzado'] },
+    { k: 'objetivo', l: '¿Cuál es el objetivo?', ph: 'Ej: armar equipo, juntar fondos, preparar una carrera' },
+    { k: 'pausas', l: '¿Hay pausas o descansos?', ph: 'Ej: 10 min de hidratación cada hora' },
+    { k: 'llevar', l: '¿Qué hay que llevar?', ph: 'Ej: zapatillas, agua, ropa cómoda' }],
+  gastronomico: [
+    { k: 'menu', l: '¿Qué se va a servir?', ph: 'Ej: menú de 4 pasos, pizzas, degustación de vinos' },
+    { k: 'cocina', l: 'Tipo de cocina', ph: 'Ej: italiana, parrilla, vegana, de autor' },
+    { k: 'opciones', l: 'Opciones especiales', t: 'multi', ops: ['Vegetariano', 'Vegano', 'Sin TACC', 'Sin lactosa'] },
+    { k: 'bebida', l: 'Bebida', t: 'sel', ops: ['Incluida', 'Se paga aparte', 'Traé la tuya'] }],
+  charla: [
+    { k: 'tema', l: '¿De qué tema?', ph: 'Ej: emprendimiento, ciberseguridad, salud mental' },
+    { k: 'quien', l: '¿Quién habla?', ph: 'Nombre y a qué se dedica' },
+    { k: 'publico', l: '¿Para quién es?', ph: 'Ej: estudiantes, emprendedores, todo público' },
+    { k: 'duracion', l: 'Duración', ph: 'Ej: 1 h 30 min' },
+    { k: 'modo', l: 'Formato', t: 'sel', ops: ['Presencial', 'Presencial y online'] },
+    { k: 'certificado', l: '¿Hay certificado?', t: 'sel', ops: ['No', 'Sí'] }],
+  taller: [
+    { k: 'tema', l: '¿Qué se aprende?', ph: 'Ej: cerámica, fotografía, coctelería' },
+    { k: 'quien', l: '¿Quién lo da?', ph: 'Nombre del docente o tallerista' },
+    { k: 'nivel', l: 'Nivel', t: 'sel', ops: ['Sin experiencia', 'Intermedio', 'Avanzado'] },
+    { k: 'materiales', l: 'Materiales', ph: 'Ej: incluidos / traer cuaderno y lápiz' },
+    { k: 'duracion', l: 'Duración', ph: 'Ej: 3 encuentros de 2 h' },
+    { k: 'certificado', l: '¿Hay certificado?', t: 'sel', ops: ['No', 'Sí'] }],
+  cultural: [
+    { k: 'disciplina', l: '¿Qué es?', t: 'sel', ops: ['Teatro', 'Muestra / exposición', 'Cine', 'Danza', 'Stand-up', 'Literatura', 'Otro'] },
+    { k: 'quien', l: 'Artistas / elenco', ph: 'Quiénes participan' },
+    { k: 'duracion', l: 'Duración', ph: 'Ej: 70 min' },
+    { k: 'apto', l: 'Apto para', t: 'sel', ops: ['Todo público', 'Mayores de 13', 'Mayores de 18'] }],
+  feria: [
+    { k: 'rubros', l: '¿Qué se va a encontrar?', ph: 'Ej: ropa, diseño, comida, plantas' },
+    { k: 'puestos', l: 'Cantidad de puestos', t: 'num', ph: 'Ej: 40' },
+    { k: 'pagos', l: 'Medios de pago', t: 'multi', ops: ['Efectivo', 'Transferencia', 'Tarjeta', 'Mercado Pago'] },
+    { k: 'actividades', l: 'Actividades extra', ph: 'Ej: música en vivo, talleres para chicos' }],
+  musical: [
+    { k: 'formato', l: 'Formato', t: 'sel', ops: ['Banda en vivo', 'Acústico', 'DJ set', 'Festival', 'Solista'] },
+    { k: 'genero', l: '¿Qué género?', ph: 'Ej: rock nacional, jazz, cumbia' }],
+  pena: [
+    { k: 'genero', l: '¿Qué música?', ph: 'Ej: folklore, chacarera, zamba' },
+    { k: 'comida', l: '¿Hay comida?', ph: 'Ej: empanadas y locro' }],
+  egresados: [
+    { k: 'institucion', l: '¿De qué colegio o facultad?', ph: 'Ej: Colegio Nacional de Monserrat' },
+    { k: 'promo', l: 'Promoción', ph: 'Ej: Promo 2026' },
+    { k: 'anotarse', l: '¿Cómo se anotan?', ph: 'Ej: hablale a cualquier egresado y te anotamos' }],
+  cumple: [
+    { k: 'quien', l: '¿Quién cumple?', ph: 'Nombre del cumpleañero' },
+    { k: 'regalo', l: 'Regalo / vaquita', ph: 'Ej: vaquita de $5.000 al alias juli.cumple' }]
+};
+// Dibuja las preguntas del tipo elegido (conserva lo que ya estaba escrito).
+function renderCamposTipo(k, valores){
+  const cont = document.getElementById('campos-tipo');
+  if(!cont) return;
+  const ant = valores || leerExtras();
+  const campos = EXTRAS_TIPO[k] || [];
+  if(!campos.length){ cont.innerHTML = ''; cont.style.display = 'none'; return; }
+  cont.style.display = '';
+  const id = c => 'fx-' + c.k;
+  cont.innerHTML = `<div class="campos-tipo-tit">${iconoTipo({ ocasion: k })}Sobre ${esc((OCASIONES[k] || 'el evento').toLowerCase())}</div>` + campos.map(c => {
+    const v = ant[c.k] || '';
+    if(c.t === 'sel') return `<div class="campo"><label for="${id(c)}">${esc(c.l)}</label><select id="${id(c)}" data-extra="${c.k}"><option value="">Sin especificar</option>${c.ops.map(o => `<option${o === v ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></div>`;
+    if(c.t === 'multi'){ const sel = v.split(',').map(x => x.trim());
+      return `<div class="campo"><label>${esc(c.l)}</label><div class="multi-ops" data-extra="${c.k}" data-multi="1">${c.ops.map(o => `<button type="button" class="chip${sel.includes(o) ? ' activo' : ''}" onclick="this.classList.toggle('activo')">${esc(o)}</button>`).join('')}</div></div>`; }
+    return `<div class="campo"><label for="${id(c)}">${esc(c.l)}</label><input type="${c.t === 'num' ? 'number' : 'text'}" id="${id(c)}" data-extra="${c.k}" maxlength="120" placeholder="${esc(c.ph || '')}" value="${esc(v)}"></div>`;
+  }).join('');
+}
+// Lee las respuestas extra del formulario (solo las que tienen algo).
+function leerExtras(){
+  const out = {};
+  document.querySelectorAll('#campos-tipo [data-extra]').forEach(el => {
+    const v = el.dataset.multi ? [...el.querySelectorAll('.chip.activo')].map(b => b.textContent).join(', ') : String(el.value || '').trim();
+    if(v) out[el.dataset.extra] = v.slice(0, 120);
+  });
+  return out;
+}
+// Bloque "Lo que tenés que saber" en el detalle del evento.
+function extrasHTML(ev){
+  const campos = EXTRAS_TIPO[ev.ocasion] || [], x = ev.extras || {};
+  const filas = campos.filter(c => x[c.k]).map(c => `<div class="extra-fila"><small>${esc(c.l.replace(/^¿/, '').replace(/\?$/, ''))}</small><b>${esc(x[c.k])}</b></div>`);
+  return filas.length ? `<div class="extras-lista">${filas.join('')}</div>` : '';
+}
 function elegirOcasion(k){
   document.getElementById('f-ocasion').value = OCASIONES[k] ? k : '';
   document.querySelectorAll('#tipos-grid .tipo-op').forEach(b => { const on = b.dataset.ocasion === k; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
-  // Charlas, ferias, talleres, etc.: no tiene sentido pedir estilo de música ni lista VIP
-  const fiesta = OCASIONES_FIESTA.has(k || '') || k === 'musical', previa = state.tipoEventoActivo === 'previa';
-  const ce = document.getElementById('campo-estilo'), fv = document.getElementById('fila-vip');
-  if(ce) ce.style.display = previa || !fiesta ? 'none' : '';
-  if(fv) fv.style.display = previa || !OCASIONES_FIESTA.has(k || '') ? 'none' : '';
+  // La música siempre es opcional; la lista VIP y el dress code solo donde tienen sentido
+  const previa = state.tipoEventoActivo === 'previa';
+  const vis = (id, on) => { const el = document.getElementById(id); if(el) el.style.display = on ? '' : 'none'; };
+  vis('campo-estilo', !previa);
+  vis('fila-vip', !previa && OCASIONES_FIESTA.has(k || ''));
+  vis('campo-dresscode', !['deportivo', 'feria', 'charla', 'taller'].includes(k));
+  const ll = document.getElementById('label-lineup'), tl = document.getElementById('f-lineup');
+  const crono = { charla: 'Cronograma', taller: 'Cronograma', deportivo: 'Cronograma', feria: 'Horarios y actividades', cultural: 'Programa', gastronomico: 'Pasos o momentos' }[k];
+  if(ll) ll.textContent = (crono || 'Line-up') + ' (opcional)';
+  if(tl) tl.placeholder = crono ? 'Un renglón por momento. Podés poner la hora:\n18:00 Apertura\n18:30 Primera parte' : 'Un artista por renglón. Podés poner la hora:\n23:30 DJ Invitado\n01:00 Banda principal';
+  const lm = document.querySelector('label[for="f-musica"]'); if(lm) lm.textContent = 'Música (opcional)';
+  renderCamposTipo(k);
+  actualizarCampoVip && document.getElementById('switch-vip') && actualizarCampoVip();
+}
+// Elegir el tipo en el paso 2 (Previa también está acá). Pasa solo al paso siguiente.
+function elegirTipoDesdeGrilla(k){
+  if(k === 'previa') elegirTipo('previa');
+  else { if(state.tipoEventoActivo === 'previa') elegirTipo('fiesta'); elegirOcasion(k); }
+  state.tipoElegido = true;
+  if(!state.editandoId && state.pasoCrear === 2) setTimeout(() => { if(state.pasoCrear === 2) irAPasoCrear(3); }, 280);
 }
 // Tocar "Previa" en los tipos lleva a la sección Previa (arriba)
 function irAPrevia(){
@@ -6124,7 +6284,7 @@ async function publicarEvento(){
     categoria: estilo, musica, dresscode: val('f-dresscode') || 'Libre', ocasion: OCASIONES[val('f-ocasion')] ? val('f-ocasion') : '', vip,
     bebida: tipo === 'previa' && document.getElementById('switch-bebida').classList.contains('on'),
     tipo, privacidad: privada ? 'privada' : 'publica',
-    listaVip: conVip, inscripcionHasta,
+    listaVip: conVip, inscripcionHasta, extras: leerExtras(),
     imagen: state.imagenMini || state.imagenNueva || '', imagenGrande: state.imagenMini ? state.imagenNueva : null,
     descripcion: val('f-descripcion') || 'Evento creado desde Partazy.',
     reglas: reglas || 'Respetar el lugar y a los demás asistentes.'
@@ -6146,6 +6306,7 @@ async function publicarEvento(){
     conQR: esOrganizacion(state.perfil) && document.getElementById('switch-qr').classList.contains('on'),
     capacidad, capacidadDesconocida: sinTope, confirmadosCount: 1, edadMinima, vistasCount: 0,
     ...(inscripcionHasta ? { inscripcionHasta } : {}),
+    ...(Object.keys(leerExtras()).length ? { extras: leerExtras() } : {}),
     dresscode: val('f-dresscode') || 'Libre', musica,
     bebida: tipo === 'previa' && document.getElementById('switch-bebida').classList.contains('on'),
     listaVip: conVip,
@@ -6203,6 +6364,9 @@ function resetFormularioCrear(){
   state.editandoId = null; state.editandoEv = null;
   modoEdicionUI(false);
   elegirTipo('fiesta');
+  document.querySelectorAll('#tipos-grid .tipo-op').forEach(b => { b.classList.remove('on'); b.setAttribute('aria-pressed', 'false'); });
+  state.tipoElegido = false;
+  irAPasoCrear(1);
 }
 
 
@@ -6775,8 +6939,9 @@ function modoEdicionUI(on){
   set('crear-titulo', el => el.textContent = on ? 'Editar evento' : 'Crear');
   set('crear-intro', el => el.textContent = on
     ? 'Cambiá lo que necesites. Si modificás la fecha, el horario o el lugar, avisamos en el grupo del evento.'
-    : 'Elegí qué tipo de encuentro querés organizar. Cualquiera que abra la app lo va a poder ver.');
-  set('crear-tipo', el => el.style.display = on ? 'none' : '');
+    : 'Fiestas, previas, recitales, charlas, ferias, talleres, partidos… cualquier evento donde vaya gente.');
+  set('crear-tipo', el => el.style.display = 'none');
+  set('form-crear', el => el.classList.toggle('todo', on));
   set('btn-publicar', el => el.textContent = on ? 'Guardar cambios' : 'Publicar evento');
   if(on){
     // Las entradas QR no se cambian con gente ya anotada (la privacidad de una previa sí)
@@ -6831,6 +6996,9 @@ async function editarEvento(ev){
     document.getElementById('upload-label-txt').textContent = 'Tocá para cambiar la foto';
   }
   modoEdicionUI(true);
+  state.tipoElegido = true;
+  renderCamposTipo(esPrevia ? 'previa' : (ev.ocasion || 'fiesta'), ev.extras || {});
+  irAPasoCrear(3);
   state.abriendoEdicion = true;
   try{ ir('crear'); } finally { state.abriendoEdicion = false; }
   if(ev.privacidad === 'privada'){
@@ -6868,6 +7036,7 @@ async function guardarEdicion(ev, d){
     dresscode: d.dresscode, bebida: d.bebida, listaVip: d.listaVip, imagen: d.imagen, ...(d.imagenGrande ? { fotoGrande: true } : {}),
     descripcion: d.descripcion, reglas: d.reglas, editadoTs: Date.now(),
   };
+  if(Object.keys(d.extras || {}).length || ev.extras) cambios.extras = d.extras || {};
   // Fecha límite: se guarda, se cambia o se borra (solo si cambió)
   if(d.inscripcionHasta) cambios.inscripcionHasta = d.inscripcionHasta;
   else if(typeof ev.inscripcionHasta === 'number') cambios.inscripcionHasta = firebase.firestore.FieldValue.delete();
@@ -6941,7 +7110,7 @@ async function renderPerfilVista(){
     `<button class="btn btn-primario" style="margin-bottom:16px;" onclick="editarPerfil()">Elegí tu @usuario para que te encuentren</button>`;
   const edad = edadUsuario();
   document.getElementById('perfil-ubic').textContent = [isNaN(edad) || state.perfil.ocultarEdad ? null : `${edad} años`, state.perfil.ciudad].filter(Boolean).join(' · ');
-  document.getElementById('perfil-email').textContent = state.email || '';
+  // El mail no se muestra en el perfil (está en ☰ → Mis datos, que solo ves vos)
   const pc = document.getElementById('perfil-calif');
   const txtCalif = esOrganizacion(state.perfil) ? (califOrgTxt(state.perfil) || 'Todavía sin calificaciones · te califican quienes van a tus eventos') : '';
   pc.innerHTML = txtCalif; pc.style.display = txtCalif ? '' : 'none';
@@ -6996,6 +7165,32 @@ function elegirGustos(){
   state.desdeGustos = true;   // al guardar, vuelve al inicio con las recomendaciones
   setTimeout(() => { const el = document.querySelector('#ep-intereses [data-grupo="musica"]'); if(el && el.scrollIntoView) el.scrollIntoView({ behavior: 'smooth', block: 'center' }); }, 250);
 }
+// "Mis datos": lo que la persona cargó al crear la cuenta. Solo lo ve ella (nunca la contraseña).
+function abrirMisDatos(){
+  cerrarMenuPerfil && cerrarMenuPerfil();
+  const p = state.perfil || {}, pr = state.privado || {};
+  const nac = pr.nacimiento ? pr.nacimiento.split('-').reverse().join('/') : '—';
+  const alta = p.createdAt ? new Date(p.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—';
+  const login = auth?.currentUser?.providerData?.[0]?.providerId === 'google.com' ? 'Google' : 'Email y contraseña';
+  const fila = (t, v) => `<div class="dato-fila"><small>${t}</small><b>${esc(v || '—')}</b></div>`;
+  document.getElementById('hoja-contenido').innerHTML = `<div class="mis-datos">
+    <div class="agarre"></div>
+    <h3>Mis datos</h3>
+    <p class="ayuda">🔒 Solo vos ves esta información. Los demás ven tu nombre, @usuario, foto, ciudad y gustos.</p>
+    ${fila(esOrganizacion(p) ? 'Nombre de la organización' : 'Nombre y apellido', p.nombre)}
+    ${p.apodo ? fila('Apodo', p.apodo) : ''}
+    ${fila('Usuario', p.usuario ? '@' + p.usuario : '')}
+    ${fila('Email', state.email || pr.email)}
+    ${fila('Fecha de nacimiento', nac)}
+    ${fila('Ciudad o barrio', p.ciudad)}
+    ${fila('Tipo de cuenta', esOrganizacion(p) ? 'Organización' : 'Persona')}
+    ${fila('Cómo entrás', login)}
+    ${fila('Cuenta creada', alta)}
+    <div class="fila-botones" style="padding:0; margin-top:14px;"><button class="btn btn-secundario" onclick="cerrarHoja(); editarPerfil();">✏️ Editar mis datos</button><button class="btn btn-primario" onclick="cerrarHoja()">Listo</button></div>
+  </div>`;
+  document.getElementById('hoja-vista').classList.add('show');
+  abrirModalHist && abrirModalHist();
+}
 // Abre el formulario de edición del perfil.
 function editarPerfil(){
   document.getElementById('vista-perfil').style.display = 'none';
@@ -7013,6 +7208,7 @@ function editarPerfil(){
   pintarCamposOrg(state.perfil);
   document.getElementById('ep-bio').value = state.perfil.bio || '';
   const sw = (id, on) => { const el = document.getElementById(id); el.classList.toggle('on', on); el.setAttribute('aria-checked', on ? 'true' : 'false'); };
+  sw('ep-amigos', !state.perfil.ocultarAmigos); sw('ep-seguidores', !state.perfil.ocultarSeguidores);
   sw('ep-edad', !state.perfil.ocultarEdad); sw('ep-enlinea', !state.perfil.ocultarEnLinea); sw('ep-planes', !state.perfil.ocultarPlanes); sw('ep-mensajes', state.perfil.mensajesDe !== 'amigos');
   document.getElementById('ep-ciudad').value = state.perfil.ciudad || '';
   autocompletarLugar(document.getElementById('ep-ciudad'));
@@ -7043,6 +7239,8 @@ async function guardarPerfil(){
     ocultarEdad: !document.getElementById('ep-edad').classList.contains('on'),
     ocultarEnLinea: !document.getElementById('ep-enlinea').classList.contains('on'),
     ocultarPlanes: !document.getElementById('ep-planes').classList.contains('on'),
+    ocultarAmigos: !document.getElementById('ep-amigos').classList.contains('on'),
+    ocultarSeguidores: !document.getElementById('ep-seguidores').classList.contains('on'),
     mensajesDe: document.getElementById('ep-mensajes').classList.contains('on') ? 'todos' : 'amigos' };
   if(cambios.ocultarEnLinea) cambios.ultimaConexion = 0;
   if(tipoCuenta === 'organizacion') Object.assign(cambios, leerCamposOrg());
@@ -7131,7 +7329,8 @@ async function init(){
   document.getElementById('dm-enviar').addEventListener('click', () => enviarDMTexto());
   document.getElementById('dm-input').addEventListener('keydown', e => { if(e.key === 'Enter') enviarDMTexto(); });
   document.getElementById('dm-input').addEventListener('input', avisarQueEscribo);
-  document.getElementById('tipos-grid').addEventListener('click', e => { const b = e.target.closest('[data-ocasion]'); if(!b) return; if(b.dataset.ocasion === 'previa') return irAPrevia(); elegirOcasion(b.dataset.ocasion); });
+  document.getElementById('tipos-grid').addEventListener('click', e => { const b = e.target.closest('[data-ocasion]'); if(!b) return; elegirTipoDesdeGrilla(b.dataset.ocasion); });
+  irAPasoCrear(1);
   document.getElementById('f-nombre').addEventListener('input', () => { clearTimeout(state._tNombre); state._tNombre = setTimeout(revisarNombrePrevia, 600); });
   document.getElementById('dm-rapidos').addEventListener('click', e => { const b = e.target.closest('[data-rapido]'); if(b) enviarDMTexto(b.dataset.rapido); });
   document.getElementById('dm-rapidos').addEventListener('wheel', e => { if(Math.abs(e.deltaY) > Math.abs(e.deltaX)){ e.currentTarget.scrollLeft += e.deltaY; e.preventDefault(); } }, { passive: false });

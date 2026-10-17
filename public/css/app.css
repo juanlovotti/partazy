@@ -1301,7 +1301,8 @@ html, body{overflow-x:hidden;}
    ========================================================= */
 .screen{overflow-x:hidden; overscroll-behavior-x:none;}
 .screen:not(#pantalla-home) > .topbar{position:sticky; top:0; z-index:30;}
-.screen:not(#pantalla-home) > .topbar{background:#141214; box-shadow:0 0 0 100vmax #141214, 0 1px 0 100vmax var(--gris-linea); clip-path:inset(-40px -100vmax -1px -100vmax);}
+.screen:not(#pantalla-home) > .topbar{transition:background-color .25s var(--ease), box-shadow .25s var(--ease);}
+.screen.con-scroll:not(#pantalla-home) > .topbar{background:#141214; box-shadow:0 0 0 100vmax #141214, 0 1px 0 100vmax var(--gris-linea); clip-path:inset(-40px -100vmax -1px -100vmax);}
 
 /* =========================================================
    LOGO VIVO: la P con el vinilo + "partazy" en Unbounded
@@ -1351,10 +1352,10 @@ html, body{overflow-x:hidden;}
 .amigo-burbuja small{font-size:10.5px; color:var(--gris); max-width:76px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; margin-top:-3px;}
 .amigo-burbuja.con-plan small{color:var(--hueso);}
 .stats-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
-.stat{background:var(--negro-2); border:1px solid var(--gris-linea); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:2px;}
-.stat b{font-family:var(--font-display); font-size:34px; line-height:1; color:var(--rojo);}
-.stat span{font-size:12.5px; font-weight:600; color:var(--blanco);}
-.stat small{font-size:11px; color:var(--gris);}
+.stats-grid .stat{background:var(--negro-2); border:1px solid var(--gris-linea); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:2px; text-align:left;}
+.stats-grid .stat b{font-family:var(--font-display); font-size:34px; line-height:1; color:var(--rojo);}
+.stats-grid .stat span{font-size:12.5px; font-weight:600; color:var(--blanco);}
+.stats-grid .stat small{font-size:11px; color:var(--gris);}
 @media (min-width:900px){ .stats-grid{grid-template-columns:repeat(4, 1fr);} }
 .info-item.insc-cerrada .ii-ico{color:var(--peligro);}
 .amigos-resumen{margin-top:8px; min-height:20px;}
@@ -1363,8 +1364,78 @@ html, body{overflow-x:hidden;}
 .grilla-amigos{display:grid; grid-template-columns:repeat(auto-fill, minmax(76px, 1fr)); gap:14px 8px; padding:4px 20px 24px;}
 .amigo-mini{display:flex; flex-direction:column; align-items:center; gap:4px; background:none; border:none; color:var(--blanco); cursor:pointer; font-family:var(--font-body);}
 .amigo-mini .av-mini{width:56px; height:56px; font-size:16px;}
-.amigo-mini span{font-size:12px; font-weight:600; max-width:80px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.amigo-mini span{font-size:12px; font-weight:600; max-width:88px; text-align:center; line-height:1.25; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow-wrap:anywhere;}
 .amigo-mini small{font-size:10px; color:var(--verde); margin-top:-3px;}
 /* Celu: menos ruido al entrar */
 @media (max-width:899px){ #pantalla-home .ticker{display:none;} }
 .tipos-grid{grid-template-columns:repeat(auto-fill, minmax(96px, 1fr));}
+
+
+/* =========================================================
+   LOGO: la P (con el vinilo) ES la primera letra → "P" + "artazy"
+   Carga: las letras "artazy" entran bailando y al final llega la P girando
+   ========================================================= */
+.lv{gap:.04em;}
+.lv-txt i{animation:lv-baile .7s cubic-bezier(.3,1.6,.5,1) both; animation-delay:calc(var(--i) * 70ms + 80ms);}
+.lv-ico{animation:lv-llega .75s cubic-bezier(.2,1.2,.3,1) .55s both; margin-right:.02em;}
+.lv-ico .lv-disco{animation-delay:.6s;}
+.lv-ico .o1{animation-delay:1.15s;} .lv-ico .o2{animation-delay:1.3s;}
+@keyframes lv-baile{0%{opacity:0; transform:translateY(-.9em) rotate(-25deg) scale(.6);} 45%{opacity:1; transform:translateY(.18em) rotate(12deg) scale(1.08);} 70%{transform:translateY(-.08em) rotate(-6deg);} 100%{opacity:1; transform:none;}}
+@keyframes lv-llega{0%{opacity:0; transform:translateX(-2.2em) rotate(-200deg) scale(.4);} 70%{opacity:1; transform:translateX(.08em) rotate(10deg) scale(1.06);} 100%{opacity:1; transform:none;}}
+/* En la carga, después de entrar, las letras siguen moviéndose suave (como bailando) */
+.loader .lv-carga .lv-txt i{animation:lv-baile .7s cubic-bezier(.3,1.6,.5,1) both, lv-ola 1.6s ease-in-out infinite; animation-delay:calc(var(--i) * 70ms + 80ms), calc(var(--i) * 110ms + 1.2s);}
+@keyframes lv-ola{0%,100%{transform:none;} 30%{transform:translateY(-.12em) rotate(-4deg);} 60%{transform:translateY(.04em) rotate(3deg);}}
+
+/* =========================================================
+   Filtros (chips): en compu se acomodan en varias líneas; en celu se deslizan con bordes suaves
+   ========================================================= */
+@media (min-width:900px){ #chips-home{flex-wrap:wrap; overflow:visible;} }
+@media (max-width:899px){ #chips-home{-webkit-mask-image:linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 28px), transparent); mask-image:linear-gradient(90deg, transparent 0, #000 18px, #000 calc(100% - 28px), transparent); scroll-padding-left:20px;} }
+
+/* =========================================================
+   CREAR EN 3 PASOS
+   ========================================================= */
+.crear-cab{padding:0 20px 16px; display:flex; flex-direction:column; gap:12px;}
+.pasos-barra{display:flex; gap:6px;}
+.pasos-barra i{flex:1; height:5px; border-radius:99px; background:var(--negro-3); transition:background-color .35s var(--ease);}
+.pasos-barra i.on{background:linear-gradient(90deg, var(--rojo), var(--amarillo));}
+.resumen-pasos{display:flex; flex-wrap:wrap; gap:8px;}
+.resumen-pasos:empty{display:none;}
+.res-chip{background:var(--negro-2); border:1px solid var(--gris-linea); color:var(--hueso); border-radius:999px; padding:7px 13px; font-size:12.5px; font-weight:600; cursor:pointer; font-family:var(--font-body); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.form-pasos .paso{display:none; flex-direction:column; gap:inherit; animation:paso-entra .35s var(--ease) both;}
+.form-pasos[data-paso="1"] .paso[data-paso="1"], .form-pasos[data-paso="2"] .paso[data-paso="2"], .form-pasos[data-paso="3"] .paso[data-paso="3"], .form-pasos.todo .paso{display:flex;}
+.form-pasos.todo .paso{animation:none;}
+.form-pasos.todo .paso[data-paso="2"]{display:none;}
+.paso-cab{display:flex; align-items:center; gap:12px; margin-bottom:4px;}
+.paso-num{width:34px; height:34px; flex:none; border-radius:50%; background:var(--rojo); color:var(--blanco); display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:800; font-size:19px;}
+.paso-cab h3{font-family:var(--font-display); text-transform:uppercase; font-size:22px; letter-spacing:.3px; line-height:1;}
+.paso-cab small{display:block; font-size:12.5px; color:var(--gris); margin-top:3px;}
+.form-pasos.todo .paso-cab{display:none;}
+.nav-pasos{display:flex; gap:10px; margin-top:8px;}
+.nav-pasos .btn{flex:1;}
+@keyframes paso-entra{from{opacity:0; transform:translateX(14px);} to{opacity:1; transform:none;}}
+@media (prefers-reduced-motion: reduce){ .form-pasos .paso{animation:none;} }
+.paso[data-paso="2"] .tipos-grid{grid-template-columns:repeat(auto-fill, minmax(100px, 1fr));}
+.paso[data-paso="2"] .tipo-op{min-height:92px;}
+/* Preguntas según el tipo de evento */
+.campos-tipo{display:flex; flex-direction:column; gap:14px; padding:16px; border-radius:18px; background:linear-gradient(135deg, rgba(242,106,27,.08), rgba(76,185,68,.05)); border:1px solid rgba(242,106,27,.28);}
+.campos-tipo .campo{margin:0;}
+.campos-tipo-tit{display:flex; align-items:center; gap:8px; font-family:var(--font-display); text-transform:uppercase; font-size:17px; letter-spacing:.4px; color:var(--hueso);}
+.campos-tipo-tit svg{width:20px; height:20px; color:var(--rojo);}
+.multi-ops{display:flex; flex-wrap:wrap; gap:8px;}
+.extras-lista{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px;}
+.extra-fila{background:var(--negro-2); border:1px solid var(--gris-linea); border-radius:14px; padding:11px 13px; display:flex; flex-direction:column; gap:3px; min-width:0;}
+.extra-fila small{font-family:var(--font-mono); font-size:9.5px; letter-spacing:1.2px; text-transform:uppercase; color:var(--gris);}
+.extra-fila b{font-size:13.5px; line-height:1.35; overflow-wrap:anywhere;}
+@media (min-width:900px){ .extras-lista{grid-template-columns:repeat(3, 1fr);} }
+/* Mis datos */
+.mis-datos{padding:6px 22px calc(22px + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:2px;}
+.mis-datos h3{font-family:var(--font-display); text-transform:uppercase; font-size:28px; margin:6px 0 4px;}
+.mis-datos .ayuda{margin-bottom:12px;}
+.dato-fila{display:flex; justify-content:space-between; gap:16px; padding:12px 0; border-bottom:1px solid var(--gris-linea);}
+.dato-fila small{color:var(--gris); font-size:13px;}
+.dato-fila b{font-size:14px; text-align:right; overflow-wrap:anywhere;}
+/* Nombre largo de organización: no se corta en los encabezados */
+.perfil-header h2{overflow-wrap:anywhere; line-height:1.05;}
+
+.paso[data-paso="2"] #campo-tipos > label{display:none;}

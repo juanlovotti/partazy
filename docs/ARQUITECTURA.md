@@ -116,3 +116,10 @@ Buscá el nombre para saltar. En orden:
 - `ocasion`: tipo de evento. De fiesta: fiesta, previa, after, egresados, cumple. Generales: musical, pena, gastronomico, charla, taller, cultural, deportivo, feria. Los generales no piden estilo de música ni lista VIP.
 - `inscripcionHasta` (opcional): fecha límite para anotarse. La regla `inscripcionAbierta()` rechaza solicitudes, confirmaciones y lista de espera después de esa fecha.
 - Estadísticas (solo quien organiza): vistas únicas, anotados, conversión y compartidos.
+- `extras` (opcional, mapa ≤ 10 claves): respuestas de las preguntas según el tipo (`EXTRAS_TIPO` en app.js: deporte, menú, disertante, etc.). Se muestran en el detalle.
+- Crear evento va en 3 pasos (`irAPasoCrear`): lo básico → tipo → dónde y detalles. Al editar se ve todo junto (`.form-pasos.todo`).
+
+## Perfil
+
+- "Mis datos" (☰): lo que la persona cargó al registrarse, solo para ella. El mail ya no se muestra en el perfil.
+- `ocultarAmigos` / `ocultarSeguidores`: la app no muestra la lista de amigos ni el número de seguidores. (Las amistades aceptadas siguen siendo legibles por usuarios con cuenta en las reglas; para privacidad total habría que mover las amistades públicas a un documento aparte.)

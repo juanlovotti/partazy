@@ -19,7 +19,7 @@ const publicar=async(nombre, tipoKey, estilo, previa)=>{
   const ops=[...w.document.querySelectorAll('#tipos-grid .tipo-op')].map(b=>b.textContent.trim());
   ok(JSON.stringify(ops)===JSON.stringify(['Fiesta','Previa','After','Peña','Egresados','Cumpleaños','Música en vivo','Gastronomía','Charla / Seminario','Taller / Curso','Arte y cultura','Deporte / Aire libre','Feria / Mercado']), 'los 13 tipos (fiestas y eventos generales) con su ícono: '+ops.join(', '));
   ok(w.document.querySelectorAll('#tipos-grid svg').length===13, 'cada tipo tiene su logito');
-  ok($('f-ocasion').value==='fiesta' && w.document.querySelector('[data-ocasion="fiesta"]').classList.contains('on'), 'arranca en "Fiesta"');
+  ok($('f-ocasion').value==='fiesta' && !w.document.querySelector('#tipos-grid .tipo-op.on'), 'arranca sin tipo marcado: lo elegís en el paso 2 (por dentro queda Fiesta)');
   w.elegirTipo('previa'); ok($('f-ocasion').value==='previa', 'al tocar "Previa" arriba, el tipo pasa a Previa');
   w.elegirTipo('fiesta');
   const pena=await publicar('Peña del Sábado','pena','cuarteto');
