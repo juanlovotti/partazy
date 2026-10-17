@@ -47,7 +47,7 @@ let fallos = 0; const check = (c, m) => { console.log((c ? '✔ ' : '✘ ') + m)
   B.abrirUsuario('O'); await sleep(120);
   const pag = txt($B('usuario-contenido'));
   check(pag.includes('Techno desde 2019.') && pag.includes('Marcelo T. de Alvear 651') && pag.includes('Viernes y sábados'), 'página de organización: descripción, dirección y horarios');
-  const links = [...B.document.querySelectorAll('#usuario-contenido a.link-ext')].map(a => a.href);
+  const links = [...B.document.querySelectorAll('#usuario-contenido a.link-ext, #usuario-contenido a.ig-chip')].map(a => a.href);
   check(links.some(h => h.startsWith('https://www.google.com/maps/dir/')) && links.includes('https://instagram.com/vortex.cba') && links.some(h => h.startsWith('https://vortex.com.ar')), '"Cómo llegar" (Google Maps), Instagram y web como links');
   check(B.document.querySelectorAll('#usuario-contenido details.faq').length === 1 && pag.includes('¿Hay guardarropa?'), 'preguntas frecuentes propias de la organización');
   check(pag.includes('Agenda · próximas fechas') && pag.includes('Casi Lleno'), 'agenda con sus próximas fechas');

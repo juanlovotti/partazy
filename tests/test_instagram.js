@@ -6,6 +6,7 @@ const store = crearStore(); const put = (p, v) => store.docs.set(p, v);
 put('users/A', { nombre: 'Juan Lovotti', usuario: 'juan', iniciales: 'JL', ciudad: 'Córdoba', intereses: [], foto: '', createdAt: Date.now() - 864e5 });
 put('users/A/privado/datos', { nacimiento: '1998-01-01' });
 put('users/B', { nombre: 'Sofía Gómez', usuario: 'sofi', iniciales: 'SG', ciudad: 'Córdoba', intereses: [], foto: '', instagram: 'sofi.gomez' });
+put('users/O', { nombre: 'Productora Luna', usuario: 'luna', iniciales: 'PL', ciudad: 'Córdoba', intereses: [], foto: '', tipoCuenta: 'organizacion', instagram: 'https://www.instagram.com/productoraluna/' });
 put('users/C', { nombre: 'Malo', usuario: 'malo', iniciales: 'M', ciudad: 'Córdoba', intereses: [], foto: '', instagram: 'javascript:alert(1)' });
 const w = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://partazy.com/', beforeParse(w){
   w.firebase = makeFirebase(store, () => ({ uid: 'A', email: 'a@t.com' })); w.navigator.geolocation = undefined;
@@ -24,11 +25,17 @@ let f = 0; const ok = (c, m) => { console.log((c ? '✔ ' : '✘ ') + m); if(!c)
   $('ep-instagram').value = 'https://www.instagram.com/juan.lovotti/';
   await w.guardarPerfil(); await sleep(400);
   ok(store.docs.get('users/A').instagram === 'juan.lovotti', 'guarda solo el @ aunque pegues el link entero');
-  w.ir('perfil'); await sleep(300);
+  w.eval('state').perfil.tipoCuenta = 'organizacion';
+  w.ir('perfil'); w.renderPerfilVista(); await sleep(300);
+  ok(d.querySelector('#perfil-ig a.ig-chip'), 'en Mi perfil se ve también si la cuenta es de organización');
+  w.eval('state').perfil.tipoCuenta = 'persona'; w.renderPerfilVista(); await sleep(100);
   const chip = d.querySelector('#perfil-ig a.ig-chip');
   ok(chip && chip.href === 'https://instagram.com/juan.lovotti' && chip.target === '_blank' && /noopener/.test(chip.rel), 'en mi perfil aparece mi Instagram con su link');
   w.abrirUsuario('B'); await sleep(500);
   ok(d.querySelector('#pantalla-usuario .perfil-header a.ig-chip')?.textContent.includes('@sofi.gomez'), 'en el perfil de otra persona se ve su Instagram');
+  w.abrirUsuario('O'); await sleep(500);
+  const hdr = d.querySelector('#pantalla-usuario');
+  ok(hdr.querySelector('.perfil-header a.ig-chip')?.textContent.includes('@productoraluna') && hdr.querySelectorAll('a[href="https://instagram.com/productoraluna"]').length === 1, 'las organizaciones también lo muestran arriba (una sola vez, aunque lo hayan cargado como link)');
   w.abrirUsuario('C'); await sleep(500);
   ok(!d.querySelector('#pantalla-usuario .perfil-header a.ig-chip'), 'un Instagram raro (no un @ real) no se muestra como link');
   const fila = w.personaHTML(w.eval('state').usuarios.B, '');

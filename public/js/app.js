@@ -2696,11 +2696,10 @@ function pintarIGs(cont){
 }
 // Bloques de la página de una organización (se insertan en el perfil público)
 function bloquesOrganizacion(u){
-  const ig = linkInstagram(u.instagram), web = linkWeb(u.web);
+  const web = linkWeb(u.web);
   const filas = [
     u.direccionPublica ? `<div class="info-fila"><span>📍</span><div><b>${esc(u.direccionPublica)}</b>${aExterno(urlMaps(u.direccionPublica), 'Cómo llegar')}</div></div>` : '',
     u.horarios ? `<div class="info-fila"><span>🕒</span><div>${esc(u.horarios)}</div></div>` : '',
-    ig ? `<div class="info-fila"><span>📸</span><div>${aExterno(ig.url, ig.texto)}</div></div>` : '',
     web ? `<div class="info-fila"><span>🌐</span><div>${aExterno(web.url, web.texto)}</div></div>` : ''
   ].join('');
   const faq = (Array.isArray(u.faq) ? u.faq : []).filter(x => x && x.p && x.r);
@@ -3604,7 +3603,7 @@ async function renderUsuario(uid){
       <h2>${esc(nombreVisible(u))}${insignia(u)}</h2>
       ${u.usuario ? `<div class="handle">@${esc(u.usuario)}</div>` : ''}
       ${fundadorHTML(u)}
-      ${!esOrganizacion(u) && !bloqueado ? igChipHTML(u) : ''}
+      ${!bloqueado ? igChipHTML(u) : ''}
       ${esOrganizacion(u) ? `<div class="tags" style="justify-content:center; margin-top:8px;"><span class="tag">🎪 Organizador de eventos</span>${(u.califN || 0) ? `<span class="tag">${califOrgTxt(u)}</span>` : ''}${u.ocultarSeguidores && !esYo ? '' : `<span class="tag">${u.seguidores || 0} ${(u.seguidores || 0) === 1 ? 'seguidor' : 'seguidores'}</span>`}</div>` : ''}
       <div class="ubic">${esc([u.apodo ? u.nombre : '', u.ciudad].filter(Boolean).join(' · '))}</div>
       ${lineaEstadoHTML(u)}
@@ -7262,7 +7261,7 @@ async function renderPerfilVista(){
   document.getElementById('btn-mi-pagina').style.display = esOrganizacion(state.perfil) ? '' : 'none';
   document.getElementById('perfil-handle').textContent = state.perfil.usuario ? '@' + state.perfil.usuario : '';
   document.getElementById('perfil-fundador').innerHTML = fundadorHTML(state.perfil);
-  document.getElementById('perfil-ig').innerHTML = esOrganizacion(state.perfil) ? '' : igChipHTML(state.perfil);
+  document.getElementById('perfil-ig').innerHTML = igChipHTML(state.perfil);
   document.getElementById('perfil-aviso').innerHTML = state.perfil.usuario ? '' :
     `<button class="btn btn-primario" style="margin-bottom:16px;" onclick="editarPerfil()">Elegí tu @usuario para que te encuentren</button>`;
   const edad = edadUsuario();
