@@ -1,0 +1,47 @@
+// Prueba: cada cuenta puede poner su Instagram; se ve en el perfil y en las listas (así sabés quién va).
+const { JSDOM } = require('jsdom');
+const { crearStore, makeFirebase } = require('./fakefb.js');
+const html = require('./cargar-html.js')();
+const store = crearStore(); const put = (p, v) => store.docs.set(p, v);
+put('users/A', { nombre: 'Juan Lovotti', usuario: 'juan', iniciales: 'JL', ciudad: 'Córdoba', intereses: [], foto: '', createdAt: Date.now() - 864e5 });
+put('users/A/privado/datos', { nacimiento: '1998-01-01' });
+put('users/B', { nombre: 'Sofía Gómez', usuario: 'sofi', iniciales: 'SG', ciudad: 'Córdoba', intereses: [], foto: '', instagram: 'sofi.gomez' });
+put('users/O', { nombre: 'Productora Luna', usuario: 'luna', iniciales: 'PL', ciudad: 'Córdoba', intereses: [], foto: '', tipoCuenta: 'organizacion', instagram: 'https://www.instagram.com/productoraluna/' });
+put('users/C', { nombre: 'Malo', usuario: 'malo', iniciales: 'M', ciudad: 'Córdoba', intereses: [], foto: '', instagram: 'javascript:alert(1)' });
+const w = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://partazy.com/', beforeParse(w){
+  w.firebase = makeFirebase(store, () => ({ uid: 'A', email: 'a@t.com' })); w.navigator.geolocation = undefined;
+  w.fetch = async () => ({ json: async () => [] });
+  w.addEventListener('error', e => console.error('ERROR JS', e.message)); } }).window;
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+let f = 0; const ok = (c, m) => { console.log((c ? '✔ ' : '✘ ') + m); if(!c) f++; };
+(async () => {
+  await sleep(1400); w.cerrarTutorial(); await sleep(150);
+  const d = w.document, $ = id => d.getElementById(id);
+  w.ir('perfil'); await sleep(300); w.editarPerfil(); await sleep(200);
+  ok($('ep-instagram') && !$('ep-org').contains($('ep-instagram')), 'el campo Instagram está para todas las cuentas (no solo organizaciones)');
+  $('ep-instagram').value = 'esto no es un usuario!!';
+  await w.guardarPerfil(); await sleep(200);
+  ok(!store.docs.get('users/A').instagram && /Instagram/.test($('toast').textContent), 'si lo que escribís no es un @ válido, avisa y no guarda');
+  $('ep-instagram').value = 'https://www.instagram.com/juan.lovotti/';
+  await w.guardarPerfil(); await sleep(400);
+  ok(store.docs.get('users/A').instagram === 'juan.lovotti', 'guarda solo el @ aunque pegues el link entero');
+  w.eval('state').perfil.tipoCuenta = 'organizacion';
+  w.ir('perfil'); w.renderPerfilVista(); await sleep(300);
+  ok(d.querySelector('#perfil-ig a.ig-chip'), 'en Mi perfil se ve también si la cuenta es de organización');
+  w.eval('state').perfil.tipoCuenta = 'persona'; w.renderPerfilVista(); await sleep(100);
+  const chip = d.querySelector('#perfil-ig a.ig-chip');
+  ok(chip && chip.href === 'https://instagram.com/juan.lovotti' && chip.target === '_blank' && /noopener/.test(chip.rel), 'en mi perfil aparece mi Instagram con su link');
+  w.abrirUsuario('B'); await sleep(500);
+  ok(d.querySelector('#pantalla-usuario .perfil-header a.ig-chip')?.textContent.includes('@sofi.gomez'), 'en el perfil de otra persona se ve su Instagram');
+  w.abrirUsuario('O'); await sleep(500);
+  const hdr = d.querySelector('#pantalla-usuario');
+  ok(hdr.querySelector('.perfil-header a.ig-chip')?.textContent.includes('@productoraluna') && hdr.querySelectorAll('a[href="https://instagram.com/productoraluna"]').length === 1, 'las organizaciones también lo muestran arriba (una sola vez, aunque lo hayan cargado como link)');
+  w.abrirUsuario('C'); await sleep(500);
+  ok(!d.querySelector('#pantalla-usuario .perfil-header a.ig-chip'), 'un Instagram raro (no un @ real) no se muestra como link');
+  const fila = w.personaHTML(w.eval('state').usuarios.B, '');
+  ok(/class="ig-mini" href="https:\/\/instagram\.com\/sofi\.gomez"/.test(fila), 'en las listas de personas aparece el íconito de Instagram');
+  const cont = d.createElement('div'); cont.innerHTML = '<span class="ig-slot" data-ig="B"></span><span class="ig-slot" data-ig="C"></span>'; d.body.appendChild(cont);
+  w.pintarIGs(cont); await sleep(300);
+  ok(cont.querySelectorAll('a.ig-mini').length === 1, 'en confirmados y solicitudes se completa el Instagram de cada uno (para saber quién va)');
+  console.log(f ? '\nFALLAS: ' + f : '\nTODO OK'); process.exit(f ? 1 : 0);
+})();

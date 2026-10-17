@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<!--
+  PARTAZY · index.html
+  Estructura de la app (una sola página):
+    - <head>: metadatos, vista previa al compartir (Open Graph), fuentes y estilos (css/app.css).
+    - #loader: pantalla de carga inicial.
+    - #app: contenedor de la app. Cada pantalla es un <div class="screen" id="pantalla-NOMBRE">
+      y js/app.js muestra una u otra con ir('NOMBRE').
+    - Navbar: barra de abajo en el celu / barra lateral en la compu.
+    - Ventanas que se abren encima (mapas, menús, avisos, tutorial).
+    - Al final: librerías externas (Firebase, QR) y js/app.js.
+  Los onclick="..." llaman a funciones de js/app.js (son globales a propósito).
+-->
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<!-- Una sola dirección: si entran por partazy.web.app (o las otras de Firebase), los mandamos a partazy.com -->
+<script>(function(){var h=location.hostname;if(h==='partazy.web.app'||h==='partazy.firebaseapp.com'||h==='www.partazy.com'){location.replace('https://partazy.com'+location.pathname+location.search+location.hash);}})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#141214">
+<!-- La app es oscura: así el "modo oscuro" de Samsung/Chrome no le cambia los colores (logo, naranja) -->
+<meta name="color-scheme" content="dark only">
+<meta name="darkreader-lock">
+<title>PARTAZY · Todo lo que pasa cerca tuyo</title>
+<meta name="description" content="Fiestas, previas, recitales, charlas, ferias y todo lo que pasa cerca tuyo. Mirá a dónde van tus amigos y armá tu plan.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="PARTAZY">
+<meta property="og:title" content="PARTAZY · Todo lo que pasa cerca tuyo">
+<meta property="og:description" content="Fiestas, recitales, charlas y más. Mirá a dónde van tus amigos y armá tu plan. Sumate gratis.">
+<meta property="og:url" content="https://partazy.com/">
+<meta property="og:image" content="https://partazy.com/og-partazy.png?v=3">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:locale" content="es_AR">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://partazy.com/og-partazy.png?v=3">
+<link rel="icon" href="/favicon.svg?v=3" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png?v=3" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/icono-180.png?v=3">
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PARTAZY">
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://www.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Unbounded:wght@700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<!-- Logo: formas compartidas (la P, el punto, el degradé y el difuminado del tornasol) -->
+<svg class="defs-logo" width="0" height="0" aria-hidden="true" focusable="false" style="position:absolute;width:0;height:0;overflow:hidden">
+  <defs>
+    <clipPath id="ptz-p"><path d="M20 13a2 2 0 0 1 2-2h12a14 14 0 0 1 0 28h-4v12a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2z M34 19.5a5.5 5.5 0 1 1 0 11h-4v-11z" clip-rule="evenodd"/></clipPath>
+    <clipPath id="ptz-c"><circle cx="10" cy="10" r="10"/></clipPath>
+    <linearGradient id="ptz-base" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8B411"/><stop offset=".55" stop-color="#F26A1B"/><stop offset="1" stop-color="#4CB944"/></linearGradient>
+    <filter id="ptz-blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4.5"/></filter>
+    <filter id="ptz-blur2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
+  </defs>
+</svg>
+<div id="gt-oculto" style="display:none"></div>
+
+<!-- Loader inicial -->
+<div class="loader" id="loader">
+  <!-- Logo animado: el vinilo de la P gira mientras carga y las letras aparecen de a una -->
+  <div class="lv lv-carga" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></div>
+  <div style="font-family:var(--font-mono); font-size:11px; color:var(--gris); letter-spacing:2px;" id="loader-txt">CONECTANDO...</div>
+</div>
+
+<div class="phone sin-nav" id="app" style="display:none;">
+
+  <!-- ============ BIENVENIDA / INGRESO ============ -->
+  <div class="screen" id="pantalla-bienvenida">
+    <div class="auth-wrap">
+      <button class="link-btn btn-seguir-mirando" onclick="seguirMirando()" style="align-self:flex-start; margin-bottom:8px; color:var(--gris); font-weight:600;">‹ Seguir mirando sin cuenta</button>
+      <div class="auth-hero">
+        <h1 class="logo-ingreso" aria-label="PARTAZY"><span class="lv lv-login" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></span></h1>
+        <div class="eq" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i><i style="--i:8"></i></div>
+        <p class="tagline">Fiestas, recitales, charlas y todo lo que pasa cerca tuyo.<br>Encontrá tu plan de hoy.</p>
+      </div>
+      <button class="btn btn-google" id="btn-google">
+        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.5l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.6 13.2l7.8 6C12.3 13.4 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z"/><path fill="#FBBC05" d="M10.4 28.8c-.5-1.5-.8-3.1-.8-4.8s.3-3.3.8-4.8l-7.8-6C.9 16.5 0 20.1 0 24s.9 7.5 2.6 10.8l7.8-6z"/><path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.7-4.2-13.6-9.9l-7.8 6C6.6 42.6 14.6 48 24 48z"/></svg>
+        Continuar con Google
+      </button>
+      <button class="btn btn-facebook" id="btn-facebook" style="display:none;">
+        <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M24 12.07C24 5.4 18.63 0 12 0S0 5.4 0 12.07C0 18.1 4.39 23.1 10.13 24v-8.44H7.08v-3.49h3.05V9.41c0-3.02 1.79-4.69 4.53-4.69 1.31 0 2.68.24 2.68.24v2.97h-1.51c-1.49 0-1.96.93-1.96 1.89v2.26h3.33l-.53 3.49h-2.8V24C19.61 23.1 24 18.1 24 12.07z"/></svg>
+        Continuar con Facebook
+      </button>
+      <div class="separador">o con tu email</div>
+      <div class="auth-form">
+        <input type="email" id="auth-email" placeholder="Email" autocomplete="email" aria-label="Email">
+        <input type="password" id="auth-pass" placeholder="Contraseña (mínimo 6 caracteres)" autocomplete="current-password" aria-label="Contraseña">
+        <div class="auth-error" id="auth-error" role="alert"></div>
+        <button class="btn btn-primario" id="btn-auth-principal">Ingresar</button>
+        <button class="link-btn" id="btn-auth-alternar">¿No tenés cuenta? Creá una</button>
+        <button class="link-btn" id="btn-auth-olvide" style="color:var(--gris); font-weight:600;">Olvidé mi contraseña</button>
+      </div>
+      <p class="auth-legal">Partazy es solo para mayores de 18 años. Al continuar aceptás los <button class="link-btn" style="font-size:11px; padding:0; display:inline;" onclick="abrirTerminos()">Términos y condiciones</button> y la <button class="link-btn" style="font-size:11px; padding:0; display:inline;" onclick="abrirPrivacidad()">Política de privacidad</button>.</p>
+      <p class="auth-legal" style="margin-top:4px;">© <span class="anio-actual">2026</span> PARTAZY · Todos los derechos reservados.</p>
+    </div>
+  </div>
+
+  <!-- ============ COMPLETAR PERFIL (primera vez) ============ -->
+  <div class="screen" id="pantalla-registro">
+    <div class="auth-wrap" style="justify-content:flex-start;">
+      <div class="auth-hero" style="text-align:left; margin-bottom:0;">
+        <div class="logo" style="font-size:34px; justify-content:flex-start;">Tu perfil<span class="punto">.</span></div>
+        <p>Así te van a ver los anfitriones y el resto de la comunidad.</p>
+      </div>
+      <div class="form" style="padding:0;">
+        <div class="foto-perfil-edit">
+          <label for="rg-foto-input" class="avatar-grande" id="rg-foto" role="button" tabindex="0" aria-label="Elegir foto de perfil">+</label>
+          <input type="file" id="rg-foto-input" accept="image/*" hidden>
+          <div class="ayuda" id="rg-foto-estado">Tocá el círculo para elegir tu foto de perfil</div>
+        </div>
+        <div class="campo">
+          <label>Tipo de cuenta</label>
+          <div class="toggle-tipo" style="margin:0;" id="rg-tipo">
+            <div class="op activo" data-tipo-cuenta="persona" role="button" tabindex="0">Persona</div>
+            <div class="op" data-tipo-cuenta="organizacion" role="button" tabindex="0">Organizador</div>
+          </div>
+          <div class="ayuda" id="rg-tipo-ayuda">Para salir, conocer gente y asistir o armar previas.</div>
+        </div>
+        <div class="campo"><label for="rg-nombre">Nombre y apellido</label><input type="text" id="rg-nombre" maxlength="60" autocomplete="name"></div>
+        <div class="campo">
+          <label for="rg-usuario">Nombre de usuario</label>
+          <div class="input-handle"><span>@</span><input type="text" id="rg-usuario" maxlength="20" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+          <div class="ayuda" id="rg-usuario-estado">Letras, números, punto y guion bajo. Es único.</div>
+        </div>
+        <div class="campo">
+          <label for="rg-apodo">Apodo (opcional)</label>
+          <input type="text" id="rg-apodo" maxlength="40" placeholder="Cómo te dicen">
+          <div class="ayuda">Si lo completás, es lo que ven los demás en lugar de tu nombre.</div>
+        </div>
+        <div class="campo">
+          <label for="rg-nacimiento">Fecha de nacimiento</label>
+          <input type="date" id="rg-nacimiento">
+          <div class="ayuda">Nadie más la ve: solo la usamos para verificar que tengas 18 o más.</div>
+        </div>
+        <div class="campo"><label for="rg-ciudad">Ciudad o barrio</label><input type="text" id="rg-ciudad" maxlength="80" placeholder="Ej: Nueva Córdoba" list="lista-barrios"></div>
+        <div class="campo"><label>¿Qué te gusta?</label><div class="intereses-sel" id="rg-intereses"></div></div>
+        <label class="check-normas"><input type="checkbox" id="rg-normas"><span>Acepto las <button type="button" class="link-btn" id="btn-ver-normas">normas de la comunidad</button></span></label>
+        <div class="auth-error" id="rg-error" role="alert"></div>
+        <p class="aviso-fundador" data-pre-lanzamiento>✦ Te estás sumando antes del lanzamiento oficial: tu perfil va a llevar la insignia <b>Fundador</b> para siempre.</p>
+        <button class="btn btn-primario" id="btn-registro">Empezar</button>
+        <button class="link-btn" id="btn-registro-salir" style="color:var(--gris);">Usar otra cuenta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ HOME ============ -->
+  <div class="screen" id="pantalla-home">
+    <div class="topbar">
+      <div class="logo"><span class="lv lv-inicio" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></span></div>
+      <div class="buscador-mini" role="button" tabindex="0" onclick="irABuscar()" aria-label="Buscar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>Buscar eventos, fiestas, charlas...</span></div>
+      <div class="topbar-acciones">
+        <div class="icon-btn btn-buscar-mini" role="button" tabindex="0" onclick="irABuscar()" aria-label="Buscar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
+        <div class="icon-btn con-badge" onclick="abrirNotificaciones()" aria-label="Notificaciones"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="badge" id="badge-notif"></span></div>
+        <div class="icon-btn" onclick="irAMisEntradas()" aria-label="Mis entradas"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 9a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z"/></svg></div>
+        <div class="icon-btn con-badge" onclick="abrirAmigos()" aria-label="Amigos"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9"/><path d="M16 3.1a4 4 0 0 1 0 7.8"/></svg><span class="badge" id="badge-amigos"></span></div>
+      </div>
+    </div>
+    <div class="saludo">
+      <div class="fila-ubic"><button class="ubic-btn" onclick="abrirRango()" aria-label="Cambiar ubicación y distancia"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg><span class="txt-ubic">Ubicando...</span> · <span class="rango txt-rango">50 km</span> ▾</button></div>
+      <div class="eyebrow" id="home-eyebrow">Hoy</div>
+      <h1>¿Qué querés hacer <span class="sin-corte"><span class="hoy-vivo">hoy</span>?</span></h1>
+    </div>
+    <div class="ticker" aria-hidden="true"><div class="ticker-pista" id="home-ticker"></div></div>
+    <div class="buscador" onclick="ir('explorar'); document.getElementById('input-buscar').focus();" aria-label="Buscar eventos">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      Buscar eventos, fiestas, charlas...
+    </div>
+    <div class="barra-invitado"><span>Estás mirando <b>sin cuenta</b>. Registrate para confirmar y armar tu previa.</span><button class="btn btn-primario" onclick="pedirCuenta()">Entrar</button></div>
+    <div id="home-amigos-cta"></div>
+    <div class="chips" id="chips-home">
+      <div class="chip activo" onclick="elegirChipHome(this,'hoy')">Hoy</div>
+      <div class="chip" id="chip-paravos" style="display:none;" onclick="elegirChipHome(this,'paravos')">Para vos 🎧</div>
+      <div class="chip" onclick="elegirChipHome(this,'cerca')">Cerca tuyo</div>
+      <div class="chip" onclick="elegirChipHome(this,'fiestas')">Fiestas</div>
+      <div class="chip" onclick="elegirChipHome(this,'previas')">Previas</div>
+      <div class="chip" onclick="elegirChipHome(this,'egresados')">Egresados</div>
+      <div class="chip" onclick="elegirChipHome(this,'musica')">Música en vivo</div>
+      <div class="chip" onclick="elegirChipHome(this,'gastro')">Gastronomía</div>
+      <div class="chip" onclick="elegirChipHome(this,'charlas')">Charlas y talleres</div>
+      <div class="chip" onclick="elegirChipHome(this,'cultura')">Arte y cultura</div>
+      <div class="chip" onclick="elegirChipHome(this,'deportes')">Deportes</div>
+      <div class="chip" onclick="elegirChipHome(this,'privadas')">Con invitación 🔒</div>
+    </div>
+    <div id="home-amigos-fila" style="display:none;"></div>
+    <div id="home-aviso-rango"></div>
+    <div class="seccion-titulo">
+      <h2 id="titulo-fila-1">Hoy 🔥</h2>
+      <span onclick="ir('explorar')">Ver todas</span>
+    </div>
+    <div class="fila-scroll" id="lista-esta-noche">
+      <div class="skeleton sk-card"></div><div class="skeleton sk-card"></div><div class="skeleton sk-card"></div>
+    </div>
+    <div class="seccion-titulo" id="titulo-paravos" style="display:none;"><h2>Para vos 🎧<small class="sub-seccion" id="sub-paravos"></small></h2><span onclick="elegirChipHome(document.getElementById('chip-paravos'),'paravos'); document.getElementById('pantalla-home').scrollTo({top:0, behavior:'smooth'})">Ver todas</span></div>
+    <div class="fila-scroll" id="lista-paravos" style="display:none;"></div>
+    <div class="seccion-titulo" id="titulo-sugeridos" style="display:none;"><h2>Tal vez te interese ✨</h2><span onclick="ir('explorar')">Ver más</span></div>
+    <div class="fila-scroll" id="lista-sugeridos" style="display:none;"></div>
+    <div class="seccion-titulo" id="titulo-compartidos" style="display:none;"><h2>Compartidos por tus amigos</h2><span onclick="verMisCompartidos()">Mis compartidos</span></div>
+    <div class="fila-scroll" id="lista-compartidos" style="display:none;"></div>
+    <div class="seccion-titulo" id="titulo-tendencia" style="display:none;"><h2>En tendencia 📈</h2></div>
+    <div class="fila-scroll" id="lista-tendencia" style="display:none;"></div>
+    <div class="seccion-titulo" id="titulo-semana"><h2>Esta semana</h2><span onclick="ir('explorar')">Ver todas</span></div>
+    <div class="fila-scroll" id="lista-semana"></div>
+    <div class="seccion-titulo"><h2 id="titulo-cerca">Cerca tuyo</h2><span onclick="verMapaEventos()">Ver en el mapa</span></div>
+    <div class="fila-scroll" id="lista-cerca">
+      <div class="skeleton sk-card"></div><div class="skeleton sk-card"></div><div class="skeleton sk-card"></div>
+    </div>
+    <div class="seccion-titulo" id="titulo-viene"><h2>Lo que viene</h2><span onclick="ir('explorar')">Ver todas</span></div>
+    <div class="lista-vertical" id="lista-viene" style="padding-bottom:26px; min-height:0;"></div>
+    <footer class="pie-legal"><b class="notranslate" translate="no">PARTAZY</b>
+      <div class="pie-redes"><a class="pie-ig" href="https://www.instagram.com/partazy/" target="_blank" rel="noopener noreferrer" aria-label="PARTAZY en Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span class="notranslate" translate="no">@partazy</span></a><a class="pie-ig pie-fb" href="https://www.facebook.com/share/1EkgZmHUXT/" target="_blank" rel="noopener noreferrer" aria-label="PARTAZY en Facebook"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.8 1.4-3.8 3.9v2.3H7.9v3h2.6V21z"/></svg><span>Facebook</span></a></div>
+      <div class="links"><button onclick="abrirTutorial()">Cómo usar Partazy</button><button onclick="abrirAyuda()">Ayuda</button><button onclick="abrirReferencias()">Colores</button><button onclick="verNormas()">Normas de la comunidad</button><button onclick="abrirTerminos()">Términos y condiciones</button><a href="/organizadores">Para organizadores</a><button onclick="abrirPrivacidad()">Privacidad</button></div>
+      <div class="idiomas notranslate" translate="no" role="group" aria-label="Idioma"><button data-idioma="es">Español</button><button data-idioma="en">English</button><button data-idioma="pt">Português</button></div>
+      <div>© <span class="anio-actual">2026</span> PARTAZY · Todos los derechos reservados.</div>
+      <div>Contacto: <span class="mail-contacto"></span></div>
+      <div>Hecho en Córdoba, Argentina · Solo para mayores de 18 años.</div></footer>
+  </div>
+
+  <!-- ============ EXPLORAR ============ -->
+  <div class="screen" id="pantalla-explorar">
+    <div class="topbar">
+      <div class="logo" style="font-size:24px;">Explorar</div>
+      <div class="icon-btn" onclick="refrescarEventos()" aria-label="Actualizar eventos">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+      </div>
+    </div>
+    <div class="seg-explorar" id="seg-explorar" role="tablist" aria-label="Qué explorar">
+      <span class="slider" aria-hidden="true"></span>
+      <button class="on" id="seg-eventos" role="tab" onclick="modoExplorar('eventos')">🎉 Eventos</button>
+      <button id="seg-personas" role="tab" onclick="modoExplorar('personas')">👥 Personas</button>
+    </div>
+    <div class="buscador" style="margin-top:2px; cursor:text;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="search" id="input-buscar" name="partazy-q" placeholder="Buscar eventos, fiestas, charlas..." aria-label="Buscar" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="search">
+    </div>
+    <div class="fila-ubic solo-eventos">
+      <button class="ubic-btn" onclick="abrirRango()" aria-label="Cambiar ubicación y distancia"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg><span class="txt-ubic">Ubicando...</span> · <span class="rango txt-rango">50 km</span> ▾</button>
+      <div class="vista-toggle" role="group" aria-label="Ver como">
+        <button id="vista-lista" class="on" onclick="cambiarVistaExplorar('lista')">☰ Lista</button>
+        <button id="vista-mapa" onclick="cambiarVistaExplorar('mapa')">🗺️ Mapa</button>
+      </div>
+    </div>
+    <div class="chips solo-eventos" id="chips-explorar">
+      <div class="chip activo" onclick="elegirChipExplorar(this,'todas')">Todas</div>
+      <div class="chip" onclick="elegirChipExplorar(this,'cerca')">Más cerca primero</div>
+      <div class="chip" onclick="elegirChipExplorar(this,'fiestas')">Fiestas</div>
+      <div class="chip" onclick="elegirChipExplorar(this,'previas-publicas')">Previas públicas</div>
+      <div class="chip" onclick="elegirChipExplorar(this,'previas-privadas')">Previas privadas</div>
+      <div class="chip" onclick="elegirChipExplorar(this,'gratis')">Gratis</div>
+      <div class="chip" onclick="elegirChipExplorar(this,'pena')">Peñas</div>
+      <div class="chip" onclick="elegirChipExplorar(this,'egresados')">Egresados</div>
+      <div class="chip" onclick="elegirChipExplorar(this,'after')">After</div>
+      <div class="chip" onclick="elegirChipExplorar(this,'cumple')">Cumpleaños</div>
+      <div class="chip" onclick="elegirChipExplorar(this,'musical')">Eventos musicales</div>
+      <div class="chip" onclick="elegirChipExplorar(this,'gastronomico')">Gastronómicos</div>
+    </div>
+    <div id="explorar-gente"></div>
+    <div id="explorar-mapa" class="solo-eventos-mapa"><div id="explorar-mapa-lienzo" style="position:absolute; inset:0;"></div><div class="mapa-contador" id="mapa-contador"></div></div>
+    <div id="explorar-personas" class="solo-eventos"></div>
+    <div class="lista-vertical solo-eventos" id="lista-explorar-cont">
+      <div class="skeleton sk-row"></div><div class="skeleton sk-row"></div><div class="skeleton sk-row"></div>
+    </div>
+    <div class="solo-eventos" id="explorar-mas" style="display:none; padding:4px 20px 30px;"><button class="btn btn-secundario" onclick="cargarMasEventos(this)">Cargar más eventos</button></div>
+  </div>
+
+  <!-- ============ DETALLE ============ -->
+  <div class="screen" id="pantalla-detalle">
+    <div id="detalle-contenido"><div class="empty-state" style="padding-top:100px;">Cargando...</div></div>
+  </div>
+
+  <!-- ============ TICKET ============ -->
+  <div class="screen" id="pantalla-ticket">
+    <button class="volver" onclick="volver('perfil')">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="m15 18-6-6 6-6"/></svg> Volver</button>
+    <div id="ticket-contenido"><div class="empty-state" style="padding-top:60px;">Todavía no confirmaste ningún evento. Confirmá tu asistencia a uno desde Explorar.</div></div>
+  </div>
+
+  <!-- ============ CREAR ============ -->
+  <div class="screen" id="pantalla-crear">
+    <div class="topbar">
+      <div class="logo" style="font-size:24px;" id="crear-titulo">Crear</div>
+      <div class="icon-btn" onclick="cerrarCrear()" aria-label="Cerrar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </div>
+    </div>
+    <div class="crear-cab">
+      <div class="pasos-barra" id="pasos-barra" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="resumen-pasos" id="resumen-pasos"></div>
+      <p style="font-size:12.5px; color:var(--gris);" id="crear-intro">Fiestas, previas, recitales, charlas, ferias, talleres, partidos… cualquier evento donde vaya gente.</p>
+    </div>
+    <div class="toggle-tipo" id="crear-tipo" hidden style="display:none;">
+      <div class="op activo" id="op-fiesta" onclick="elegirTipo('fiesta')">Evento</div>
+      <div class="op" id="op-previa" onclick="elegirTipo('previa')">Previa</div>
+    </div>
+    <div class="form form-pasos" id="form-crear">
+      <section class="paso" data-paso="1">
+        <div class="paso-cab"><span class="paso-num">1</span><div><h3>Lo básico</h3><small>Nombre, cuándo es y una foto</small></div></div>
+        <div class="campo"><label for="f-nombre">Nombre del evento</label><input id="f-nombre" maxlength="80" placeholder="Ej: Charla de emprendedores, Noche Techno, Torneo de pádel" type="text"/></div>
+        <div class="fila-2">
+<div class="campo"><label for="f-fecha">Fecha</label><input id="f-fecha" type="date"/></div>
+<div class="campo"><label for="f-hora">Horario</label><input id="f-hora" type="time"/></div>
+</div>
+        <div class="campo"><label for="f-hora-fin">Hora de cierre (opcional)</label><input id="f-hora-fin" type="time"/></div>
+        <div class="campo">
+<label>Foto del evento</label>
+<input accept="image/*" id="f-imagen" onchange="onImagenSeleccionada(this)" style="display:none" type="file"/>
+<label class="upload-foto" for="f-imagen" id="upload-label" role="button" tabindex="0">
+<svg fill="none" height="26" stroke="currentColor" stroke-width="1.6" viewbox="0 0 24 24" width="26"><rect height="18" rx="3" width="18" x="3" y="3"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-5-5L5 21"></path></svg>
+<div id="upload-label-txt">Tocá para subir una foto</div>
+<span class="tip-foto">Usá una foto <b>real</b>: el lugar, la barra o una edición anterior. Las fotos reales generan más confianza y más confirmaciones que un flyer genérico.</span>
+</label>
+<img alt="Vista previa" class="preview-img" id="preview-imagen"/>
+</div>
+        <div class="campo"><label for="f-descripcion">¿De qué se trata?</label><textarea id="f-descripcion" maxlength="800" placeholder="Contá de qué se trata, qué va a haber, para quién es..."></textarea></div>
+      </section>
+      <section class="paso" data-paso="2">
+        <div class="paso-cab"><span class="paso-num">2</span><div><h3>¿Qué tipo de evento es?</h3><small>Así te mostramos las preguntas justas</small></div></div>
+        <div class="campo" id="campo-tipos">
+<label>Tipo de evento</label>
+<input id="f-ocasion" type="hidden" value=""/>
+<div class="tipos-grid" id="tipos-grid"><button aria-pressed="false" class="tipo-op" data-ocasion="fiesta" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="13" r="7"></circle><path d="M12 6V2M5.5 10.5h13M5.5 15.5h13M12 6c-2 2.2-2.8 4.6-2.8 7s.8 4.8 2.8 7M12 6c2 2.2 2.8 4.6 2.8 7s-.8 4.8-2.8 7"></path></svg><span>Fiesta</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="previa" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M6.5 2h3v2h-3zM7 4v3c0 1.3-3 2-3 4.5V21h8v-9.5C12 9 9 8.3 9 7V4"></path><path d="M13 12.5l1-.8 1 .8 1-.8 1 .8 1-.8 1 .8V21h-6z"></path><path d="M13 15.5h6"></path></svg><span>Previa</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="after" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 18h18M5 21h14"></path><path d="M7 18a5 5 0 0 1 10 0"></path><path d="M12 7V4M5.6 10.6 3.8 8.8M18.4 10.6l1.8-1.8"></path></svg><span>After</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="pena" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M14 3l4 4-2 2-4-4z"></path><path d="M13.5 7.5 9 12"></path><path d="M10.5 10.5c-2.5-1-5 0-6 2.5s0 5.5 2.5 6.5 5.5 0 6.5-2.5c.6-1.5.3-3-.5-4.2"></path><circle cx="8.5" cy="15.5" r="1.4"></circle></svg><span>Peña</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="egresados" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"></path><path d="M6 11v5c3.5 2.5 8.5 2.5 12 0v-5"></path><path d="M22 9v6"></path></svg><span>Egresados</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="cumple" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M4 21h16v-8H4z"></path><path d="M4 16c2 1.5 4 1.5 6 0s4-1.5 6 0 3 1.5 4 0"></path><path d="M8 13V9M12 13V9M16 13V9"></path><path d="M8 6.5c0-1 .8-1.5.8-2.5M12 6.5c0-1 .8-1.5.8-2.5M16 6.5c0-1 .8-1.5.8-2.5"></path></svg><span>Cumpleaños</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="musical" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><rect height="10" rx="2.5" width="5" x="6" y="3"></rect><path d="M3.5 10.5a5 5 0 0 0 10 0M8.5 15.5V20M6 20h5"></path><path d="M17 11V4l4-1v6"></path><circle cx="16" cy="11.2" r="1.6"></circle><circle cx="20" cy="9.2" r="1.6"></circle></svg><span>Música en vivo</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="gastronomico" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="13" r="6"></circle><circle cx="12" cy="13" r="3"></circle><path d="M3 3v6a2 2 0 0 0 2 2v10M5 3v4M21 3c-1.5 1-2 3-2 6h2v12"></path></svg><span>Gastronomía</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="charla" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M4 5h16v10H9l-5 4z"></path><path d="M8 9h8M8 12h5"></path></svg><span>Charla / Seminario</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="taller" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"></path></svg><span>Taller / Curso</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="cultural" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M4 7c5-3 11-3 16 0-1 8-4 12-8 12s-7-4-8-12z"></path><circle cx="9" cy="10.5" r="1"></circle><circle cx="15" cy="10.5" r="1"></circle><path d="M9 14.5c2 1.5 4 1.5 6 0"></path></svg><span>Arte y cultura</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="deportivo" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m12 7 4 3-1.5 4.5h-5L8 10z"></path></svg><span>Deporte / Aire libre</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="feria" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 9l2-5h14l2 5"></path><path d="M3 9c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3"></path><path d="M5 12v8h14v-8M10 20v-5h4v5"></path></svg><span>Feria / Mercado</span></button></div>
+<div class="ayuda">Si no subís foto, la portada se arma sola con el diseño de este tipo.</div>
+</div>
+      </section>
+      <section class="paso" data-paso="3">
+        <div class="paso-cab"><span class="paso-num">3</span><div><h3>Dónde y detalles</h3><small>Lo que la gente necesita saber</small></div></div>
+        <div class="campo">
+<label for="f-lugar" id="label-lugar">Lugar</label>
+<input id="f-lugar" list="lista-barrios" maxlength="120" placeholder="Dirección o barrio" type="text"/>
+<datalist id="lista-barrios"></datalist>
+<div class="ayuda" id="ayuda-lugar">📍 Sé lo más específico posible: calle y número (o nombre del lugar), barrio y ciudad. Mejor todavía: marcalo en el mapa. Así nadie se confunde.</div>
+<button class="btn btn-secundario btn-mini btn-mapa" onclick="abrirMapa()" type="button">📍 Elegir en el mapa</button>
+<div class="mapa-elegido" id="mapa-elegido"></div>
+</div>
+        <div class="campo" id="campo-direccion" style="display:none;">
+<label for="f-direccion">Dirección exacta (privada)</label>
+<input id="f-direccion" maxlength="200" placeholder="Calle, número, piso, depto, barrio y ciudad" type="text"/>
+<div class="ayuda">📍 Lo más específica posible (calle, número, piso/depto, timbre, barrio y ciudad) para que nadie se pierda. Solo la ven vos y los invitados que apruebes.</div>
+</div>
+        <div class="switch-row" id="fila-privacidad" style="display:none;">
+<div class="txt">Previa privada<small>La dirección se revela al aprobar</small></div>
+<div aria-checked="true" aria-label="Previa privada" class="switch on" id="switch-privacidad" onclick="toggleSwitch(this); actualizarCamposPrivacidad(); ajustarLugarPorPrivacidad();" role="switch" tabindex="0"><div class="bola"></div></div>
+</div>
+        <div id="campos-tipo" class="campos-tipo"></div>
+        <div class="fila-2">
+<div class="campo"><label for="f-capacidad">Capacidad</label><input id="f-capacidad" max="20000" min="2" placeholder="Ej: 40" type="number"/><div class="ayuda" id="ayuda-capacidad" style="display:none;">Si vendés por otra página y no sabés el tope, dejalo vacío.</div></div>
+<div class="campo"><label for="f-edad">Edad mínima</label><input id="f-edad" max="99" min="0" placeholder="18 · 0 = ATP" type="number"/></div>
+</div>
+        <div class="campo" id="campo-dresscode"><label for="f-dresscode">Dress code</label><input id="f-dresscode" maxlength="60" placeholder="Ej: Negro, libre, temática..." type="text"/></div>
+        <div class="campo" id="campo-estilo">
+<label for="f-estilo">Estilo de música (opcional)</label>
+<select id="f-estilo" onchange="actualizarEstiloOtro(); if(document.getElementById('campo-musica').style.display === 'none') document.getElementById('f-musica').value = '';">
+<option value="">Sin especificar</option>
+<option value="electronica">Electrónica</option>
+<option value="techno">Techno</option>
+<option value="house">House</option>
+<option value="cachengue">Cachengue</option>
+<option value="cuarteto">Cuarteto</option>
+<option value="reggaeton">Reggaetón</option>
+<option value="cumbia">Cumbia</option>
+<option value="trap">Trap</option>
+<option value="rock">Rock</option>
+<option value="pop">Pop</option>
+<option value="rnb">R&amp;B</option>
+<option value="folklore">Folklore</option>
+<option value="tango">Tango</option>
+<option value="variado">Variado</option>
+<option value="otro">Otro…</option>
+</select>
+<input id="f-estilo-otro" maxlength="30" placeholder="¿Cuál? Ej: jazz, salsa, metal" type="text" aria-label="Otro estilo de música" style="display:none; margin-top:10px;"/>
+<div class="ayuda">Si lo elegís, tu evento le aparece a quien busca ese estilo: llega a más gente.</div>
+</div>
+        <div class="campo" id="campo-musica" style="display:none;"><label for="f-musica">Música (opcional)</label><input id="f-musica" maxlength="80" placeholder="Ej: cumbia, cachengue, lo que pinte" type="text"/></div>
+        <div class="campo" id="campo-lineup"><label for="f-lineup" id="label-lineup">Line-up (opcional)</label><textarea id="f-lineup" maxlength="600" placeholder="Un artista por renglón. Podés poner la hora:
+23:30 DJ Invitado
+01:00 Banda principal"></textarea></div>
+        <div class="switch-row" id="fila-bebida" style="display:none;">
+<div class="txt">Llevar bebida<small>Cada invitado trae la suya</small></div>
+<div aria-checked="true" aria-label="Llevar bebida" class="switch on" id="switch-bebida" onclick="toggleSwitch(this)" role="switch" tabindex="0"><div class="bola"></div></div>
+</div>
+        <div class="switch-row" id="fila-pago">
+<div class="txt">Entrada paga<small>Si está apagado, es gratuita</small></div>
+<div aria-checked="false" aria-label="Entrada paga" class="switch" id="switch-pago" onclick="toggleSwitchPago(this)" role="switch" tabindex="0"><div class="bola"></div></div>
+</div>
+        <div class="campo" id="campo-precio" style="display:none;">
+<label for="f-precio">Precio de la entrada ($)</label>
+<input id="f-precio" min="1" placeholder="Ej: 5000" type="number"/>
+<label style="margin-top:14px;">¿Quién recibe la plata?</label>
+<div class="toggle-tipo" id="pago-quien" style="margin:0;">
+<div class="op activo" data-quien="yo" role="button" tabindex="0" onclick="elegirQuienCobra('yo')">Yo / mi organización</div>
+<div class="op" data-quien="otro" role="button" tabindex="0" onclick="elegirQuienCobra('otro')">Otra persona</div>
+</div>
+<div id="campo-titular" style="display:none;">
+<label for="f-pago-titular" style="margin-top:14px;">Titular de la cuenta</label>
+<input id="f-pago-titular" maxlength="60" placeholder="Nombre y apellido de quien recibe la plata" type="text"/>
+<div class="ayuda">Para cuando publicás el evento de otra persona: los asistentes ven a quién le pagan y que el evento lo publicaste vos.</div>
+</div>
+<label for="f-pago-info" style="margin-top:14px;">Cómo se paga</label>
+<input id="f-pago-info" maxlength="200" placeholder="Ej: transferencia al alias mi.fiesta, o efectivo en puerta" type="text"/>
+<label for="f-link-entradas" style="margin-top:14px;">Link de venta en otra plataforma (opcional)</label>
+<input autocapitalize="none" id="f-link-entradas" maxlength="300" placeholder="https://alpogo.com/... o https://passline.com/..." type="text"/>
+<div class="ayuda">El dinero va directo a vos. Partazy no cobra ni devuelve dinero: si cancelás el evento, las devoluciones las coordinás vos con cada persona. Estamos trabajando en un sistema seguro para devoluciones de dinero.</div>
+</div>
+        <div class="switch-row" id="fila-qr" style="display:none;">
+<div class="txt">Entradas con QR<small>Cada asistente recibe un código QR para mostrar en la puerta</small></div>
+<div aria-checked="true" aria-label="Entradas con QR" class="switch on" id="switch-qr" onclick="toggleSwitch(this)" role="switch" tabindex="0"><div class="bola"></div></div>
+</div>
+        <div class="switch-row" id="fila-vip">
+<div class="txt">Lista VIP<small>Acceso prioritario para invitados</small></div>
+<div aria-checked="false" aria-label="Lista VIP" class="switch" id="switch-vip" onclick="toggleSwitch(this); actualizarCampoVip();" role="switch" tabindex="0"><div class="bola"></div></div>
+</div>
+        <div class="campo" id="campo-vip" style="display:none;">
+<label for="f-vip">¿Quiénes están en la lista VIP?</label>
+<textarea id="f-vip" maxlength="6000" placeholder="Un nombre por renglón:
+Sofía Gómez
+Ivo Paz +1"></textarea>
+<div class="ayuda">Uno por renglón. Solo la ves vos, desde la página del evento.</div>
+</div>
+        <div class="campo" id="campo-insc">
+<label for="f-insc-fecha">Anotarse hasta (opcional)</label>
+<div class="fila-2" style="margin:0;"><input aria-label="Fecha límite para anotarse" id="f-insc-fecha" type="date"/><input aria-label="Hora límite" id="f-insc-hora" placeholder="23:59" type="time"/></div>
+<div class="ayuda">⏳ Después de esa fecha nadie más se puede anotar. Sirve para cerrar la lista de un egreso, una cena o un viaje.</div>
+</div>
+        <div class="campo"><label for="f-reglas">Reglas del evento</label><textarea id="f-reglas" maxlength="500" placeholder="Ej: Respetar el lugar, no ingresar con más invitados de los acordados..."></textarea></div>
+        <div class="campo" id="campo-faq">
+<label>Preguntas frecuentes (opcional)</label>
+<div class="ayuda" style="margin:0 0 10px;">Lo que siempre te preguntan sobre este evento. Hasta 5, aparecen en la página del evento.</div>
+<div id="f-faq"></div>
+<div class="faq-sug" id="faq-sug"></div>
+<button type="button" class="btn btn-secundario btn-mini" id="btn-faq-mas" onclick="agregarFaq()">+ Escribir otra pregunta</button>
+</div>
+      </section>
+      <div class="nav-pasos" id="nav-pasos">
+        <button type="button" class="btn btn-secundario" id="btn-paso-atras" onclick="pasoCrear(-1)">Atrás</button>
+        <button type="button" class="btn btn-primario" id="btn-paso-sig" onclick="pasoCrear(1)">Continuar</button>
+      </div>
+      <button class="btn btn-primario" id="btn-publicar" onclick="publicarEvento()" style="margin-top:6px;">Publicar evento</button>
+    </div>
+  </div>
+
+  <!-- ============ CONFIRMACION ============ -->
+  <div class="screen" id="pantalla-confirmacion">
+    <div style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; text-align:center;">
+      <div style="width:64px;height:64px;border-radius:50%;background:var(--rojo);display:flex;align-items:center;justify-content:center;margin-bottom:18px;">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><path d="M20 6 9 17l-5-5"/></svg>
+      </div>
+      <h2 style="font-family:var(--font-display); text-transform:uppercase; font-weight:700; font-size:28px;">¡Tu evento está publicado!</h2>
+      <p style="color:var(--gris); font-size:13.5px; margin-top:8px; max-width:280px;">Ya cualquiera que abra la app lo puede ver. Si es una previa privada, la dirección exacta solo se muestra a los invitados que apruebes desde el detalle del evento.</p>
+      <div style="width:100%; margin-top:28px; display:flex; flex-direction:column; gap:10px;">
+        <button class="btn btn-primario" id="btn-ver-mi-evento">Ver mi evento</button>
+        <button class="btn btn-secundario" onclick="ir('home')">Volver al inicio</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ PERFIL ============ -->
+  <div class="screen" id="pantalla-perfil">
+    <div class="topbar">
+      <div style="display:flex; align-items:center; gap:12px;"><button class="icon-btn" onclick="volver('home')" aria-label="Volver"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="logo" style="font-size:24px;">Mi perfil</div></div>
+      <div style="display:flex; gap:8px;">
+        <div class="icon-btn" onclick="editarPerfil()" aria-label="Editar perfil" role="button" tabindex="0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+        </div>
+        <div class="icon-btn btn-menu" id="btn-menu-perfil" onclick="abrirMenuPerfil()" aria-label="Menú" role="button" tabindex="0">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          <span class="punto-menu" id="punto-menu" style="display:none;"></span>
+        </div>
+      </div>
+    </div>
+    <div id="vista-perfil">
+      <div class="banner-org" id="perfil-banner" hidden></div>
+      <div class="perfil-header">
+        <div class="avatar-grande" id="perfil-avatar">··</div>
+        <h2 id="perfil-nombre">Cargando...</h2>
+        <div class="handle" id="perfil-handle"></div>
+        <div id="perfil-fundador"></div>
+        <div id="perfil-ig"></div>
+        <div class="ubic" id="perfil-ubic">—</div>
+        <div class="ubic" id="perfil-calif" style="display:none;"></div>
+        <p class="bio" id="perfil-bio" style="display:none;"></p>
+      </div>
+      <div id="perfil-aviso" style="padding:0 20px;"></div>
+      <div class="stats-row">
+        <div class="stat"><div class="num" id="stat-eventos">0</div><div class="lbl">Próximos</div></div>
+        <div class="stat"><div class="num" id="stat-organizados">0</div><div class="lbl">Organizando</div></div>
+        <div class="stat" role="button" tabindex="0" onclick="abrirAmigos()"><div class="num" id="stat-amigos">0</div><div class="lbl">Amigos</div></div>
+      </div>
+      <div class="fila-botones">
+        <button class="btn btn-primario" onclick="explorarPersonas()">🔍 Buscar amigos</button>
+        <button class="btn btn-secundario" onclick="invitarAmigos()">📨 Invitar</button>
+      </div>
+      <div id="perfil-verificacion" style="padding:0 20px 22px;"></div>
+      <div id="perfil-intereses"></div>
+      <div style="padding:0 20px 10px;"><h3 class="titulo-bloque">Próximos eventos</h3></div>
+      <div class="lista-simple" id="perfil-proximos" style="padding-bottom:24px;"></div>
+      <div id="perfil-compartidos-bloque" style="display:none;">
+        <div style="padding:0 20px 10px;"><h3 class="titulo-bloque" style="display:flex; align-items:center;"><span id="ico-compartiste"></span>Compartiste</h3></div>
+        <div class="lista-simple" id="perfil-compartidos" style="padding-bottom:24px;"></div>
+      </div>
+      <div class="acciones-perfil">
+        <button class="btn btn-primario" onclick="irAMisEntradas()">Mis entradas</button>
+        <button class="btn btn-secundario" onclick="abrirMenuPerfil()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" style="margin-right:6px;"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Más opciones</button>
+      </div>
+      <div><footer class="pie-legal"><b class="notranslate" translate="no">PARTAZY</b>
+      <div class="pie-redes"><a class="pie-ig" href="https://www.instagram.com/partazy/" target="_blank" rel="noopener noreferrer" aria-label="PARTAZY en Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span class="notranslate" translate="no">@partazy</span></a><a class="pie-ig pie-fb" href="https://www.facebook.com/share/1EkgZmHUXT/" target="_blank" rel="noopener noreferrer" aria-label="PARTAZY en Facebook"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.8 1.4-3.8 3.9v2.3H7.9v3h2.6V21z"/></svg><span>Facebook</span></a></div>
+      <div class="links"><button onclick="abrirTutorial()">Cómo usar Partazy</button><button onclick="abrirAyuda()">Ayuda</button><button onclick="abrirReferencias()">Colores</button><button onclick="verNormas()">Normas de la comunidad</button><button onclick="abrirTerminos()">Términos y condiciones</button><a href="/organizadores">Para organizadores</a><button onclick="abrirPrivacidad()">Privacidad</button></div>
+      <div class="idiomas notranslate" translate="no" role="group" aria-label="Idioma"><button data-idioma="es">Español</button><button data-idioma="en">English</button><button data-idioma="pt">Português</button></div>
+      <div>© <span class="anio-actual">2026</span> PARTAZY · Todos los derechos reservados.</div>
+      <div>Contacto: <span class="mail-contacto"></span></div>
+      <div>Hecho en Córdoba, Argentina · Solo para mayores de 18 años.</div></footer>
+      </div>
+    </div>
+    <div class="form-perfil" id="form-perfil">
+      <div class="foto-perfil-edit">
+        <label for="ep-foto-input" class="avatar-grande" id="ep-foto" role="button" tabindex="0" aria-label="Cambiar foto de perfil">+</label>
+        <input type="file" id="ep-foto-input" accept="image/*" hidden>
+        <div class="ayuda" id="ep-foto-estado">Tocá el círculo para cambiar tu foto</div>
+        <button type="button" class="link-btn" id="ep-foto-quitar" style="color:var(--gris);">Quitar foto</button>
+      </div>
+      <div class="campo">
+          <label>Tipo de cuenta</label>
+          <div class="toggle-tipo" style="margin:0;" id="ep-tipo">
+            <div class="op activo" data-tipo-cuenta="persona" role="button" tabindex="0">Persona</div>
+            <div class="op" data-tipo-cuenta="organizacion" role="button" tabindex="0">Organizador</div>
+          </div>
+          <div class="ayuda" id="ep-tipo-ayuda">Para salir, conocer gente y asistir o armar previas.</div>
+        </div>
+        <div class="campo"><label for="ep-nombre">Nombre</label><input type="text" id="ep-nombre" maxlength="60" placeholder="Máx. 40 letras si es una organización"></div>
+      <div class="campo">
+        <label for="ep-usuario">Nombre de usuario</label>
+        <div class="input-handle"><span>@</span><input type="text" id="ep-usuario" maxlength="20" autocomplete="off" autocapitalize="none" spellcheck="false"></div>
+        <div class="ayuda" id="ep-usuario-estado">Letras, números, punto y guion bajo. Es único.</div>
+      </div>
+      <div class="campo"><label for="ep-apodo">Apodo (opcional)</label><input type="text" id="ep-apodo" maxlength="40" placeholder="Cómo te dicen"></div>
+      <div class="campo"><label for="ep-bio" id="ep-bio-label">Biografía</label><textarea id="ep-bio" maxlength="300" placeholder="Contá algo de vos: qué música te gusta, por dónde salís... (hasta 300 letras)"></textarea></div>
+      <div class="campo"><label for="ep-instagram">Instagram (opcional)</label><input type="text" id="ep-instagram" maxlength="60" placeholder="@tuusuario" autocapitalize="none" spellcheck="false" autocomplete="off"><div class="ayuda">Aparece en tu perfil y en las listas de los eventos, así saben quién sos.</div></div>
+      <div class="switch-row en-form">
+        <div class="txt">Mostrar mi edad en el perfil<small>Los demás nunca ven tu edad ni tu fecha de nacimiento. Apagalo y tampoco aparece en tu perfil (por ejemplo, si mostrás la pantalla o sacás captura).</small></div>
+        <div class="switch on" id="ep-edad" onclick="toggleSwitch(this)" role="switch" aria-checked="true" aria-label="Mostrar mi edad en el perfil" tabindex="0"><div class="bola"></div></div>
+      </div>
+      <div class="switch-row en-form">
+        <div class="txt">Mostrar cuando estoy en línea<small>Tus amigos ven "En línea" o "Activo hace un rato"</small></div>
+        <div class="switch on" id="ep-enlinea" onclick="toggleSwitch(this)" role="switch" aria-checked="true" aria-label="Mostrar cuando estoy en línea" tabindex="0"><div class="bola"></div></div>
+      </div>
+      <div class="switch-row en-form">
+        <div class="txt">Recibir solicitudes de mensajes<small>De personas que no son tus amigos. Vos decidís si las aceptás.</small></div>
+        <div class="switch on" id="ep-mensajes" onclick="toggleSwitch(this)" role="switch" aria-checked="true" aria-label="Recibir solicitudes de mensajes" tabindex="0"><div class="bola"></div></div>
+      </div>
+      <div class="switch-row en-form">
+        <div class="txt">Mostrar a mis amigos a qué eventos voy<small>Para "Juan y 2 amigos más van" y las sugerencias. Solo eventos públicos.</small></div>
+        <div class="switch on" id="ep-planes" onclick="toggleSwitch(this)" role="switch" aria-checked="true" aria-label="Mostrar a mis amigos a qué eventos voy" tabindex="0"><div class="bola"></div></div>
+      </div>
+      <div class="switch-row en-form">
+        <div class="txt">Mostrar mi lista de amigos<small>En tu perfil se ve cuántos amigos tenés y quiénes son.</small></div>
+        <div class="switch on" id="ep-amigos" onclick="toggleSwitch(this)" role="switch" aria-checked="true" aria-label="Mostrar mi lista de amigos" tabindex="0"><div class="bola"></div></div>
+      </div>
+      <div class="switch-row en-form">
+        <div class="txt">Mostrar cuántos seguidores tengo<small>Para organizaciones: el número de seguidores en tu página.</small></div>
+        <div class="switch on" id="ep-seguidores" onclick="toggleSwitch(this)" role="switch" aria-checked="true" aria-label="Mostrar cuántos seguidores tengo" tabindex="0"><div class="bola"></div></div>
+      </div>
+      <div id="ep-org" style="display:none; flex-direction:column; gap:14px;">
+        <h3 class="titulo-bloque" style="margin:8px 0 0;">Página de tu organización</h3>
+        <div class="campo"><label for="ep-banner-input">Portada (banner)</label>
+          <label for="ep-banner-input" class="banner-sel" id="ep-banner" role="button" tabindex="0"><span>Tocá para subir una foto horizontal</span></label>
+          <input type="file" id="ep-banner-input" accept="image/*" hidden>
+          <div class="ayuda" id="ep-banner-estado">Se ve arriba de tu página. Ideal: una foto del lugar o de un evento, apaisada.</div>
+          <button type="button" class="link-btn" id="ep-banner-quitar" style="display:none; margin-top:6px; color:var(--gris);">Quitar portada</button></div>
+        <div class="campo"><label for="ep-dir-pub">Dirección del lugar (pública)</label><input type="text" id="ep-dir-pub" maxlength="150" placeholder="Ej: Av. Colón 1234, Centro"></div>
+        <div class="campo"><label for="ep-horarios">Horarios</label><input type="text" id="ep-horarios" maxlength="200" placeholder="Ej: Viernes y sábados de 00 a 06 hs"></div>
+        <div class="campo"><label for="ep-web">Página web</label><input type="text" id="ep-web" maxlength="150" placeholder="https://..." autocapitalize="none"></div>
+      </div>
+      <div class="campo"><label for="ep-ciudad">Ciudad o barrio</label><input type="text" id="ep-ciudad" maxlength="80" list="lista-barrios"></div>
+      <div class="campo"><label>Tus gustos</label><div class="intereses-sel" id="ep-intereses"></div></div>
+      <button class="btn btn-primario" onclick="guardarPerfil()">Guardar cambios</button>
+      <button class="btn btn-secundario" onclick="cancelarEdicionPerfil()">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- ============ AMIGOS ============ -->
+  <div class="screen" id="pantalla-amigos">
+    <div class="topbar">
+      <div style="display:flex; align-items:center; gap:12px;"><button class="icon-btn" onclick="volver('perfil')" aria-label="Volver"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="logo" style="font-size:24px;">Amigos</div></div>
+      <div class="icon-btn" onclick="compartirMiPerfil()" aria-label="Compartir mi perfil"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg></div>
+    </div>
+    <div class="buscador" style="cursor:text;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      <input type="search" id="input-buscar-personas" name="partazy-p" placeholder="Buscar gente o @usuario..." aria-label="Buscar gente" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="search">
+    </div>
+    <div class="lista-simple" id="resultados-personas" style="min-height:0; padding-bottom:12px;"></div>
+    <div class="fila-botones"><button class="btn btn-secundario" onclick="invitarAmigos()">📨 Invitar amigos a Partazy</button></div>
+    <div id="bloque-recibidas"></div>
+    <div class="subtitulo"><h3 class="titulo-bloque" id="titulo-mis-amigos">Mis amigos</h3></div>
+    <div class="lista-simple" id="lista-amigos"></div>
+    <div id="bloque-enviadas" style="padding-top:16px;"></div>
+    <div id="bloque-bloqueados" style="padding-top:8px;"></div>
+  </div>
+
+  <!-- ============ PERFIL DE OTRA PERSONA ============ -->
+  <div class="screen" id="pantalla-usuario">
+    <button class="volver" onclick="volver(abrirAmigos)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg> Volver</button>
+    <div id="usuario-contenido"></div>
+  </div>
+
+  <!-- ============ CHATS (bandeja) ============ -->
+  <div class="screen" id="pantalla-chats">
+    <div class="topbar">
+      <div class="logo" style="font-size:24px;">Chats</div>
+      <div class="icon-btn" onclick="nuevoChat()" aria-label="Nuevo mensaje"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></div>
+    </div>
+    <div class="lista-simple" id="lista-chats"></div>
+  </div>
+
+  <!-- ============ CONVERSACIÓN ============ -->
+  <div class="screen" id="pantalla-chat">
+    <div class="chat-top">
+      <button class="icon-btn" onclick="volver(abrirChats)" aria-label="Volver"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+      <div class="chat-top-persona" id="chat-top-persona" role="button" tabindex="0"></div>
+    </div>
+    <div id="dm-aviso"></div>
+    <div class="chat-cuerpo chat-preview" id="dm-mensajes"></div>
+    <div class="escribiendo-burbuja" id="dm-escribiendo" aria-label="Está escribiendo"><i></i><i></i><i></i></div>
+    <div class="chat-pie">
+      <div class="chat-rapidos" id="dm-rapidos">
+        <button data-rapido="🔥">🔥</button><button data-rapido="🙌">🙌</button><button data-rapido="😂">😂</button><button data-rapido="🎉">🎉</button><button data-rapido="🥂">🥂</button><button data-rapido="💃">💃</button><button data-rapido="😍">😍</button><button data-rapido="¿Vamos?">¿Vamos?</button><button data-rapido="Me sumo 🙋">Me sumo 🙋</button><button data-rapido="¿A qué hora arrancamos?">¿A qué hora arrancamos?</button><button data-rapido="¿Hay lista?">¿Hay lista?</button><button data-rapido="¿Cuánto sale la entrada?">¿Cuánto sale la entrada?</button><button data-rapido="¿Quién lleva qué?">¿Quién lleva qué?</button><button data-rapido="Llevo bebida 🍾">Llevo bebida 🍾</button><button data-rapido="Mandame la ubi 📍">Mandame la ubi 📍</button><button data-rapido="Paso a buscarte 🚗">Paso a buscarte 🚗</button><button data-rapido="Ya salgo 🚕">Ya salgo 🚕</button><button data-rapido="Estoy llegando">Estoy llegando</button><button data-rapido="Ya estoy acá 👋">Ya estoy acá 👋</button><button data-rapido="¿Dónde están?">¿Dónde están?</button><button data-rapido="¿Cómo volvemos?">¿Cómo volvemos?</button><button data-rapido="Avisame cuando llegues 🙏">Avisame cuando llegues 🙏</button><button data-rapido="Hoy no puedo 😔">Hoy no puedo 😔</button><button data-rapido="La próxima sí 🤞">La próxima sí 🤞</button>
+      </div>
+      <div class="chat-input-mock" id="dm-caja" style="margin-top:0;">
+        <input type="text" id="dm-input" maxlength="500" placeholder="Escribí un mensaje..." aria-label="Mensaje" autocomplete="off">
+        <button class="enviar" id="dm-enviar" aria-label="Enviar"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" aria-hidden="true"><path d="m22 2-7 20-4-9-9-4Z"/></svg></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ NOTIFICACIONES ============ -->
+  <div class="screen" id="pantalla-notificaciones">
+    <div class="topbar">
+      <div style="display:flex; align-items:center; gap:12px;"><button class="icon-btn" onclick="volver('home')" aria-label="Volver"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="logo" style="font-size:24px;">Notificaciones</div></div>
+    </div>
+    <div class="chips" id="chips-notif" style="margin-bottom:6px;"></div>
+    <div class="lista-simple" id="lista-notificaciones" style="padding-bottom:24px;"></div>
+  </div>
+
+  <!-- ============ PEDIR VERIFICACIÓN (organizaciones) ============ -->
+  <div class="screen" id="pantalla-verificacion">
+    <button class="volver" onclick="volver('perfil')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg> Volver</button>
+    <div style="padding:6px 20px 16px;">
+      <h2 style="font-family:var(--font-display); text-transform:uppercase; font-weight:700; font-size:30px; letter-spacing:.3px;">Verificar organización</h2>
+      <p style="font-size:13px; color:var(--gris); line-height:1.55; margin-top:6px;">La insignia ✓ muestra que tu organización es real. El equipo de Partazy revisa estos datos y puede contactarte para confirmarlos. No se muestran en tu perfil.</p>
+    </div>
+    <div id="verif-estado" style="padding:0 20px 14px;"></div>
+    <div class="form" id="verif-form" style="padding-bottom:24px;">
+      <div class="campo"><label for="vf-nombre">Nombre de la organización</label><input type="text" id="vf-nombre" maxlength="80"></div>
+      <div class="campo"><label for="vf-rubro">Rubro</label><select id="vf-rubro"><option value="">Elegí el rubro</option><option value="Boliche">Boliche</option><option value="Bar">Bar</option><option value="Productora">Productora</option><option value="Centro de estudiantes">Centro de estudiantes</option><option value="DJ / Artista">DJ / Artista</option><option value="Salón de fiestas">Salón de fiestas</option><option value="Otro">Otro</option></select></div>
+      <div class="campo"><label for="vf-instagram">Instagram</label><input type="text" id="vf-instagram" maxlength="100" placeholder="@tuorganizacion" autocapitalize="none"></div>
+      <div class="campo"><label for="vf-web">Página web (opcional)</label><input type="text" id="vf-web" maxlength="150" placeholder="https://..." autocapitalize="none"></div>
+      <div class="campo"><label for="vf-telefono">Teléfono de contacto</label><input type="text" id="vf-telefono" maxlength="30" inputmode="tel" placeholder="Ej: 351 555-1234"></div>
+      <div class="campo"><label for="vf-email">Email de contacto</label><input type="text" id="vf-email" maxlength="100" inputmode="email" autocapitalize="none"></div>
+      <div class="campo"><label for="vf-direccion">Dirección o zona</label><input type="text" id="vf-direccion" maxlength="150" placeholder="Ej: Güemes, Córdoba"></div>
+      <div class="campo"><label for="vf-cuit">CUIT (opcional)</label><input type="text" id="vf-cuit" maxlength="20" inputmode="numeric"></div>
+      <div class="campo"><label for="vf-comentario">Algo más que nos quieras contar (opcional)</label><textarea id="vf-comentario" maxlength="500"></textarea></div>
+      <div class="auth-error" id="vf-error" role="alert"></div>
+      <button class="btn btn-primario" id="btn-enviar-verif">Enviar solicitud</button>
+    </div>
+  </div>
+
+  <!-- ============ CONTROL DE PUERTA ============ -->
+  <div class="screen" id="pantalla-puerta">
+    <button class="volver" onclick="volver(() => Puerta.ev && abrirDetalle(Puerta.ev.id))"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg> Volver</button>
+    <div style="padding:6px 20px 14px;">
+      <h2 style="font-family:var(--font-display); text-transform:uppercase; font-weight:700; font-size:30px; letter-spacing:.3px;">Control de puerta</h2>
+      <div class="ubic" id="puerta-evento" style="color:var(--gris); font-size:12.5px;"></div>
+      <p id="puerta-ayuda" style="font-size:12.5px; color:var(--gris); margin-top:6px; line-height:1.5;"></p>
+    </div>
+    <div class="puerta-contador" id="puerta-contador"></div>
+    <div id="puerta-camara" class="puerta-camara"></div>
+    <div style="padding:0 20px;"><button class="btn btn-primario" id="btn-escanear">📷 Escanear QR</button></div>
+    <div class="form" id="puerta-campo-codigo" style="padding-top:14px;">
+      <div class="campo"><label for="puerta-codigo">O escribí el código</label>
+        <div class="input-handle" style="padding-right:6px;"><input type="text" id="puerta-codigo" placeholder="PT-XXXXXXXXXX" autocapitalize="characters" autocomplete="off"><button class="btn btn-secundario btn-mini" id="btn-validar">Validar</button></div>
+      </div>
+    </div>
+    <div id="puerta-resultado" class="puerta-resultado" role="status" aria-live="assertive"></div>
+    <div class="subtitulo" style="padding-top:18px;"><h3 class="titulo-bloque">Lista de ingreso</h3></div>
+    <div class="lista-simple" id="puerta-lista" style="padding-bottom:24px;"></div>
+  </div>
+
+  <!-- ============ AYUDA ============ -->
+  <div class="screen" id="pantalla-ayuda">
+    <button class="volver" onclick="volver('perfil')"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg> Volver</button>
+    <div style="padding:6px 20px 10px;"><h2 style="font-family:var(--font-display); text-transform:uppercase; font-weight:700; font-size:30px; letter-spacing:.3px;">Ayuda</h2>
+      <p style="font-size:12.5px; color:var(--gris);">Preguntas frecuentes sobre Partazy.</p></div>
+    <div style="padding:0 20px 8px; display:flex; gap:10px;"><button class="btn btn-primario" onclick="abrirTutorial()">Ver tutorial</button><button class="btn btn-secundario" onclick="abrirReferencias()">Colores</button></div>
+    <div id="lista-ayuda"></div>
+    <!-- Contacto: la consulta se guarda en Firestore (colección "consultas") y la ve el admin en Moderación -->
+    <form class="contacto" id="form-contacto" onsubmit="event.preventDefault(); enviarConsulta();">
+      <h3>¿No encontraste tu respuesta?</h3>
+      <p>Dejanos tu consulta y te respondemos a la brevedad.</p>
+      <input type="text" id="ct-nombre" maxlength="60" placeholder="Nombre" autocomplete="name" aria-label="Nombre">
+      <input type="email" id="ct-email" maxlength="100" placeholder="Correo electrónico" autocomplete="email" aria-label="Correo electrónico">
+      <select id="ct-motivo" aria-label="Motivo">
+        <option value="consulta">Consulta general</option><option value="problema">Algo no funciona</option>
+        <option value="organizacion">Soy boliche / productora</option><option value="cuenta">Mi cuenta</option>
+        <option value="denuncia">Denuncia o seguridad</option><option value="sugerencia">Sugerencia</option>
+      </select>
+      <textarea id="ct-mensaje" maxlength="1000" placeholder="Contanos en qué te podemos ayudar" aria-label="Mensaje"></textarea>
+      <button class="btn btn-primario" type="submit" id="ct-enviar">Enviar</button>
+      <div class="otra-via">
+        <span>O si preferís, escribinos directo:</span>
+        <a class="btn btn-wa" id="ct-whatsapp" style="display:none;" target="_blank" rel="noopener noreferrer">💬 Escribir por WhatsApp</a>
+        <a class="btn btn-secundario" id="ct-mail" href="mailto:partazycontacto@gmail.com">✉️ partazycontacto@gmail.com</a>
+      </div>
+    </form>
+    <div style="padding:0 20px 28px;"><button class="btn btn-secundario" onclick="abrirPrivacidad()">Política de privacidad</button></div>
+    <footer class="pie-legal"><b class="notranslate" translate="no">PARTAZY</b>
+      <div class="pie-redes"><a class="pie-ig" href="https://www.instagram.com/partazy/" target="_blank" rel="noopener noreferrer" aria-label="PARTAZY en Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span class="notranslate" translate="no">@partazy</span></a><a class="pie-ig pie-fb" href="https://www.facebook.com/share/1EkgZmHUXT/" target="_blank" rel="noopener noreferrer" aria-label="PARTAZY en Facebook"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.8 1.4-3.8 3.9v2.3H7.9v3h2.6V21z"/></svg><span>Facebook</span></a></div>
+      <div class="links"><button onclick="abrirTutorial()">Cómo usar Partazy</button><button onclick="abrirAyuda()">Ayuda</button><button onclick="abrirReferencias()">Colores</button><button onclick="verNormas()">Normas de la comunidad</button><button onclick="abrirTerminos()">Términos y condiciones</button><a href="/organizadores">Para organizadores</a><button onclick="abrirPrivacidad()">Privacidad</button></div>
+      <div class="idiomas notranslate" translate="no" role="group" aria-label="Idioma"><button data-idioma="es">Español</button><button data-idioma="en">English</button><button data-idioma="pt">Português</button></div>
+      <div>© <span class="anio-actual">2026</span> PARTAZY · Todos los derechos reservados.</div>
+      <div>Contacto: <span class="mail-contacto"></span></div>
+      <div>Hecho en Córdoba, Argentina · Solo para mayores de 18 años.</div></footer>
+  </div>
+
+  <!-- ============ PRIVACIDAD ============ -->
+  <div class="screen" id="pantalla-privacidad">
+    <button class="volver" onclick="volver(volverLegal)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg> Volver</button>
+    <div style="padding:6px 20px 4px;"><h2 style="font-family:var(--font-display); text-transform:uppercase; font-weight:700; font-size:30px; letter-spacing:.3px;">Privacidad</h2></div>
+    <div class="texto-legal">
+      <p class="legal-meta">Última actualización: 17/10/2026</p>
+      <p>Esta política explica qué datos guarda Partazy, para qué y qué podés hacer con ellos, según la Ley 25.326 de Protección de Datos Personales. <b>Responsable:</b> PARTAZY, Córdoba, Argentina. <b>Contacto:</b> <span class="mail-contacto"></span>.</p>
+      <h3>Qué datos guardamos</h3>
+      <ul>
+        <li><b>Públicos para la comunidad:</b> nombre, apodo, @usuario, foto, ciudad, intereses, tu Instagram (si lo agregás) y, si sos organización, la información de tu página.</li>
+        <li><b>Privados:</b> tu fecha de nacimiento (solo para verificar que tengas 18 años o más) y tu email.</li>
+        <li><b>De uso:</b> los eventos que creás, tus asistencias, solicitudes, mensajes con tus amigos, notificaciones, denuncias y bloqueos.</li>
+        <li><b>Visibles para tus amigos:</b> los eventos públicos a los que vas y los que compartís (para mostrar "Juan y 2 amigos más van" y las sugerencias). Lo podés desactivar en Editar perfil.</li>
+        <li><b>Actividad:</b> cuándo estuviste en línea por última vez. También lo podés ocultar en Editar perfil.</li>
+        <li><b>Ubicación:</b> si marcás un lugar en el mapa al crear un evento, guardamos ese punto. Las búsquedas de direcciones usan OpenStreetMap.</li>
+      </ul>
+      <h3>Para qué los usamos</h3>
+      <p>Solo para que la app funcione: mostrar eventos, gestionar entradas y listas, conectar con tus amigos, avisarte de novedades y mantener la comunidad segura. No vendemos tus datos ni los usamos para publicidad.</p>
+      <h3>Servicios que usamos</h3>
+      <table class="tabla-legal">
+        <tr><th>Servicio</th><th>Para qué</th></tr>
+        <tr><td>Google Firebase (Hosting, Authentication y Cloud Firestore)</td><td>Publicar la página, manejar tu inicio de sesión y guardar los datos de la app.</td></tr>
+        <tr><td>Google reCAPTCHA (App Check)</td><td>Frenar bots y usos automáticos que no vienen de la app.</td></tr>
+        <tr><td>OpenStreetMap</td><td>Buscar direcciones y mostrar el mapa. Se envía el texto que buscás, no tu cuenta.</td></tr>
+        <tr><td>jsDelivr, cdnjs y Google Fonts</td><td>Cargar las librerías y las tipografías de la página.</td></tr>
+        <tr><td>Google Translate</td><td>Solo si elegís ver la app en English o Português.</td></tr>
+      </table>
+      <h3>Quién ve qué</h3>
+      <p>La dirección exacta de una previa privada solo la ven quienes fueron aprobados. Tus mensajes solo los ven las dos personas del chat. Los datos de un pedido de verificación o de una denuncia solo los ve el equipo de moderación.</p>
+      <h3>Tus derechos</h3>
+      <p>Según la Ley 25.326 de Protección de Datos Personales, podés acceder a tus datos, corregirlos y pedir que se eliminen (también escribiendo a <span class="mail-contacto"></span>). Podés editar tu perfil en cualquier momento y borrar tu cuenta desde "Eliminar mi cuenta". La Agencia de Acceso a la Información Pública es el órgano de control de esta ley.</p>
+      <p>Respondemos los pedidos de acceso dentro de los 10 días corridos y los de corrección o eliminación dentro de los 5 días hábiles (arts. 14 y 16 de la Ley 25.326). Escribinos desde el mail de tu cuenta para que podamos confirmar que sos vos.</p>
+      <h3>Cuánto tiempo guardamos los datos</h3>
+      <table class="tabla-legal">
+        <tr><th>Dato</th><th>Hasta cuándo</th></tr>
+        <tr><td>Perfil, @usuario, foto, email y fecha de nacimiento</td><td>Mientras tengas la cuenta. Se borran al eliminarla.</td></tr>
+        <tr><td>Amistades, bloqueos, notificaciones y lo que compartiste</td><td>Mientras tengas la cuenta. Se borran al eliminarla.</td></tr>
+        <tr><td>Eventos que organizaste</td><td>Hasta que los borres o elimines la cuenta (si no tienen otros confirmados).</td></tr>
+        <tr><td>Tu nombre en listas de eventos ajenos</td><td>Lo conserva quien organiza ese evento.</td></tr>
+        <tr><td>Mensajes que mandaste</td><td>Quedan en el chat de la otra persona.</td></tr>
+        <tr><td>Denuncias, consultas y pedidos de verificación</td><td>El tiempo necesario para resolverlos.</td></tr>
+      </table>
+      <h3>Eliminar tu cuenta</h3>
+      <p>Se borran tu perfil, tu @usuario, tu foto, tu fecha de nacimiento, tus amistades, tus bloqueos, tus notificaciones, lo que compartiste con tus amigos y los eventos que organizaste sin otros confirmados. Tu nombre puede seguir apareciendo en la lista de eventos ajenos a los que confirmaste asistencia, porque esa lista es del organizador.</p>
+    </div>
+    <footer class="pie-legal"><b class="notranslate" translate="no">PARTAZY</b>
+      <div class="pie-redes"><a class="pie-ig" href="https://www.instagram.com/partazy/" target="_blank" rel="noopener noreferrer" aria-label="PARTAZY en Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span class="notranslate" translate="no">@partazy</span></a><a class="pie-ig pie-fb" href="https://www.facebook.com/share/1EkgZmHUXT/" target="_blank" rel="noopener noreferrer" aria-label="PARTAZY en Facebook"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.8 1.4-3.8 3.9v2.3H7.9v3h2.6V21z"/></svg><span>Facebook</span></a></div>
+      <div class="links"><button onclick="abrirTutorial()">Cómo usar Partazy</button><button onclick="abrirAyuda()">Ayuda</button><button onclick="abrirReferencias()">Colores</button><button onclick="verNormas()">Normas de la comunidad</button><button onclick="abrirTerminos()">Términos y condiciones</button><a href="/organizadores">Para organizadores</a><button onclick="abrirPrivacidad()">Privacidad</button></div>
+      <div class="idiomas notranslate" translate="no" role="group" aria-label="Idioma"><button data-idioma="es">Español</button><button data-idioma="en">English</button><button data-idioma="pt">Português</button></div>
+      <div>© <span class="anio-actual">2026</span> PARTAZY · Todos los derechos reservados.</div>
+      <div>Contacto: <span class="mail-contacto"></span></div>
+      <div>Hecho en Córdoba, Argentina · Solo para mayores de 18 años.</div></footer>
+  </div>
+
+
+  <!-- ============ TÉRMINOS Y CONDICIONES ============ -->
+  <div class="screen" id="pantalla-terminos">
+    <button class="volver" onclick="volver(volverLegal)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg> Volver</button>
+    <div style="padding:6px 20px 4px;"><h2 style="font-family:var(--font-display); text-transform:uppercase; font-weight:700; font-size:30px; letter-spacing:.3px; line-height:1.05;">Términos y condiciones de uso y de intermediación</h2></div>
+    <div class="texto-legal terminos">
+      <p class="legal-meta">Versión 1.0 — Última actualización: 15/10/2026</p>
+      <p><b>Identificación del proveedor</b> (art. 4 Ley 24.240 y art. 1100 CCyC): PARTAZY, Ciudad de Córdoba, República Argentina, correo de contacto <span class="mail-contacto"></span> (en adelante, "PARTAZY").</p>
+      <p class="legal-aviso">LEA ATENTAMENTE ESTOS TÉRMINOS Y CONDICIONES (en adelante, los "Términos"). EL REGISTRO Y EL USO DE LA PLATAFORMA IMPLICAN SU ACEPTACIÓN ÍNTEGRA. QUIEN NO ESTÉ DE ACUERDO DEBERÁ ABSTENERSE DE USARLA.</p>
+      <h3>1. DEFINICIONES</h3>
+      <p><b class="num">1.1.</b> Plataforma: el sitio web y aplicación web accesible en partazy.com y sus subdominios, funcionalidades, chats, notificaciones y herramientas.</p>
+      <p><b class="num">1.2.</b> Usuario: toda persona que accede a la Plataforma o se registra, ya sea como Persona o como Organizador.</p>
+      <p><b class="num">1.3.</b> Asistente: Usuario que confirma, solicita o adquiere acceso a un Evento.</p>
+      <p><b class="num">1.4.</b> Organizador: Usuario que publica o gestiona un Evento, sea persona humana o jurídica (productoras, boliches, bares, salones, centros de estudiantes, DJs/artistas u otros), incluyendo al Anfitrión que ofrece su domicilio o espacio particular.</p>
+      <p><b class="num">1.5.</b> Evento: toda fiesta, boliche, previa pública, previa privada, juntada, reunión o encuentro publicado en la Plataforma.</p>
+      <p><b class="num">1.6.</b> Previa Privada: Evento realizado en domicilio o espacio particular, cuya dirección exacta se revela solo a invitados aprobados por el Organizador.</p>
+      <p><b class="num">1.7.</b> Entrada: código, QR, lista, confirmación o credencial que habilita el ingreso a un Evento según las condiciones fijadas por el Organizador.</p>
+      <p><b class="num">1.8.</b> Contenido: textos, fotos, videos, perfiles, mensajes, descripciones, line-ups, reglas y cualquier material que el Usuario suba o transmita.</p>
+      <p><b class="num">1.9.</b> Normas de la Comunidad y Política de Privacidad: documentos disponibles en la Plataforma que integran estos Términos por referencia.</p>
+      <h3>2. NATURALEZA DEL SERVICIO Y ROL DE PARTAZY</h3>
+      <p><b class="num">2.1.</b> PARTAZY es exclusivamente una plataforma tecnológica de intermediación que permite a Organizadores publicar Eventos y a Asistentes descubrirlos, contactarse, solicitar acceso y, en su caso, gestionar Entradas y listas.</p>
+      <p><b class="num">2.2.</b> PARTAZY NO es organizador, productor, promotor, propietario, locador, anfitrión, habilitante ni responsable de los Eventos, ni de los inmuebles, locales o domicilios donde se realizan. No emplea ni controla a los Organizadores, su personal, seguridad, artistas o proveedores, ni les presta asesoramiento legal, impositivo o de seguridad.</p>
+      <p><b class="num">2.3.</b> El Organizador es el único y directo responsable de la organización, realización, seguridad, habilitaciones, aforo, contenidos, precios, condiciones de acceso y cumplimiento de la normativa aplicable de cada Evento. Toda relación de consumo o de otra índole sobre el Evento se traba entre el Asistente y el Organizador.</p>
+      <p><b class="num">2.4.</b> PARTAZY no garantiza la veracidad de los datos de Eventos ni de Usuarios, la identidad de las personas, la calidad, seguridad o legalidad de un Evento, ni que éste se realice. Las descripciones, imágenes, line-ups y condiciones son suministradas por los Organizadores.</p>
+      <p><b class="num">2.5.</b> PARTAZY podrá, a su criterio y sin obligación ni garantía de resultado, ofrecer esfuerzos razonables para canalizar reclamos entre Usuarios.</p>
+      <h3>3. REQUISITOS: MAYORÍA DE EDAD Y CAPACIDAD</h3>
+      <p><b class="num">3.1.</b> <b>PARTAZY es solo para mayores de 18 años.</b> Al registrarse, el Usuario declara con carácter de declaración jurada que tiene 18 años cumplidos y plena capacidad legal para contratar. Se prohíbe el registro de menores de edad.</p>
+      <p><b class="num">3.2.</b> La fecha de nacimiento se usa únicamente para verificar la edad. PARTAZY podrá exigir acreditación mediante documento de identidad, y suspender o eliminar cuentas ante dudas razonables o falsedad. Las mayores restricciones de edad fijadas por el Organizador (por ejemplo, +21) prevalecen sobre este mínimo.</p>
+      <p><b class="num">3.3.</b> La falsedad en la declaración de edad o identidad es responsabilidad exclusiva del Usuario. Si se detectara un menor, su cuenta será eliminada y se informará a sus representantes o autoridades cuando corresponda.</p>
+      <p><b class="num">3.4.</b> Está prohibido a los Organizadores admitir menores de 18 años a Eventos publicados en la Plataforma, aunque los acompañen adultos, salvo que PARTAZY habilite expresamente por escrito una categoría especial.</p>
+      <h3>4. REGISTRO, CUENTA Y SEGURIDAD</h3>
+      <p><b class="num">4.1.</b> Para el acceso total a la Plataforma es necesario registrarse (mediante email o cuenta de Google) y completar los datos solicitados: nombre y apellido, nombre de usuario, fecha de nacimiento y ciudad o barrio. El Usuario garantiza que son exactos, veraces y actuales y se obliga a actualizarlos. PARTAZY no se responsabiliza por su certeza.</p>
+      <p><b class="num">4.2.</b> Cada persona podrá tener una sola cuenta y es personal e intransferible. El Usuario es responsable de la confidencialidad de sus credenciales y de toda actividad realizada desde su cuenta, y debe notificar de inmediato cualquier uso no autorizado.</p>
+      <p><b class="num">4.3.</b> Está prohibido suplantar identidades, usar perfiles falsos, usar la imagen de terceros o crear cuentas para eludir suspensiones o bloqueos.</p>
+      <p><b class="num">4.4.</b> El tipo de cuenta (Persona u Organizador) debe reflejar el uso real. Quien organice Eventos de forma habitual o con fines de lucro deberá registrarse como Organizador.</p>
+      <h3>5. CONDUCTA PROHIBIDA</h3>
+      <p>El Usuario se obliga a usar la Plataforma conforme a la ley, la moral, el orden público, estos Términos y las Normas de la Comunidad. Está prohibido:</p>
+      <p>a) publicar o promover Eventos ilícitos, o que impliquen la venta, suministro o consumo de estupefacientes (Ley 23.737) o la venta de alcohol a menores (Ley 24.788);</p>
+      <p>b) admitir, ofrecer alcohol o promover Eventos con menores de 18 años;</p>
+      <p>c) publicar contenido discriminatorio, de odio, violento, amenazante, difamatorio, sexualmente explícito o que afecte la intimidad o la imagen de terceros (Ley 23.592, art. 53 CCyC);</p>
+      <p>d) acosar, hostigar, intimidar, ejercer violencia de género o abuso sexual, o buscar contactos con fines de grooming, captación, trata o explotación;</p>
+      <p>e) estafar, vender entradas falsas, cobrar y no prestar el servicio, o inducir a error sobre precios, capacidad, lugar o fecha;</p>
+      <p>f) vulnerar derechos de propiedad intelectual, de imagen o de datos personales;</p>
+      <p>g) introducir virus, extraer datos masivamente (scraping), realizar ingeniería inversa, usar bots o interferir en la seguridad o el funcionamiento de la Plataforma (Ley 26.388);</p>
+      <p>h) enviar spam, publicidad no solicitada o mensajes masivos;</p>
+      <p>i) usar la Plataforma para eludir la ley, evadir controles de acceso o reventa no autorizada de Entradas;</p>
+      <p>j) publicar la dirección exacta de una Previa Privada fuera de los canales de la Plataforma o divulgar datos de otros Usuarios sin su consentimiento.</p>
+      <h3>6. OBLIGACIONES DE LOS ORGANIZADORES Y ANFITRIONES</h3>
+      <p><b class="num">6.1.</b> <b>Cumplimiento normativo.</b> El Organizador declara y garantiza que cuenta con todas las autorizaciones, habilitaciones, permisos y seguros requeridos por la normativa nacional, provincial y municipal aplicable a su Evento, incluyendo, según el caso: habilitación comercial y de espectáculos, aforo, seguridad e higiene, prevención de incendios y salidas de emergencia, ruidos molestos, horarios y expendio de bebidas alcohólicas, protocolos de emergencia, derechos de autor y conexos (SADAIC, AADI-CAPIF u otros), obligaciones tributarias y previsionales (ARCA) y, si corresponde, uso de personal de control de admisión y permanencia debidamente registrado (Ley 26.370).</p>
+      <p><b class="num">6.2.</b> <b>Información veraz.</b> Debe publicar datos exactos y completos: nombre, lugar, fecha, horario, capacidad, edad mínima, precio y qué incluye, condiciones de pago, política de cancelación y reglas del Evento. Debe informar modificaciones de modo inmediato y por los canales de la Plataforma.</p>
+      <p><b class="num">6.3.</b> <b>Seguridad de los asistentes.</b> Es responsable de adoptar medidas razonables de prevención y cuidado: control de aforo, ingreso, vías de evacuación, iluminación, hidratación, atención de emergencias, prevención de violencia y abuso, y manejo de personas en estado de intoxicación. Debe contar con medios para llamar a emergencias y colaborar con las autoridades.</p>
+      <p><b class="num">6.4.</b> <b>Alcohol y sustancias.</b> Debe respetar la prohibición de expendio y suministro de alcohol a menores y a personas visiblemente alcoholizadas. Está prohibido permitir, facilitar o lucrar con el consumo o tráfico de estupefacientes.</p>
+      <p><b class="num">6.5.</b> <b>Dinero y Entradas.</b> Responde por el cobro, la entrega, la validez y la facturación de las Entradas y por toda devolución, reintegro o compensación debida a los Asistentes (cláusula 11). Debe emitir los comprobantes fiscales que correspondan.</p>
+      <p><b class="num">6.6.</b> <b>Derecho de admisión y permanencia.</b> Debe ejercerlo de forma razonable, no discriminatoria y conforme a la ley (arts. 8 bis y 42 de la Ley 24.240 y Ley 23.592), informando las condiciones de forma previa y visible.</p>
+      <p><b class="num">6.7.</b> <b>Terceros.</b> Responde por sus empleados, colaboradores, DJs, artistas, personal de seguridad, proveedores y cualquier persona que actúe por su cuenta.</p>
+      <p><b class="num">6.8.</b> <b>Cooperación.</b> Debe atender los requerimientos de PARTAZY y de las autoridades, y acreditar documentación habilitante cuando se le solicite.</p>
+      <h3>7. PREVIAS PRIVADAS Y EVENTOS EN DOMICILIOS PARTICULARES</h3>
+      <p><b class="num">7.1.</b> Los Eventos en domicilios particulares son encuentros entre particulares que ocurren fuera de todo control de PARTAZY. PARTAZY no verifica inmuebles, anfitriones, invitados ni condiciones de seguridad. El Usuario asiste bajo su exclusiva responsabilidad.</p>
+      <p><b class="num">7.2.</b> <b>Dirección privada y aprobación.</b> La dirección exacta se revela únicamente a los invitados que el Anfitrión apruebe. El Anfitrión es responsable de a quién aprueba. El Asistente acepta que su nombre, apodo, foto y datos de perfil sean vistos por el Anfitrión a esos fines. Está prohibido divulgar la dirección a terceros no aprobados.</p>
+      <p><b class="num">7.3.</b> <b>Naturaleza no comercial.</b> Salvo habilitación municipal vigente y declarada ante PARTAZY, el Anfitrión no podrá vender bebidas alcohólicas, cobrar entrada ni realizar una actividad comercial en un domicilio particular, ni aplicar la modalidad "Entrada paga" a Previas Privadas. Las aportaciones o "llevar bebida" son un acuerdo exclusivo entre particulares, bajo responsabilidad exclusiva del Anfitrión.</p>
+      <p><b class="num">7.4.</b> <b>Convivencia y vecinos.</b> El Anfitrión debe respetar la normativa de propiedad horizontal, reglamentos de consorcio, ordenanzas de ruidos y el Código de Convivencia Ciudadana de la Provincia de Córdoba (Ley 10.326). El Anfitrión es el único responsable frente a vecinos, consorcios, locadores y autoridades por reclamos, multas, clausuras o daños derivados del Evento.</p>
+      <p><b class="num">7.5.</b> <b>Seguros.</b> Se recomienda especialmente que el Anfitrión verifique la cobertura de su seguro del hogar y de responsabilidad civil. PARTAZY no brinda ni garantiza cobertura alguna.</p>
+      <p><b class="num">7.6.</b> <b>Recomendaciones de seguridad a Asistentes.</b> Se recomienda: informar a un conocido la dirección y el horario previstos; compartir ubicación en tiempo real; no aceptar bebidas abiertas de desconocidos; no dejar bebidas ni pertenencias sin cuidado; planificar el regreso con un conductor sobrio, transporte público o aplicación de viajes; abandonar el lugar ante cualquier situación de riesgo y llamar al 911. PARTAZY se reserva el derecho de reforzar estas medidas.</p>
+      <h3>8. CONDICIONES PARA LOS ASISTENTES</h3>
+      <p><b class="num">8.1.</b> El Asistente debe informarse de las condiciones del Evento antes de confirmar asistencia o pagar: descripción, edad mínima, dress code, precio, forma de pago, política de cancelación y reglas.</p>
+      <p><b class="num">8.2.</b> <b>Asunción de riesgos.</b> El Asistente reconoce que los Eventos sociales, nocturnos, masivos o en domicilios particulares involucran riesgos propios (aglomeraciones, consumo de alcohol, ruido, interacción con desconocidos, hurtos, accidentes, conductas de terceros) y acepta asumirlos de manera libre e informada, sin perjuicio de los derechos irrenunciables que la ley le reconoce frente a los responsables.</p>
+      <p><b class="num">8.3.</b> <b>Consumo responsable.</b> El Asistente se compromete a consumir alcohol con moderación y conforme a la ley, a no conducir bajo sus efectos y a no consumir ni portar estupefacientes. Debe cumplir las indicaciones del Organizador y su personal.</p>
+      <p><b class="num">8.4.</b> <b>Consentimiento y respeto.</b> Toda interacción debe basarse en el consentimiento libre, informado y continuo. Se prohíbe cualquier forma de acoso, agresión o abuso. El incumplimiento causa la baja inmediata y la comunicación a las autoridades.</p>
+      <p><b class="num">8.5.</b> <b>Daños.</b> El Asistente responde por los daños causados a inmuebles, bienes o personas durante el Evento.</p>
+      <p><b class="num">8.6.</b> <b>Pertenencias.</b> El Asistente es responsable de sus objetos personales. PARTAZY no responde por pérdidas, hurtos o daños.</p>
+      <p><b class="num">8.7.</b> <b>Controles de ingreso.</b> Podrá requerirse documento de identidad, revisión de pertenencias y cumplimiento de condiciones de ingreso, conforme a la naturaleza del Evento. Quien se niegue podrá ser rechazado sin responsabilidad para el Organizador ni para PARTAZY, salvo conducta ilícita o discriminatoria.</p>
+      <h3>9. ENTRADAS, LISTAS Y PRECIOS</h3>
+      <p><b class="num">9.1.</b> Las Entradas, listas, accesos VIP, QR y condiciones de acceso son definidos por el Organizador. Los precios son fijados por éste y deben informarse en pesos argentinos, incluyendo impuestos y cargos adicionales (art. 4 Ley 24.240).</p>
+      <p><b class="num">9.2.</b> PARTAZY no cobra, no recibe ni administra el dinero de las Entradas, ni garantiza pagos, devoluciones o reembolsos. El dinero se abona directamente al Organizador por el medio que éste indique (transferencia, billetera virtual, efectivo, plataforma de terceros). El Asistente asume los riesgos propios del medio de pago elegido y debe conservar comprobantes. Se recomienda pagar únicamente por medios trazables y a cuentas a nombre del Organizador verificado.</p>
+      <p><b class="num">9.3.</b> <b>Entradas con QR.</b> El código es personal, de un solo uso y es el único documento controlado para el acceso. PARTAZY no responde si el Usuario lo comparte, o si fue copiado o utilizado por un tercero. El Organizador podrá denegar el ingreso ante códigos duplicados, adulterados o ya utilizados.</p>
+      <p><b class="num">9.4.</b> <b>Control de puerta.</b> Los Organizadores podrán validar Entradas mediante lectura de QR o ingreso manual de código y gestionar la lista de ingreso. El Organizador es responsable del tratamiento de los datos de asistentes a los que acceda y deberá usarlos solo para la gestión del Evento.</p>
+      <p><b class="num">9.5.</b> <b>Reventa.</b> Las Entradas no podrán revenderse ni utilizarse con fines comerciales o promocionales sin autorización escrita del Organizador. PARTAZY no interviene en disputas entre Usuarios por reventa ni responde por Entradas adquiridas fuera de los canales habilitados por el Organizador.</p>
+      <p><b class="num">9.6.</b> <b>Enlaces de venta externos.</b> Si el Organizador deriva a una plataforma de venta de terceros, la compra se rige por los términos de esa plataforma y PARTAZY no es parte ni responsable.</p>
+      <p><b class="num">9.7.</b> <b>Sistemas futuros de pago.</b> Si PARTAZY incorporase medios de pago, retenciones o devoluciones propias, se informarán condiciones adicionales y específicas, que se incorporarán a estos Términos.</p>
+      <h3>10. MODIFICACIONES, REPROGRAMACIÓN Y CANCELACIÓN DE EVENTOS</h3>
+      <p><b class="num">10.1.</b> El Organizador puede modificar artistas, line-up, horarios, ubicación o capacidad, informándolo oportunamente. Si la fecha varía, las Entradas serán válidas para la fecha definitiva, salvo que el Asistente opte por la devolución conforme a la cláusula 11.</p>
+      <p><b class="num">10.2.</b> <b>Cancelación por el Organizador.</b> Debe informarla de inmediato por la Plataforma y por todos los medios a su alcance, y devolver íntegramente los importes cobrados en el plazo razonable que informe, sin cargos ni penalidades al Asistente.</p>
+      <p><b class="num">10.3.</b> Cancelación por clima, fuerza mayor o decisión de autoridad. El Organizador informará las alternativas (reprogramación o devolución) y no podrá cobrar cargos adicionales por ello. En ningún caso PARTAZY garantiza reembolsos.</p>
+      <p><b class="num">10.4.</b> PARTAZY podrá bajar, ocultar o suspender un Evento si advierte incumplimientos, riesgos de seguridad, denuncias reiteradas u orden de autoridad, sin responsabilidad por ello.</p>
+      <h3>11. DERECHO DE REVOCACIÓN, DEVOLUCIONES Y RECLAMOS</h3>
+      <p><b class="num">11.1.</b> Cuando el Asistente haya contratado con un Organizador a distancia y exista relación de consumo, tiene el derecho irrenunciable de revocar la aceptación dentro de los diez (10) días corridos contados desde la celebración del contrato o la entrega de la Entrada, lo que ocurra último (art. 34 Ley 24.240 y arts. 1110 a 1116 CCyC), sin responsabilidad y salvo que ya hubiera utilizado la Entrada o corresponda una excepción legal. La revocación se ejerce frente al Organizador por el canal informado o mediante el botón de arrepentimiento (Res. 424/2020 SCI), cuando corresponda.</p>
+      <p><b class="num">11.2.</b> El Organizador debe reintegrar los importes por el mismo medio de pago o uno equivalente, sin gastos para el consumidor, en los plazos legales. No se admiten devoluciones parciales cuando la compra comprenda más de una Entrada, salvo que el Organizador lo permita.</p>
+      <p><b class="num">11.3.</b> PARTAZY no devuelve dinero ni es responsable de la devolución, y no se obliga a intermediar, sin perjuicio de los esfuerzos razonables mencionados en la cláusula 2.5. El Asistente podrá reclamar directamente al Organizador y a las autoridades de Defensa del Consumidor.</p>
+      <p><b class="num">11.4.</b> El incumplimiento reiterado por un Organizador de sus obligaciones de devolución habilita su suspensión o baja definitiva y la publicación de una advertencia a los Usuarios, sin perjuicio de las acciones legales.</p>
+      <h3>12. MODERACIÓN, DENUNCIAS Y SANCIONES</h3>
+      <p><b class="num">12.1.</b> Cualquier Usuario puede denunciar Contenido, perfiles, Eventos o conductas mediante las herramientas de la Plataforma. Las denuncias son revisadas por el equipo de moderación.</p>
+      <p><b class="num">12.2.</b> <b>Ocultamiento preventivo.</b> Al acumularse tres (3) denuncias sobre un mismo contenido, éste podrá ocultarse automáticamente hasta su revisión. Esta medida es preventiva, no implica sanción ni reconocimiento de responsabilidad.</p>
+      <p><b class="num">12.3.</b> <b>Sanciones.</b> Ante incumplimientos PARTAZY podrá, según la gravedad, y sin necesidad de previo aviso: eliminar contenido, advertir, limitar funciones, suspender o dar de baja cuentas, revocar la insignia de verificación, bajar Eventos y comunicar los hechos a autoridades.</p>
+      <p><b class="num">12.4.</b> <b>Revisión.</b> El Usuario suspendido podrá solicitar la revisión de la decisión escribiendo a <span class="mail-contacto"></span> dentro de los 15 días de notificada, indicando su usuario y los fundamentos. PARTAZY resolverá a su criterio razonable.</p>
+      <p><b class="num">12.5.</b> PARTAZY no tiene obligación general de monitorear contenidos ni de buscar activamente ilicitudes. Actuará ante notificación fehaciente o conocimiento efectivo, conforme a la ley y a la jurisprudencia aplicable. Las denuncias falsas o de mala fe son una infracción.</p>
+      <p><b class="num">12.6.</b> <b>Bloqueos.</b> Los Usuarios podrán bloquear a otros Usuarios. PARTAZY no garantiza que un bloqueo evite todo contacto fuera de la Plataforma.</p>
+      <h3>13. SEGURIDAD, EMERGENCIAS Y COLABORACIÓN CON AUTORIDADES</h3>
+      <p><b class="num">13.1.</b> <b>Ante una emergencia, llame al 911.</b> Línea 144 (violencia de género) y línea 141 (consumos problemáticos). PARTAZY no es un servicio de emergencias ni de monitoreo en tiempo real.</p>
+      <p><b class="num">13.2.</b> PARTAZY podrá conservar y entregar información de Usuarios y Eventos (datos de cuenta, registros, denuncias, mensajes involucrados en una denuncia) a las autoridades judiciales o administrativas competentes ante requerimiento legal o para prevenir o investigar delitos, proteger la vida o la integridad de personas, o defender sus derechos.</p>
+      <p><b class="num">13.3.</b> <b>Violencia y abuso sexual.</b> PARTAZY mantiene tolerancia cero. Toda denuncia será priorizada y podrá derivar en la baja inmediata y permanente del denunciado. PARTAZY recomienda realizar la denuncia penal ante la autoridad competente.</p>
+      <h3>14. CONTENIDO DE LOS USUARIOS, IMAGEN Y PRENSA</h3>
+      <p><b class="num">14.1.</b> El Usuario es el único responsable del Contenido que publica y declara ser titular de los derechos o contar con autorización para ello. Conserva la titularidad de su Contenido.</p>
+      <p><b class="num">14.2.</b> <b>Licencia.</b> El Usuario otorga a PARTAZY una licencia mundial, no exclusiva, gratuita, sublicenciable a los fines operativos y por el plazo de vigencia de la cuenta, para alojar, reproducir, adaptar, mostrar y distribuir el Contenido dentro de la Plataforma y en acciones de difusión del Evento o de la Plataforma. Podrá revocarla eliminando el Contenido, sin afectar usos ya realizados de manera razonable ni copias de seguridad.</p>
+      <p><b class="num">14.3.</b> <b>Derecho a la imagen.</b> Está prohibido fotografiar, filmar o difundir a personas sin su consentimiento, y en particular en situaciones de intimidad, vulnerabilidad o estado de ebriedad (art. 53 CCyC y Ley 11.723). Los Organizadores que registren fotos o videos deberán informarlo previamente a los Asistentes y obtener los consentimientos necesarios.</p>
+      <p><b class="num">14.4.</b> <b>Acreditación de prensa.</b> Los medios, periodistas, fotógrafos o creadores de contenido podrán solicitar acreditación. PARTAZY no garantiza su aceptación; la admisión y las condiciones de cobertura dependen del Organizador. El acreditado debe respetar la privacidad de los asistentes y la normativa aplicable.</p>
+      <p><b class="num">14.5.</b> PARTAZY podrá retirar cualquier Contenido que infrinja estos Términos o la ley, y reproducirlo o difundirlo respetando la ley.</p>
+      <h3>15. CUENTAS DE ORGANIZADORES E INSIGNIA DE VERIFICACIÓN</h3>
+      <p><b class="num">15.1.</b> El Organizador podrá solicitar la insignia de verificación (✓) aportando datos de su organización (nombre, rubro, redes, teléfono, email, dirección o zona, CUIT u otra documentación). PARTAZY podrá solicitar información adicional y contactarlo.</p>
+      <p><b class="num">15.2.</b> La insignia acredita únicamente que PARTAZY revisó ciertos datos de existencia de la organización. No implica aval, garantía, recomendación, habilitación, seguridad, solvencia ni calidad de sus Eventos. Podrá denegarse o retirarse en cualquier momento.</p>
+      <p><b class="num">15.3.</b> Los datos de verificación solo son accesibles al equipo de moderación y se tratan conforme a la Política de Privacidad.</p>
+      <h3>16. COMUNICACIONES, CHATS Y AMIGOS</h3>
+      <p><b class="num">16.1.</b> La Plataforma permite conectar con otros Usuarios, enviar solicitudes de amistad, mensajes y compartir Eventos. El Usuario debe emplear estos medios de forma respetuosa y legal.</p>
+      <p><b class="num">16.2.</b> Los mensajes son visibles solo por quienes participan en el chat, salvo que PARTAZY deba acceder a ellos por una denuncia, una orden de autoridad o razones de seguridad, conforme a la Política de Privacidad.</p>
+      <p><b class="num">16.3.</b> PARTAZY no se responsabiliza por lo que los Usuarios se comuniquen o acuerden entre sí, ni por conductas que desarrollen fuera de la Plataforma.</p>
+      <p><b class="num">16.4.</b> El Usuario presta su consentimiento para recibir notificaciones relacionadas con el servicio (eventos, solicitudes, avisos de seguridad) y podrá gestionar las preferencias de comunicaciones comerciales.</p>
+      <h3>17. DATOS PERSONALES Y PRIVACIDAD</h3>
+      <p><b class="num">17.1.</b> El tratamiento de datos personales se rige por la Ley 25.326 y por la Política de Privacidad, que integra estos Términos. Al registrarse, el Usuario presta su consentimiento libre, expreso e informado para el tratamiento de sus datos con las finalidades allí descriptas: operación de la Plataforma, gestión de Eventos, Entradas y listas, conexión entre Usuarios, notificaciones, seguridad y moderación.</p>
+      <p><b class="num">17.2.</b> <b>Datos de otros Usuarios.</b> Los Organizadores y Asistentes que accedan a datos de terceros (por ejemplo, listas de ingreso o perfiles) los usarán únicamente para los fines del Evento, serán responsables de su tratamiento como responsables independientes y no podrán cederlos ni usarlos con otros fines.</p>
+      <p><b class="num">17.3.</b> <b>Derechos del titular.</b> El titular puede acceder gratuitamente a sus datos, a intervalos no inferiores a seis meses (art. 14 inc. 3 Ley 25.326), y rectificarlos, actualizarlos o suprimirlos (art. 6 y 16). Puede ejercer estos derechos escribiendo a <span class="mail-contacto"></span> o desde su perfil. La Agencia de Acceso a la Información Pública, órgano de control de la Ley 25.326, atiende las denuncias y reclamos por incumplimientos de la normativa de protección de datos.</p>
+      <p><b class="num">17.4.</b> <b>Eliminación de la cuenta.</b> El Usuario puede eliminar su cuenta desde su perfil. Se borrarán sus datos de perfil, fotos, fecha de nacimiento, amistades, bloqueos, notificaciones y los Eventos organizados sin otros confirmados. Su nombre puede seguir apareciendo en listas de Eventos ajenos a los que confirmó asistencia, por pertenecer esas listas al Organizador, y PARTAZY podrá conservar datos mínimos por obligación legal, para resolver controversias, prevenir fraude y por motivos de seguridad.</p>
+      <p><b class="num">17.5.</b> <b>Seguridad y no venta de datos.</b> PARTAZY adopta medidas técnicas y organizativas razonables, aunque ningún sistema es infalible. No vende datos personales ni los usa con fines de publicidad de terceros.</p>
+      <p><b class="num">17.6.</b> <b>Ubicación.</b> Si el Usuario autoriza la geolocalización, se usará para mostrar Eventos cercanos. Puede revocar el permiso desde su dispositivo.</p>
+      <h3>18. PROPIEDAD INTELECTUAL DE PARTAZY</h3>
+      <p><b class="num">18.1.</b> La marca PARTAZY, su logotipo, diseño, software, bases de datos y contenidos propios son titularidad de PARTAZY o de sus licenciantes y están protegidos por la Ley 11.723, la Ley 22.362 y demás normas. Se prohíbe su reproducción, uso comercial o modificación sin autorización escrita.</p>
+      <p><b class="num">18.2.</b> Quien considere que un Contenido vulnera sus derechos podrá notificarlo a <span class="mail-contacto"></span> con identificación de la obra, del contenido objetado, sus datos y la acreditación de su titularidad. PARTAZY evaluará la remoción sin que ello implique reconocer responsabilidad.</p>
+      <h3>19. LIMITACIÓN DE RESPONSABILIDAD</h3>
+      <p><b class="num">19.1.</b> <b>Alcance.</b> En la máxima medida permitida por la ley, PARTAZY no responde por: (a) la organización, realización, cancelación, calidad, seguridad o legalidad de los Eventos; (b) los actos u omisiones de Organizadores, Anfitriones, Asistentes o terceros; (c) daños a la persona o a los bienes ocurridos antes, durante o después de un Evento, incluyendo los ocurridos en domicilios particulares; (d) el consumo de alcohol, drogas u otras sustancias; (e) el pago, cobro, entrega o devolución de dinero entre Usuarios; (f) la veracidad de la información publicada; (g) la pérdida, hurto o daño de pertenencias; (h) contenidos de Usuarios o de sitios de terceros; (i) interrupciones, fallas o errores técnicos, ataques informáticos o accesos no autorizados ajenos a su control razonable; ni (j) lucro cesante, pérdida de oportunidad o daños indirectos.</p>
+      <p><b class="num">19.2.</b> <b>Derechos irrenunciables.</b> Nada de lo dispuesto en estos Términos limita ni excluye los derechos que la Ley 24.240 y el CCyC reconocen al consumidor como irrenunciables, ni la responsabilidad que por ley no pueda excluirse, ni la derivada de dolo o culpa grave de PARTAZY.</p>
+      <p><b class="num">19.3.</b> <b>Responsabilidad directa.</b> PARTAZY responderá en los términos de la ley por los daños que le sean directamente imputables por sus propios actos u omisiones, o por el incumplimiento de sus deberes como proveedor de la Plataforma.</p>
+      <p><b class="num">19.4.</b> <b>Fuerza mayor.</b> PARTAZY no responde por incumplimientos derivados de caso fortuito o fuerza mayor (art. 1730 CCyC), incluyendo fallas de proveedores de infraestructura, de Internet, de servicios en la nube, cortes energéticos, actos de autoridad o ciberataques.</p>
+      <h3>20. INDEMNIDAD</h3>
+      <p><b class="num">20.1.</b> El Usuario que incumpla estos Términos o la ley mantendrá indemne a PARTAZY, sus socios, directivos, empleados y colaboradores frente a reclamos, daños, multas, costas y honorarios que se originen en su conducta, su Contenido, sus Eventos o el uso indebido de la Plataforma, incluyendo reclamos de otros Usuarios, vecinos, autoridades o terceros.</p>
+      <p><b class="num">20.2.</b> Esta cláusula no se aplica en lo que contradiga derechos irrenunciables del consumidor.</p>
+      <p><b class="num">20.3.</b> PARTAZY podrá repetir contra el Organizador o Usuario responsable lo que deba abonar por hechos que a éstos sean imputables.</p>
+      <h3>21. DISPONIBILIDAD DEL SERVICIO Y MODIFICACIONES</h3>
+      <p><b class="num">21.1.</b> La Plataforma se ofrece "tal como está" y según disponibilidad. PARTAZY podrá modificar, suspender o discontinuar funcionalidades, por razones técnicas, de seguridad, legales o comerciales, informándolo cuando sea razonable.</p>
+      <p><b class="num">21.2.</b> PARTAZY podrá actualizar estos Términos en cualquier momento. Las modificaciones se notificarán por la Plataforma o por email y regirán desde su publicación o desde la fecha que se indique. Si el cambio es sustancial, el Usuario podrá rechazarlo dando de baja su cuenta; el uso continuado posterior implica aceptación.</p>
+      <h3>22. ENLACES Y SITIOS DE TERCEROS</h3>
+      <p><b class="num">22.1.</b> La Plataforma puede incluir enlaces a sitios de terceros (redes sociales, plataformas de pago o venta, mapas, páginas de Organizadores). PARTAZY no los controla ni responde por sus contenidos, servicios, políticas o daños que de su uso deriven, salvo que tenga conocimiento efectivo de su ilicitud y no desactive el enlace con diligencia. La existencia de un enlace no implica recomendación ni vínculo con sus titulares.</p>
+      <h3>23. SUSPENSIÓN Y BAJA</h3>
+      <p><b class="num">23.1.</b> PARTAZY podrá suspender o dar de baja cuentas por incumplimiento de estos Términos o de las Normas de la Comunidad, por orden de autoridad, por riesgo para otros Usuarios o por uso fraudulento, con o sin previo aviso según la gravedad.</p>
+      <p><b class="num">23.2.</b> La baja no extingue las obligaciones previamente asumidas por el Usuario (por ejemplo, devoluciones pendientes) ni las responsabilidades por hechos anteriores.</p>
+      <h3>24. DEFENSA DEL CONSUMIDOR</h3>
+      <p><b class="num">24.1.</b> Cuando resulte aplicable, los Usuarios que sean consumidores gozan de los derechos de la Ley 24.240, sus modificatorias y el CCyC (arts. 1092 y ss.). Estos Términos se interpretarán en el sentido más favorable al consumidor (arts. 3 Ley 24.240 y 1094 CCyC). Toda cláusula que contradiga normas de orden público se tendrá por no escrita, sin afectar la validez del resto.</p>
+      <p><b class="num">24.2.</b> Defensa de las y los Consumidores: para reclamos ante la autoridad de aplicación, <a href="https://www.argentina.gob.ar/servicio/iniciar-un-reclamo-ante-defensa-de-las-y-los-consumidores" target="_blank" rel="noopener noreferrer">ingrese aquí</a>. Los reclamos podrán presentarse también ante PARTAZY en <span class="mail-contacto"></span>.</p>
+      <h3>25. LEY APLICABLE Y JURISDICCIÓN</h3>
+      <p><b class="num">25.1.</b> Estos Términos se rigen por las leyes de la República Argentina.</p>
+      <p><b class="num">25.2.</b> Las partes procurarán resolver amistosamente toda controversia comunicándola previamente por escrito a <span class="mail-contacto"></span>.</p>
+      <p><b class="num">25.3.</b> Para toda controversia derivada de estos Términos, las partes se someten a los Tribunales Ordinarios de la ciudad de Córdoba (primera circunscripción judicial de la Provincia de Córdoba), con renuncia a cualquier otro fuero o jurisdicción, excepto cuando el Usuario sea consumidor, en cuyo caso será competente el tribunal correspondiente a su domicilio o al lugar de cumplimiento del contrato, conforme los arts. 36 de la Ley 24.240 y 1109 y 2654 del CCyC.</p>
+      <h3>26. DISPOSICIONES GENERALES</h3>
+      <p><b class="num">26.1.</b> <b>Integridad.</b> Estos Términos, las Normas de la Comunidad y la Política de Privacidad constituyen el acuerdo completo entre PARTAZY y el Usuario. En caso de conflicto, prevalecen estos Términos, salvo la Política de Privacidad en materia de datos personales.</p>
+      <p><b class="num">26.2.</b> <b>Divisibilidad.</b> Si alguna cláusula fuera declarada nula o inaplicable, las restantes mantendrán su vigencia.</p>
+      <p><b class="num">26.3.</b> <b>No renuncia.</b> La falta de ejercicio de un derecho por PARTAZY no implica su renuncia.</p>
+      <p><b class="num">26.4.</b> <b>Cesión.</b> PARTAZY podrá ceder estos Términos a una sociedad vinculada o sucesora, informándolo al Usuario. El Usuario no podrá cederlos sin consentimiento escrito de PARTAZY.</p>
+      <p><b class="num">26.5.</b> <b>Domicilios y notificaciones.</b> Las notificaciones a PARTAZY se enviarán al domicilio y correo indicados al inicio. PARTAZY notificará al Usuario al correo electrónico registrado o por la Plataforma, que se tendrán por válidos y fehacientes. Domicilio de PARTAZY: Ciudad de Córdoba.</p>
+      <p><b class="num">26.6.</b> <b>Firma y aceptación electrónica.</b> La aceptación de estos Términos mediante el tilde o el uso de la Plataforma tiene plena validez como manifestación de voluntad (Ley 25.506 y arts. 286, 288 y 1106 CCyC).</p>
+      <h3>27. CONTACTO</h3>
+      <p>Para dudas, ejercicio de derechos, denuncias o reclamos sobre estos Términos: <span class="mail-contacto"></span>.</p>
+      <p class="legal-meta">Fecha de última actualización: 15/10/2026</p>
+    </div>
+    <footer class="pie-legal"><b class="notranslate" translate="no">PARTAZY</b>
+      <div class="pie-redes"><a class="pie-ig" href="https://www.instagram.com/partazy/" target="_blank" rel="noopener noreferrer" aria-label="PARTAZY en Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span class="notranslate" translate="no">@partazy</span></a><a class="pie-ig pie-fb" href="https://www.facebook.com/share/1EkgZmHUXT/" target="_blank" rel="noopener noreferrer" aria-label="PARTAZY en Facebook"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.8 1.4-3.8 3.9v2.3H7.9v3h2.6V21z"/></svg><span>Facebook</span></a></div>
+      <div class="links"><button onclick="abrirTutorial()">Cómo usar Partazy</button><button onclick="abrirAyuda()">Ayuda</button><button onclick="abrirReferencias()">Colores</button><button onclick="verNormas()">Normas de la comunidad</button><button onclick="abrirTerminos()">Términos y condiciones</button><a href="/organizadores">Para organizadores</a><button onclick="abrirPrivacidad()">Privacidad</button></div>
+      <div class="idiomas notranslate" translate="no" role="group" aria-label="Idioma"><button data-idioma="es">Español</button><button data-idioma="en">English</button><button data-idioma="pt">Português</button></div>
+      <div>© <span class="anio-actual">2026</span> PARTAZY · Todos los derechos reservados.</div>
+      <div>Contacto: <span class="mail-contacto"></span></div>
+      <div>Hecho en Córdoba, Argentina · Solo para mayores de 18 años.</div></footer>
+  </div>
+
+  <!-- ============ MODERACIÓN (solo admins) ============ -->
+  <div class="screen" id="pantalla-moderacion">
+    <div class="topbar">
+      <div style="display:flex; align-items:center; gap:12px;"><button class="icon-btn" onclick="volver('perfil')" aria-label="Volver"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button><div class="logo" style="font-size:24px;">Moderación</div></div>
+    </div>
+    <div style="padding:0 20px 14px;"><p style="font-size:12.5px; color:var(--gris);">Denuncias pendientes, agrupadas por contenido. Con 3 denuncias, el contenido se oculta hasta que lo revises.</p></div>
+    <div class="subtitulo" id="titulo-verificaciones" style="display:none;"><h3 class="titulo-bloque">Pedidos de verificación</h3></div>
+    <div class="lista-simple" id="lista-verificaciones" style="min-height:0; padding-bottom:16px;"></div>
+    <div class="subtitulo"><h3 class="titulo-bloque">Denuncias</h3></div>
+    <div class="lista-simple" id="lista-reportes" style="padding-bottom:24px;"></div>
+    <!-- Consultas que llegan desde el formulario de Ayuda -->
+    <div style="padding:0 20px 10px;"><h3 class="titulo-bloque">Consultas recibidas</h3></div>
+    <div class="lista-simple" id="lista-consultas" style="padding-bottom:24px;"></div>
+  </div>
+
+  <!-- ============ CUENTA SUSPENDIDA ============ -->
+  <div class="screen" id="pantalla-suspendido">
+    <div class="auth-wrap" style="text-align:center;">
+      <div style="font-size:46px;">🚫</div>
+      <h2 style="font-family:var(--font-display); text-transform:uppercase; font-weight:700; font-size:30px;">Cuenta suspendida</h2>
+      <p style="color:var(--gris); font-size:13.5px; line-height:1.6;">Tu cuenta fue suspendida por no cumplir las normas de la comunidad de Partazy. Si creés que es un error, escribile al equipo de Partazy.</p>
+      <button class="btn btn-secundario" onclick="verNormas()">Ver las normas</button>
+      <button class="btn btn-secundario" onclick="cerrarSesion()">Cerrar sesión</button>
+    </div>
+  </div>
+
+  <!-- ============ NAVBAR ============ -->
+  <nav class="navbar" aria-label="Navegación principal">
+    <div class="nav-marca solo-escritorio" role="button" tabindex="0" onclick="ir('home')" aria-label="PARTAZY · Inicio"><span class="lv lv-nav"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></span></div>
+    <button class="nav-toggle solo-escritorio" id="nav-toggle" onclick="alternarNav()" aria-label="Achicar el menú" title="Achicar el menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+    <button class="nav-item activo" data-nav="home" onclick="ir('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      Inicio
+    </button>
+    <button class="nav-item" data-nav="explorar" onclick="ir('explorar')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      Explorar
+    </button>
+    <button class="nav-item crear" data-nav="crear" onclick="ir('crear')">
+      <div class="circulo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+      <span class="txt-crear">Crear</span>
+    </button>
+    <button class="nav-item" data-nav="chats" onclick="abrirChats()">
+      <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg><span class="badge" id="badge-chats"></span></span>
+      Chats
+    </button>
+    <button class="nav-item solo-escritorio" data-nav-esc="notificaciones" onclick="abrirNotificaciones()">
+      <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="badge" id="badge-notif-side"></span></span>
+      Notificaciones
+    </button>
+    <button class="nav-item solo-escritorio" data-nav-esc="amigos" onclick="abrirAmigos()">
+      <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg><span class="badge" id="badge-amigos-side"></span></span>
+      Amigos
+    </button>
+    <button class="nav-item solo-escritorio" data-nav-esc="ticket" onclick="irAMisEntradas()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/><path d="M13 6v12" stroke-dasharray="2 2"/></svg>
+      Mis entradas
+    </button>
+    <button class="nav-item" data-nav="perfil" onclick="ir('perfil')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+      Perfil
+    </button>
+    <div class="nav-pie solo-escritorio">
+      <div class="pie-redes"><a class="pie-ig" href="https://www.instagram.com/partazy/" target="_blank" rel="noopener noreferrer" aria-label="PARTAZY en Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span class="notranslate" translate="no">@partazy</span></a><a class="pie-ig pie-fb" href="https://www.facebook.com/share/1EkgZmHUXT/" target="_blank" rel="noopener noreferrer" aria-label="PARTAZY en Facebook"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.8 1.4-3.8 3.9v2.3H7.9v3h2.6V21z"/></svg><span>Facebook</span></a></div>
+      <div class="links"><button onclick="abrirTutorial()">Tutorial</button><button onclick="abrirAyuda()">Ayuda</button><button onclick="abrirTerminos()">Términos</button><a href="/organizadores">Organizadores</a><button onclick="abrirPrivacidad()">Privacidad</button></div>
+      <div class="idiomas notranslate" translate="no" role="group" aria-label="Idioma"><button data-idioma="es">ES</button><button data-idioma="en">EN</button><button data-idioma="pt">PT</button></div>
+      <div>© <span class="anio-actual">2026</span> PARTAZY · Todos los derechos reservados</div>
+    </div>
+  </nav>
+
+  <!-- Cartelito de aviso (toast() en app.js) -->
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<!-- ============ VENTANAS QUE SE ABREN ENCIMA (fuera de las pantallas) ============ -->
+<!-- Mapa para elegir dónde es el evento (Crear / Editar) -->
+<div class="mapa-bg" id="modal-mapa" role="dialog" aria-modal="true" aria-label="Elegir ubicación en el mapa">
+  <div class="mapa-top">
+    <button class="icon-btn" onclick="cerrarMapa()" aria-label="Cerrar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    <input type="text" id="mapa-buscar" placeholder="Buscá una dirección o lugar..." autocomplete="off" enterkeyhint="search">
+    <button class="btn btn-primario btn-mini" onclick="buscarEnMapa()">Buscar</button>
+  </div>
+  <div class="mapa-resultados" id="mapa-resultados"></div>
+  <div id="mapa-lienzo"></div>
+  <div class="mapa-pie">
+    <div class="mapa-dir" id="mapa-dir">Tocá el mapa o mové el pin hasta el lugar exacto.</div>
+    <div class="fila"><button class="btn btn-secundario" onclick="mapaMiUbicacion()">📍 Mi ubicación</button><button class="btn btn-primario" id="mapa-confirmar" onclick="confirmarMapa()" disabled>Usar este lugar</button></div>
+  </div>
+</div>
+<!-- Elegir ciudad y distancia (botón de ubicación del inicio y Explorar) -->
+<div class="modal-bg" id="modal-rango" role="dialog" aria-modal="true" aria-labelledby="rango-titulo" onclick="if(event.target===this) cerrarRango()">
+  <div class="modal ref">
+    <h3 id="rango-titulo">¿Qué eventos querés ver?</h3>
+    <p style="margin-bottom:8px;" id="rango-ubic-txt"></p>
+    <div class="rango-ops" id="rango-ops"></div>
+    <button class="btn btn-secundario" onclick="usarMiUbicacion()">📍 Usar mi ubicación actual</button>
+    <div class="rango-ciudad"><input type="text" id="rango-ciudad" placeholder="O escribí una ciudad o barrio..." autocomplete="off" enterkeyhint="search"><button class="btn btn-primario btn-mini" onclick="buscarCiudadRango()">Ir</button></div>
+    <div class="ayuda" id="rango-estado" style="margin-top:8px; font-size:12px; color:var(--gris);"></div>
+    <button class="btn btn-primario" style="margin-top:14px;" onclick="cerrarRango()">Listo</button>
+  </div>
+</div>
+<!-- Menú ☰ del perfil: opciones de cuenta, ayuda y sesión -->
+<div class="hoja-bg" id="menu-perfil" role="dialog" aria-modal="true" aria-label="Menú" onclick="if(event.target===this) cerrarMenuPerfil()"><div class="hoja menu-hoja">
+  <div class="agarre"></div>
+  <div class="grupo-menu">Tu cuenta</div>
+  <button class="btn btn-secundario" onclick="abrirMisDatos()"><span class="mi">🪪</span>Mis datos</button>
+  <button class="btn btn-secundario" onclick="compartirMiPerfil()"><span class="mi">📤</span>Compartir mi perfil</button>
+  <button class="btn btn-secundario" id="btn-mi-pagina" style="display:none;" onclick="verMiPagina()"><span class="mi">🎪</span>Ver mi página pública</button>
+  <button class="btn btn-secundario" id="btn-moderacion" style="display:none;" onclick="abrirModeracion()"><span class="mi">🛡️</span>Moderación <span class="badge badge-inline" id="badge-moderacion"></span></button>
+  <button class="btn btn-secundario" id="btn-avisos"><span class="mi">🔔</span>Activar notificaciones en este celular</button>
+  <button class="btn btn-secundario" id="btn-instalar" onclick="instalarApp()"><span class="mi">📲</span>Instalar Partazy en el celular</button>
+  <div class="grupo-menu">Ayuda</div>
+  <button class="btn btn-secundario" onclick="abrirAyuda()"><span class="mi">❓</span>Ayuda y preguntas frecuentes</button>
+  <button class="btn btn-secundario" onclick="abrirTutorial()"><span class="mi">🎓</span>Cómo usar Partazy (tutorial)</button>
+  <button class="btn btn-secundario" onclick="verNormas()"><span class="mi">📜</span>Normas de la comunidad</button>
+  <button class="btn btn-secundario" onclick="abrirPrivacidad()"><span class="mi">🔒</span>Privacidad</button>
+  <hr>
+  <button class="btn btn-secundario" onclick="cerrarSesion()"><span class="mi">↩️</span>Cerrar sesión</button>
+  <button class="link-peligro" onclick="eliminarCuenta()">Eliminar mi cuenta</button>
+</div></div>
+<!-- "Sumate / Necesitás una cuenta": modo invitado -->
+<div class="hoja-bg" id="hoja-cuenta" role="dialog" aria-modal="true" aria-labelledby="cuenta-titulo" onclick="if(event.target===this) cerrarPedirCuenta()"><div class="hoja hoja-cuenta">
+  <button class="icon-btn cerrar" onclick="cerrarPedirCuenta()" aria-label="Cerrar">✕</button>
+  <div class="cuenta-marca"><span class="lv lv-cuenta" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></span></div>
+  <h3 id="cuenta-titulo">Sumate</h3>
+  <p id="cuenta-texto">Creá tu cuenta gratis para anotarte a fiestas, recitales, charlas y todo lo que pasa cerca tuyo, armar tus propios eventos y ver qué hacen tus amigos.</p>
+  <p class="aviso-fundador" data-pre-lanzamiento>✦ Si te sumás antes del lanzamiento oficial, quedás como <b>Fundador</b> para siempre.</p>
+  <div class="ventajas"><span>🎟️ Anotate en un toque</span><span>🎧 Planes para vos</span><span>🎉 Armá tu evento</span><span>👥 Mirá qué hacen tus amigos</span><span>💬 Chateá</span></div>
+  <button class="btn btn-primario" onclick="irALogin('crear')">Crear cuenta gratis</button>
+  <button class="btn btn-secundario" onclick="irALogin('ingresar')">Ya tengo cuenta · Iniciar sesión</button>
+  <button class="seguir" onclick="cerrarPedirCuenta()">Seguir mirando</button>
+</div></div>
+<!-- Hoja de abajo reutilizable: vista rápida de un evento, vista previa antes de publicar, calificar -->
+<div class="hoja-bg" id="hoja-vista" role="dialog" aria-modal="true" aria-label="Vista previa del evento" onclick="if(event.target===this) cerrarHoja()"><div class="hoja" id="hoja-contenido"></div></div>
+<!-- Guía "Qué significa cada color" del estado de los eventos -->
+<div class="modal-bg" id="modal-referencias" role="dialog" aria-modal="true" aria-labelledby="ref-titulo" onclick="if(event.target===this) cerrarReferencias()">
+  <div class="modal ref">
+    <h3 id="ref-titulo">Qué significa cada color</h3>
+    <div id="ref-contenido"></div>
+    <button class="btn btn-primario" style="margin-top:16px;" onclick="cerrarReferencias()">Entendido</button>
+  </div>
+</div>
+<!-- Tutorial de 6 pasos (sale solo a cuentas nuevas; después desde Ayuda) -->
+<div class="tuto-bg" id="tutorial" role="dialog" aria-modal="true" aria-label="Cómo usar Partazy">
+  <div class="tuto">
+    <div class="tuto-top"><span class="tuto-paso" id="tuto-paso"></span><button class="tuto-saltar" onclick="cerrarTutorial()">Saltar</button></div>
+    <div id="tuto-slide"></div>
+    <div class="tuto-pie"><div class="tuto-puntos" id="tuto-puntos"></div>
+      <div style="display:flex; gap:8px;"><button class="btn btn-secundario" id="tuto-atras" onclick="pasoTutorial(-1)">Atrás</button><button class="btn btn-primario" id="tuto-sig" onclick="pasoTutorial(1)">Siguiente</button></div></div>
+  </div>
+</div>
+<!-- Ventana genérica de confirmar / avisar / pedir un texto (confirmar() y pedirTexto() en app.js) -->
+<div class="modal-bg" id="modal-bg" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+  <div class="modal">
+    <h3 id="modal-titulo">Confirmar</h3>
+    <p id="modal-texto"></p>
+    <textarea id="modal-input" maxlength="200" style="display:none;" aria-label="Texto"></textarea>
+    <div class="modal-menciones" id="modal-menciones" role="listbox" aria-label="Mencionar a un amigo" style="display:none;"></div>
+    <div class="modal-contador" id="modal-contador" style="display:none;" aria-live="polite"></div>
+    <input type="password" id="modal-clave" style="display:none; width:100%; background:var(--negro-3); border:1px solid var(--gris-linea); border-radius:12px; padding:12px; color:var(--blanco); font-size:14px; margin:-4px 0 16px;" aria-label="Contraseña" autocomplete="current-password">
+    <div class="acciones">
+      <button class="btn btn-secundario" id="modal-cancelar">Cancelar</button>
+      <button class="btn btn-primario" id="modal-ok">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Acreditación de prensa -->
+<div class="modal-bg" id="modal-acred" role="dialog" aria-modal="true" aria-labelledby="ac-titulo">
+  <div class="modal" style="max-height:88vh; overflow-y:auto;">
+    <h3 id="ac-titulo">Acreditación de prensa</h3>
+    <p id="ac-sub" style="margin-bottom:12px;"></p>
+    <div class="form" style="padding:0; gap:12px;">
+      <div class="campo"><label for="ac-medio">Medio</label><input type="text" id="ac-medio" maxlength="80" placeholder="Nombre del medio"></div>
+      <div class="campo"><label for="ac-rol">Tu rol</label><select id="ac-rol"><option value="">Elegí tu rol</option><option value="Periodista">Periodista</option><option value="Fotografía">Fotografía</option><option value="Video">Video</option><option value="Streaming / redes">Streaming / redes</option><option value="Otro">Otro</option></select></div>
+      <div class="campo"><label for="ac-link">Web o Instagram del medio</label><input type="text" id="ac-link" maxlength="200" autocapitalize="none"></div>
+      <div class="campo"><label for="ac-comentario">Comentario (opcional)</label><textarea id="ac-comentario" maxlength="300" style="min-height:60px;"></textarea></div>
+    </div>
+    <div class="auth-error" id="ac-error" role="alert" style="margin:10px 0 8px;"></div>
+    <div class="acciones">
+      <button class="btn btn-secundario" id="ac-cancelar">Cancelar</button>
+      <button class="btn btn-primario" id="ac-ok">Enviar pedido</button>
+    </div>
+  </div>
+</div>
+
+<!-- Denunciar -->
+<div class="modal-bg" id="modal-denuncia" role="dialog" aria-modal="true" aria-labelledby="den-titulo">
+  <div class="modal" style="max-height:88vh; display:flex; flex-direction:column;">
+    <h3 id="den-titulo">Denunciar</h3>
+    <p id="den-sub" style="margin-bottom:10px;"></p>
+    <div class="motivos" id="den-motivos" role="radiogroup" aria-label="Motivo"></div>
+    <textarea id="den-detalle" maxlength="500" placeholder="Contanos más (opcional)"></textarea>
+    <div class="auth-error" id="den-error" role="alert" style="margin:-6px 0 8px;"></div>
+    <div class="acciones">
+      <button class="btn btn-secundario" id="den-cancelar">Cancelar</button>
+      <button class="btn btn-primario" id="den-ok">Enviar denuncia</button>
+    </div>
+  </div>
+</div>
+
+<!-- Elegir amigos (enviar fiesta / nuevo chat) -->
+<div class="modal-bg" id="hoja-amigos" role="dialog" aria-modal="true" aria-labelledby="hoja-titulo">
+  <div class="modal" style="max-height:80vh; display:flex; flex-direction:column;">
+    <h3 id="hoja-titulo">Enviar a amigos</h3>
+    <p id="hoja-sub" style="margin-bottom:10px;"></p>
+    <div class="lista-amigos-sel" id="hoja-lista"></div>
+    <div class="acciones" style="margin-top:14px;">
+      <button class="btn btn-secundario" id="hoja-cancelar">Cancelar</button>
+      <button class="btn btn-primario" id="hoja-ok">Enviar</button>
+    </div>
+  </div>
+</div>
+
+<!-- QR real -->
+<!-- La librería del QR se carga recién cuando se abre una entrada (ver cargarQR en app.js) -->
+
+<!-- Firebase compat (mismos archivos oficiales, servidos por jsDelivr desde el paquete npm "firebase") -->
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.0/firebase-app-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.0/firebase-auth-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/firebase@10.12.0/firebase-app-check-compat.js"></script>
+
+<script src="/js/app.js"></script>
+</body>
+</html>

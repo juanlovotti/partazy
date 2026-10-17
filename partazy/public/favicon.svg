@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><clipPath id="p"><path d="M20 13a2 2 0 0 1 2-2h12a14 14 0 0 1 0 28h-4v12a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2z M34 19.5a5.5 5.5 0 1 1 0 11h-4v-11z" clip-rule="evenodd"/></clipPath>
+<linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8B411"/><stop offset=".55" stop-color="#F26A1B"/><stop offset="1" stop-color="#4CB944"/></linearGradient>
+<filter id="b" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4.5"/></filter></defs>
+<rect width="64" height="64" rx="14" fill="#0E0C0D"/><g><g clip-path="url(#p)"><rect width="64" height="64" fill="url(#g)"/><g filter="url(#b)"><circle cx="24" cy="14" r="11" fill="#4CB944"/><circle cx="24" cy="48" r="11" fill="#E8B411"/><circle cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></g></svg>
