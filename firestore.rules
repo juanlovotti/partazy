@@ -62,6 +62,10 @@ service cloud.firestore {
         && request.resource.data.get('verificado', false) == false
         && request.resource.data.get('seguidores', 0) == 0
         && sinCalif(request.resource.data)
+        // Fecha de alta (define la insignia "Fundador"): cerca de la hora real, con un día de margen por relojes atrasados
+        && request.resource.data.createdAt is int
+        && request.resource.data.createdAt > request.time.toMillis() - 86400000
+        && request.resource.data.createdAt < request.time.toMillis() + 86400000
         && existsAfter(/databases/$(database)/documents/users/$(uid)/privado/datos);
       // El dueño edita su perfil, pero no puede tocar sus denuncias ni su suspensión
       allow update: if soy(uid) && perfilValido() && usuarioReservado(uid)
@@ -70,6 +74,7 @@ service cloud.firestore {
         && request.resource.data.get('suspendido', false) == false
         && request.resource.data.get('verificado', false) == resource.data.get('verificado', false)
         && request.resource.data.get('seguidores', 0) == resource.data.get('seguidores', 0)
+        && request.resource.data.get('createdAt', 0) == resource.data.get('createdAt', 0)
         && request.resource.data.get('califN', 0) == resource.data.get('califN', 0)
         && request.resource.data.get('califSuma', 0) == resource.data.get('califSuma', 0)
         && request.resource.data.get('califUlt', '') == resource.data.get('califUlt', '');

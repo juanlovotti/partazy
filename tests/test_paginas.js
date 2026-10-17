@@ -8,8 +8,8 @@ const PUB = path.join(__dirname, '..', 'public');
 let f = 0; const ok = (c, m) => { console.log((c ? '✔ ' : '✘ ') + m); if(!c) f++; };
 
 const esperado = generar();
-const nombres = ['privacidad.html', 'terminos.html', 'soporte.html', 'eliminar-cuenta.html', 'organizadores.html'];
-ok(nombres.every(n => fs.existsSync(path.join(PUB, n))), 'existen las 5 páginas públicas');
+const nombres = ['privacidad.html', 'terminos.html', 'soporte.html', 'eliminar-cuenta.html', 'organizadores.html', 'lanzamiento.html'];
+ok(nombres.every(n => fs.existsSync(path.join(PUB, n))), 'existen las 6 páginas públicas');
 ok(nombres.every(n => fs.readFileSync(path.join(PUB, n), 'utf8') === esperado[n]), 'están al día con los textos de la app (si falla: npm run paginas)');
 
 const doc = n => new JSDOM(esperado[n]).window.document;
@@ -33,6 +33,10 @@ const todas = nombres.map(doc);
 ok(todas.every(d => d.querySelector('.pie a[href="/privacidad"]') && d.querySelector('.pie a[href="/eliminar-cuenta"]') && d.querySelector('.lv-ico')), 'todas tienen el logo nuevo y los links del pie');
 ok(!nombres.some(n => esperado[n].includes('juanvalentinlovotti')), 'ninguna página muestra el mail personal');
 
+const lz = doc('lanzamiento.html');
+ok(/Próximamente/.test(lz.body.textContent) && !/\d{1,2}\/1[0-2]|octubre|noviembre/i.test(lz.querySelector('main').textContent), 'lanzamiento: dice "Próximamente" sin mostrar la fecha');
+ok(lz.querySelector('.fundador a[href="/"]') && lz.querySelector('.lv-anim .lv-ico') && lz.querySelector('a[href="/organizadores"]'), 'lanzamiento: logo animado, invitación a ser Fundador y link para organizadores');
+ok(!/solo-post|Date\.parse|¡Ya llegó!/.test(esperado['lanzamiento.html']), 'lanzamiento: no depende de ninguna fecha');
 const fb = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'firebase.json'), 'utf8'));
 ok(fb.hosting[0].cleanUrls === true, 'firebase: las páginas se abren sin ".html" (partazy.com/privacidad)');
 

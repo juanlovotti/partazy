@@ -132,3 +132,4 @@ Buscá el nombre para saltar. En orden:
 - `/organizadores` tiene un formulario que guarda en la colección `consultas` (motivo `organizacion`), la misma del formulario de Ayuda: se ve en Moderación → Consultas. Usa `js/organizadores.js` y App Check.
 - Sirven también para lo que piden Google y Meta al revisar el inicio de sesión: link a la política de privacidad y a cómo borrar los datos (`/eliminar-cuenta`).
 - La app acepta el link `partazy.com/#/crear` (abre Crear evento; sin cuenta pide registrarse y después sigue ahí).
+- **Fundadores y /lanzamiento:** `FIN_FUNDADORES` en `app.js` está en `null` ("próximamente", sin fecha): todas las cuentas llevan la insignia ✦ Fundador y el aviso de registro se muestra. El día del lanzamiento se pone esa fecha y desde ahí las cuentas nuevas ya no son Fundadoras. La fecha de alta (`createdAt`) la validan las reglas al crear el perfil y no se puede cambiar después.

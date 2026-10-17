@@ -2376,6 +2376,15 @@ function abrirNotificacion(id){
 const RUBROS = ['Boliche', 'Bar', 'Productora', 'Centro de estudiantes', 'DJ / Artista', 'Salón de fiestas', 'Otro'];
 const SVG_CHECK = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
 // Tilde verde ✓ de cuenta verificada.
+// Lanzamiento oficial: todavía SIN fecha (en público: "próximamente").
+// Mientras sea null, todas las cuentas son Fundadoras. El día que se lance se pone ese día, por ejemplo
+// Date.parse('2026-11-20T00:00:00-03:00'): desde ahí las cuentas nuevas ya no lo son y el aviso se esconde solo.
+const FIN_FUNDADORES = null;
+// ¿Se sumó antes de que terminara la etapa de Fundadores? (los perfiles viejos sin fecha de alta también son de los primeros)
+function fundadorAntesDe(u, fin){ return !!u && (fin == null || !u.createdAt || u.createdAt < fin); }
+function esFundador(u){ return fundadorAntesDe(u, FIN_FUNDADORES); }
+function etapaFundadores(){ return FIN_FUNDADORES == null || Date.now() < FIN_FUNDADORES; }
+function fundadorHTML(u){ return esFundador(u) ? '<span class="tag-fundador" title="Se sumó a Partazy antes del lanzamiento oficial">✦ Fundador</span>' : ''; }
 function insignia(u){ return u?.verificado ? `<span class="ins-verif" title="Cuenta verificada" aria-label="Cuenta verificada">${SVG_CHECK}</span>` : ''; }
 // ¿Es una cuenta de organización (boliche, productora...)?
 function esOrganizacion(u){ return u?.tipoCuenta === 'organizacion'; }
@@ -3562,6 +3571,7 @@ async function renderUsuario(uid){
       <div class="avatar-grande">${avatarHTML(u)}</div>
       <h2>${esc(nombreVisible(u))}${insignia(u)}</h2>
       ${u.usuario ? `<div class="handle">@${esc(u.usuario)}</div>` : ''}
+      ${fundadorHTML(u)}
       ${esOrganizacion(u) ? `<div class="tags" style="justify-content:center; margin-top:8px;"><span class="tag">🎪 Organizador de eventos</span>${(u.califN || 0) ? `<span class="tag">${califOrgTxt(u)}</span>` : ''}${u.ocultarSeguidores && !esYo ? '' : `<span class="tag">${u.seguidores || 0} ${(u.seguidores || 0) === 1 ? 'seguidor' : 'seguidores'}</span>`}</div>` : ''}
       <div class="ubic">${esc([u.apodo ? u.nombre : '', u.ciudad].filter(Boolean).join(' · '))}</div>
       ${lineaEstadoHTML(u)}
@@ -7214,6 +7224,7 @@ async function renderPerfilVista(){
   renderTarjetaVerificacion();
   document.getElementById('btn-mi-pagina').style.display = esOrganizacion(state.perfil) ? '' : 'none';
   document.getElementById('perfil-handle').textContent = state.perfil.usuario ? '@' + state.perfil.usuario : '';
+  document.getElementById('perfil-fundador').innerHTML = fundadorHTML(state.perfil);
   document.getElementById('perfil-aviso').innerHTML = state.perfil.usuario ? '' :
     `<button class="btn btn-primario" style="margin-bottom:16px;" onclick="editarPerfil()">Elegí tu @usuario para que te encuentren</button>`;
   const edad = edadUsuario();
@@ -7496,4 +7507,5 @@ function refrescarCajasFecha(){
   document.querySelectorAll('.caja-fecha').forEach(c => { const i = c.querySelector('input'); c.classList.toggle('vacia', !!i && !i.value); });
 }
 envolverCajasFecha();
+document.querySelectorAll('[data-pre-lanzamiento]').forEach(e => { e.hidden = !etapaFundadores(); });
 init();

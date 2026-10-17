@@ -144,6 +144,7 @@
         <div class="campo"><label>¿Qué te gusta?</label><div class="intereses-sel" id="rg-intereses"></div></div>
         <label class="check-normas"><input type="checkbox" id="rg-normas"><span>Acepto las <button type="button" class="link-btn" id="btn-ver-normas">normas de la comunidad</button></span></label>
         <div class="auth-error" id="rg-error" role="alert"></div>
+        <p class="aviso-fundador" data-pre-lanzamiento>✦ Te estás sumando antes del lanzamiento oficial: tu perfil va a llevar la insignia <b>Fundador</b> para siempre.</p>
         <button class="btn btn-primario" id="btn-registro">Empezar</button>
         <button class="link-btn" id="btn-registro-salir" style="color:var(--gris);">Usar otra cuenta</button>
       </div>
@@ -466,6 +467,7 @@ Ivo Paz +1"></textarea>
         <div class="avatar-grande" id="perfil-avatar">··</div>
         <h2 id="perfil-nombre">Cargando...</h2>
         <div class="handle" id="perfil-handle"></div>
+        <div id="perfil-fundador"></div>
         <div class="ubic" id="perfil-ubic">—</div>
         <div class="ubic" id="perfil-calif" style="display:none;"></div>
         <p class="bio" id="perfil-bio" style="display:none;"></p>
@@ -1063,6 +1065,7 @@ Ivo Paz +1"></textarea>
   <div class="cuenta-marca"><span class="lv lv-cuenta" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></span></div>
   <h3 id="cuenta-titulo">Sumate a Partazy</h3>
   <p id="cuenta-texto">Creá tu cuenta gratis para anotarte a fiestas, recitales, charlas y todo lo que pasa cerca tuyo, armar tus propios eventos y ver qué hacen tus amigos.</p>
+  <p class="aviso-fundador" data-pre-lanzamiento>✦ Si te sumás antes del lanzamiento oficial, quedás como <b>Fundador</b> para siempre.</p>
   <div class="ventajas"><span>🎟️ Anotate en un toque</span><span>🎧 Planes para vos</span><span>🎉 Armá tu evento</span><span>👥 Mirá qué hacen tus amigos</span><span>💬 Chateá</span></div>
   <button class="btn btn-primario" onclick="irALogin('crear')">Crear cuenta gratis</button>
   <button class="btn btn-secundario" onclick="irALogin('ingresar')">Ya tengo cuenta · Iniciar sesión</button>

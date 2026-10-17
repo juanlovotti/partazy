@@ -215,6 +215,39 @@ ${faq}
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.0/firebase-app-check-compat.js"></script>
 <script src="/js/organizadores.js"></script>`
   });
+  // Página de prelanzamiento: "Próximamente", sin ninguna fecha (como certifix.com.ar).
+  const letras = [...'artazy'].map((c, i) => `<i style="--i:${i}">${c}</i>`).join('');
+  const logoAnimado = LOGO.replace('class="lv"', 'class="lv lv-grande lv-anim"').replace('<span class="lv-txt">artazy</span>', `<span class="lv-txt">${letras}</span>`)
+    .replace('<circle cx="24" cy="14" r="11" fill="#4CB944"/><circle cx="24" cy="48" r="11" fill="#E8B411"/><circle cx="44" cy="26" r="9" fill="#F26A1B"/>',
+             '<circle class="b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="b3" cx="44" cy="26" r="9" fill="#F26A1B"/>')
+    .replace(/id="(p[pgbc]2?)"/g, 'id="g$1"').replace(/url\(#(p[pgbc]2?)\)/g, 'url(#g$1)');
+  P['lanzamiento.html'] = pagina({
+    ruta: 'lanzamiento', titulo: 'Próximamente',
+    descripcion: 'Todo lo que pasa cerca tuyo, en un solo lugar. Sumate antes del lanzamiento y quedás como Fundador.',
+    cuerpo: `<section class="lanz">
+  <span class="kicker">Próximamente</span>
+  <div class="lanz-logo">${logoAnimado}</div>
+  <h1>Todo lo que pasa cerca tuyo, <em>en un solo lugar.</em></h1>
+  <p class="bajada">Fiestas, previas, recitales, charlas, ferias y partidos. Mirá a dónde van tus amigos, anotate en un toque y armá tus propios eventos.</p>
+</section>
+<section class="tarjeta fundador">
+  <span class="tag-fundador">✦ Fundador</span>
+  <h2>Sumate antes que nadie</h2>
+  <p>Los que se registren antes del lanzamiento oficial llevan la insignia <b>✦ Fundador</b> en su perfil. Para siempre.</p>
+  <div class="acciones"><a class="btn btn-primario" href="/">Crear mi cuenta gratis</a><a class="btn btn-secundario" href="/">Ya tengo cuenta</a></div>
+</section>
+<section class="tres">
+  <div class="tarjeta"><span class="ico">🎧</span><h3>Para vos</h3><p>Elegís tus gustos una vez y te mostramos los planes que van con vos.</p></div>
+  <div class="tarjeta"><span class="ico">👥</span><h3>Tus amigos</h3><p>Ves quién va, quién está en un evento ahora y quién es el host. Sin preguntar en el grupo.</p></div>
+  <div class="tarjeta"><span class="ico">🔒</span><h3>Con invitación</h3><p>En los eventos privados, la dirección la ven solo los invitados.</p></div>
+</section>
+<section class="banda">
+  <span class="sello">🎪 Organizadores</span>
+  <div><h2>¿Organizás eventos?</h2><p>Sumate ahora y llegá al lanzamiento con tu evento publicado. <a href="/organizadores">Ver cómo funciona →</a></p></div>
+</section>
+<p class="nota centro">Seguinos para enterarte primero: <a href="https://www.instagram.com/partazy/" target="_blank" rel="noopener noreferrer">Instagram</a> · <a href="https://www.facebook.com/share/1EkgZmHUXT/" target="_blank" rel="noopener noreferrer">Facebook</a></p>`
+
+  });
   return P;
 }
 

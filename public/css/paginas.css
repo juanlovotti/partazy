@@ -103,3 +103,31 @@ p{margin:0 0 12px;}
 .pie-links{display:flex; flex-wrap:wrap; gap:6px 16px;}
 .pie a{color:var(--hueso); text-decoration:none;} .pie a:hover{color:var(--blanco); text-decoration:underline;}
 @media (max-width:420px){ .lv{font-size:22px;} .btn-app{padding:8px 12px; font-size:12.5px;} }
+
+/* Prelanzamiento (/lanzamiento) */
+[hidden]{display:none !important;}
+.lanz{text-align:center; padding:26px 0 6px;}
+.lanz h1{font-size:clamp(38px, 8vw, 64px); max-width:760px; margin:18px auto 14px;}
+.lanz h1 em{font-style:normal; color:var(--rojo);}
+.lanz .bajada{margin:0 auto;}
+.lanz-logo{margin:22px 0 6px;}
+.lv-grande{font-size:clamp(46px, 11vw, 84px);}
+.centro{text-align:center;}
+.fundador{text-align:center; border-color:rgba(232,180,17,.45); background:linear-gradient(150deg, rgba(232,180,17,.10), rgba(76,185,68,.07)), var(--negro-2); padding:26px 22px;}
+.fundador h2{margin:12px 0 8px;}
+.fundador .acciones{justify-content:center;}
+.tag-fundador{display:inline-flex; align-items:center; gap:4px; padding:5px 13px; border-radius:999px; font-size:13px; font-weight:800; letter-spacing:.3px; color:#141214;
+  background:linear-gradient(120deg, #E8B411, #F26A1B 55%, #4CB944); box-shadow:0 4px 14px rgba(242,106,27,.25);}
+/* Logo animado como en la app: las letras bailan, llega la P, cae el punto y los colores se mueven */
+.lv-anim .lv-txt i{font-style:normal; display:inline-block; animation:lv-baile .7s cubic-bezier(.3,1.6,.5,1) both; animation-delay:calc(var(--i) * 70ms + 80ms);}
+.lv-anim .lv-ico{transform-origin:50% 60%; animation:lv-llega .75s cubic-bezier(.2,1.2,.3,1) .55s both, lv-lateP 3s ease-in-out 1.6s infinite;}
+.lv-anim .lv-punto{opacity:0; animation:lv-cae .9s cubic-bezier(.3,0,.4,1) 1.2s forwards;}
+.lv-anim .b1{animation:lv-m1 5s ease-in-out infinite;} .lv-anim .b2{animation:lv-m2 5s ease-in-out infinite;} .lv-anim .b3{animation:lv-m3 5s ease-in-out infinite;}
+@keyframes lv-baile{0%{opacity:0; transform:translateY(-.9em) rotate(-25deg) scale(.6);} 45%{opacity:1; transform:translateY(.18em) rotate(12deg) scale(1.08);} 70%{transform:translateY(-.08em) rotate(-6deg);} 100%{opacity:1; transform:none;}}
+@keyframes lv-llega{0%{opacity:0; transform:translateX(-2.2em) rotate(-200deg) scale(.4);} 70%{opacity:1; transform:translateX(.08em) rotate(10deg) scale(1.06);} 100%{opacity:1; transform:none;}}
+@keyframes lv-cae{0%{opacity:1; transform:translateY(-3em);} 55%{transform:translateY(0) scale(1.25,.75);} 70%{transform:translateY(-.4em) scale(.92,1.08);} 85%{transform:translateY(0) scale(1.08,.92);} 93%{transform:translateY(-.06em);} 100%{opacity:1; transform:none;}}
+@keyframes lv-lateP{0%,60%,100%{transform:scale(1); filter:drop-shadow(0 0 2px rgba(255,255,255,.2));} 15%{transform:scale(1.035); filter:drop-shadow(0 0 7px rgba(255,255,255,.6)) drop-shadow(0 0 18px rgba(255,255,255,.22));}}
+@keyframes lv-m1{0%,100%{transform:translate(0,0);} 33%{transform:translate(18px,22px);} 66%{transform:translate(4px,34px);}}
+@keyframes lv-m2{0%,100%{transform:translate(0,0);} 33%{transform:translate(16px,-26px);} 66%{transform:translate(22px,-8px);}}
+@keyframes lv-m3{0%,100%{transform:translate(0,0);} 33%{transform:translate(-20px,10px);} 66%{transform:translate(-8px,-18px);}}
+@media (prefers-reduced-motion: reduce){ .lv-anim *, .lv-anim{animation:none !important; opacity:1 !important; transform:none !important;} }
