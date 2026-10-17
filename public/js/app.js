@@ -155,7 +155,9 @@ const DataService = {
   // Borra el evento, su dirección privada y la asistencia del creador
   async eliminarEvento(id, uid){
     const ref = this._ev(id);
+    const equipos = await ref.collection('equipos').get().then(s => s.docs.map(d => d.id)).catch(() => []);
     const batch = db.batch();
+    equipos.slice(0, 200).forEach(e => batch.delete(ref.collection('equipos').doc(e)));
     batch.delete(ref.collection('media').doc('foto'));
     batch.delete(ref.collection('vip').doc('lista'));
     batch.delete(ref.collection('private').doc('data'));
@@ -193,6 +195,48 @@ const DataService = {
       return datos;
     });
   },
+  // ---------- EQUIPOS (torneos) ----------
+  _eq(eventId, id){ return this._ev(eventId).collection('equipos').doc(id); },
+  async listarEquipos(eventId){
+    const snap = await this._ev(eventId).collection('equipos').get();
+    return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (a.ts || 0) - (b.ts || 0));
+  },
+  // Saca a uid de un equipo dentro de una transacción (si queda vacío, se borra).
+  _sacarDeEquipo(tx, ref, datos, uid){
+    const m = { ...(datos.miembros || {}) }; delete m[uid];
+    if(Object.keys(m).length) tx.set(ref, { ...datos, miembros: m }); else tx.delete(ref);
+  },
+  // Arma un equipo (quien lo arma es el primer integrante); si estaba en otro, sale de ese.
+  async crearEquipo(eventId, id, datos, anteriorId){
+    const ref = this._eq(eventId, id), ant = anteriorId ? this._eq(eventId, anteriorId) : null;
+    return db.runTransaction(async tx => {
+      const a = ant ? await tx.get(ant) : null;
+      if(a && a.exists) this._sacarDeEquipo(tx, ant, a.data(), datos.creador);
+      tx.set(ref, datos);
+    });
+  },
+  // Se suma a un equipo (y sale del anterior). LLENO si ya no hay lugar.
+  async unirseEquipo(eventId, id, uid, yo, max, anteriorId){
+    const ref = this._eq(eventId, id), ant = anteriorId && anteriorId !== id ? this._eq(eventId, anteriorId) : null;
+    return db.runTransaction(async tx => {
+      const s = await tx.get(ref), a = ant ? await tx.get(ant) : null;
+      if(!s.exists) throw new Error('INEXISTENTE');
+      const d = s.data(), m = { ...(d.miembros || {}) };
+      if(m[uid]) return;
+      if(max && Object.keys(m).length >= max) throw new Error('LLENO');
+      m[uid] = yo;
+      if(a && a.exists) this._sacarDeEquipo(tx, ant, a.data(), uid);
+      tx.set(ref, { ...d, miembros: m });
+    });
+  },
+  async salirEquipo(eventId, id, uid){
+    const ref = this._eq(eventId, id);
+    return db.runTransaction(async tx => {
+      const s = await tx.get(ref);
+      if(s.exists && s.data().miembros && s.data().miembros[uid]) this._sacarDeEquipo(tx, ref, s.data(), uid);
+    });
+  },
+  async borrarEquipo(eventId, id){ await this._eq(eventId, id).delete(); },
   // Darse de baja: libera el lugar (con el -1 en la misma transacción) o retira la solicitud / lista de espera
   async salirDeEvento(eventId, uid, estado){
     const evRef = this._ev(eventId), atRef = this._at(eventId, uid);
@@ -1768,6 +1812,7 @@ async function salirDelEvento(id, estado){
   if(!(await confirmar(titulo, texto, ok))) return;
   try{
     await DataService.salirDeEvento(id, state.uid, estado);
+    if(ev.porEquipos) DataService.listarEquipos(id).then(l => { const t = miEquipo(l); return t && DataService.salirEquipo(id, t.id, state.uid); }).catch(e => console.warn('salir del equipo', e));
     if(lugar){
       const e = eventoEnCache(id); if(e) e.confirmadosCount = Math.max(0, (e.confirmadosCount || 1) - 1);
       state.misPlanes.delete(id); sincronizarPlanes();
@@ -5725,6 +5770,8 @@ async function renderDetalle(id){
         <p class="texto-desc">${esc(ev.descripcion||'')}</p>
       </div>
 
+      ${ev.porEquipos ? '<div class="bloque bloque-equipos" id="bloque-equipos"><h3 class="titulo-bloque">Equipos</h3><p class="eq-resumen">Cargando equipos…</p></div>' : ''}
+
       ${ev.lineup ? `<div class="bloque"><h3 class="titulo-bloque">Line-up</h3><div class="lineup">${lineupItems(ev.lineup).map(x =>
         `<div class="lineup-item"><span class="hora">${esc(x.hora)}</span><b>${esc(x.nombre)}</b></div>`).join('')}</div></div>` : ''}
 
@@ -5787,6 +5834,7 @@ async function renderDetalle(id){
     if(bDen) bDen.onclick = () => denunciarEvento(ev);
     if(esCreador && esPrivada && !cancelado) cargarSolicitudes(ev.id, tok);
     if(esCreador) cargarConfirmados(ev, tok);
+    if(ev.porEquipos) pintarEquipos(ev, estado, tok);
     if(esCreador && ev.listaVip) DataService.getVip(ev.id).then(l => {
       const b = document.getElementById('bloque-vip');
       if(!b || tok !== state.tok) return;
@@ -5826,22 +5874,22 @@ async function accionDetalle(ev, estado, lleno, adentro, yaCompro){
     toast(`Este evento es +${ev.edadMinima}.`); return;
   }
 
-  // Torneo por equipos: antes de anotarse, elige en cuál juega (o si va a mirar)
-  let equipo = '';
-  if(equiposDe(ev).length && ev.creador !== state.uid){
-    const e = await elegirEquipo(ev);
-    if(e === null) return;
-    equipo = e;
+  // Torneo por equipos: antes de anotarse, elige equipo, arma uno o ninguno por ahora (no en la lista de espera)
+  let eleccion = null;
+  if(ev.porEquipos && ev.creador !== state.uid && (ev.privacidad === 'privada' || !lleno)){
+    eleccion = await elegirEquipo(ev);
+    if(eleccion === null) return;
   }
   const btn = document.getElementById('btn-accion-detalle');
-  const base = { uid: state.uid, nombre: state.perfil.nombre, ts: Date.now(), ...(equipo ? { equipo } : {}) };
+  const base = { uid: state.uid, nombre: state.perfil.nombre, ts: Date.now() };
 
   try{
     if(ev.privacidad === 'privada'){
       if(btn) btn.disabled = true;
       await DataService.crearAsistencia(ev.id, { ...base, estado: 'solicitado' });
       notificar(ev.creador, 'evento_solicitud', { objetoId: ev.id, objetoNombre: ev.nombre });
-      toast('Solicitud enviada al anfitrión');
+      const eq = await aplicarEquipo(ev, eleccion);
+      toast(('Solicitud enviada al anfitrión. ' + eq.msj).trim());
       return renderDetalle(ev.id);
     }
 
@@ -5865,7 +5913,8 @@ async function accionDetalle(ev, estado, lleno, adentro, yaCompro){
     sumarConfirmadoEnCache(ev.id);
     renderPerfilVista();
     state.misPlanes.add(ev.id); sincronizarPlanes();
-    toast(equipo ? `¡Listo! Estás confirmado en ${equipo}.` : '¡Listo! Ya estás confirmado.');
+    const eq = await aplicarEquipo(ev, eleccion);
+    toast(('¡Listo! Ya estás confirmado. ' + eq.msj).trim());
     abrirTicket(ev.id);
   } catch(e){
     console.error(e);
@@ -5945,14 +5994,16 @@ async function cargarConfirmados(ev, tok){
         <div class="nom" data-usuario="${esc(a.uid)}">${esc(a.nombre)}${a.uid === state.uid ? ' (vos)' : ''}<small>${a.estado === 'aprobado' ? 'Aprobado' : 'Confirmado'}${ev.conQR && a.ticket ? ' · ' + esc(a.ticket) : ''}</small></div>
         <span class="ig-slot" data-ig="${esc(a.uid)}"></span>
       </div>`;
-    // Torneo por equipos: una lista por equipo (y al final quienes van a mirar)
-    const eq = equiposDe(ev);
+    // Torneo por equipos: una lista por equipo (y al final quienes no tienen)
     let cuerpo = lista.map(fila).join('');
-    if(eq.length){
-      const nombres = [...eq, ...new Set(lista.map(a => a.equipo).filter(n => n && !eq.includes(n)))];
+    if(ev.porEquipos){
+      const equipos = await DataService.listarEquipos(ev.id).catch(() => []);
+      if(tok !== state.tok) return;
       const grupo = (tit, l) => `<div class="equipo-tit"><b>${esc(tit)}</b><span>${l.length} ${l.length === 1 ? 'persona' : 'personas'}</span></div>${l.map(fila).join('') || '<div class="equipo-vacio">Todavía nadie</div>'}`;
-      const sin = lista.filter(a => !a.equipo || !nombres.includes(a.equipo));
-      cuerpo = nombres.map(n => grupo(n, lista.filter(a => a.equipo === n))).join('') + (sin.length ? grupo('Sin equipo', sin) : '');
+      const conEquipo = new Set();
+      cuerpo = equipos.map(t => { const l = lista.filter(a => t.miembros && t.miembros[a.uid]); l.forEach(a => conEquipo.add(a.uid)); return grupo(t.nombre, l); }).join('');
+      const sin = lista.filter(a => !conEquipo.has(a.uid));
+      cuerpo += sin.length ? grupo('Sin equipo', sin) : '';
     }
     cont.innerHTML = lista.length ? `
       <div style="font-size:12px; color:var(--gris); margin-bottom:4px;">${lista.length} ${lista.length === 1 ? 'persona' : 'personas'}${ev.conQR ? ' · con entrada QR' : ' · sin QR: controlá en la puerta con esta lista'}</div>
@@ -5969,12 +6020,13 @@ async function cargarConfirmados(ev, tok){
 async function cargarSolicitudes(eventId, tok){
   try{
     const sols = await DataService.listSolicitudes(eventId);
+    const equipos = eventoEnCache(eventId)?.porEquipos ? await DataService.listarEquipos(eventId).catch(() => []) : [];
     const cont = document.getElementById('lista-solicitudes');
     if(!cont || tok !== state.tok) return;
     cont.innerHTML = sols.length ? sols.map(s => `
       <div class="solicitud">
         <div class="avatar" data-usuario="${esc(s.uid)}">${esc(inicialesDe(s.nombre))}</div>
-        <div class="nom" data-usuario="${esc(s.uid)}">${esc(s.nombre)}<small>Pidió unirse ${esc(hace(s.ts))}${s.equipo ? ' · ' + esc(s.equipo) : ''}</small></div>
+        <div class="nom" data-usuario="${esc(s.uid)}">${esc(s.nombre)}<small>Pidió unirse ${esc(hace(s.ts))}${miEquipo(equipos, s.uid) ? ' · ' + esc(miEquipo(equipos, s.uid).nombre) : ''}</small></div>
         <span class="ig-slot" data-ig="${esc(s.uid)}"></span>
         <button class="btn btn-secundario btn-mini" data-solicitud="${esc(s.uid)}" data-evento="${esc(eventId)}" data-accion="rechazar">Rechazar</button>
         <button class="btn btn-primario btn-mini" data-solicitud="${esc(s.uid)}" data-evento="${esc(eventId)}" data-accion="aprobar">Aprobar</button>
@@ -6412,11 +6464,12 @@ const EXTRAS_TIPO = {
     { k: 'regalo', l: 'Regalo / vaquita', ph: 'Ej: vaquita de $5.000 al alias juli.cumple' }]
 };
 // Dibuja las preguntas del tipo elegido (conserva lo que ya estaba escrito).
-function renderCamposTipo(k, valores, equipos){
+function renderCamposTipo(k, valores, cfgEq){
   const cont = document.getElementById('campos-tipo');
   if(!cont) return;
   const ant = valores || leerExtras();
-  const equiposTxt = equipos ? equipos.join('\n') : (document.getElementById('f-equipos')?.value || '');
+  const jugAnt = cfgEq ? (cfgEq.jugadoresPorEquipo || '') : (document.getElementById('f-jugadores-equipo')?.value || '');
+  const maxAnt = cfgEq ? (cfgEq.maxEquipos || '') : (document.getElementById('f-max-equipos')?.value || '');
   const campos = EXTRAS_TIPO[k] || [];
   if(!campos.length){ cont.innerHTML = ''; cont.style.display = 'none'; return; }
   cont.style.display = '';
@@ -6430,11 +6483,12 @@ function renderCamposTipo(k, valores, equipos){
     else if(c.t === 'multi'){ const sel = v.split(',').map(x => x.trim());
       h = `<div class="campo"${si(c)}><label>${esc(c.l)}</label><div class="multi-ops" data-extra="${c.k}" data-multi="1">${c.ops.map(o => `<button type="button" class="chip${sel.includes(o) ? ' activo' : ''}" onclick="this.classList.toggle('activo')">${esc(o)}</button>`).join('')}</div></div>`; }
     else h = `<div class="campo"${si(c)}><label for="${id(c)}">${esc(c.l)}</label><input type="${c.t === 'num' ? 'number' : 'text'}" id="${id(c)}" data-extra="${c.k}" maxlength="120" placeholder="${esc(c.ph || '')}" value="${esc(v)}"></div>`;
-    if(c.k === 'porEquipos') h += `<div class="campo" id="campo-equipos" data-si-k="porEquipos" data-si-v="Sí"><label for="f-equipos">Nombres de los equipos</label>
-      <textarea id="f-equipos" maxlength="1100" placeholder="Un equipo por renglón:
-Los Halcones
-La Naranja Mecánica">${esc(equiposTxt)}</textarea>
-      <div class="ayuda">Al anotarse, cada persona elige su equipo (o "Voy a mirar"). Vos ves la lista de cada uno.</div></div>`;
+    if(c.k === 'porEquipos') h += `<div class="campo" id="campo-equipos" data-si-k="porEquipos" data-si-v="Sí">
+      <div class="fila-2" style="margin:0;">
+        <div><label for="f-jugadores-equipo">Jugadores por equipo</label><input type="number" id="f-jugadores-equipo" min="1" max="50" inputmode="numeric" placeholder="Ej: 5" value="${esc(jugAnt)}"></div>
+        <div><label for="f-max-equipos">Máximo de equipos</label><input type="number" id="f-max-equipos" min="2" max="64" inputmode="numeric" placeholder="Sin límite" value="${esc(maxAnt)}"></div>
+      </div>
+      <div class="ayuda">👥 Los que se anotan arman su equipo y los demás se van sumando. Vos ves todos los equipos y quién está en cada uno.</div></div>`;
     return h;
   }).join('');
   actualizarCondicionalesTipo();
@@ -6450,18 +6504,18 @@ function actualizarCondicionalesTipo(){
   });
 }
 document.getElementById('campos-tipo')?.addEventListener('change', actualizarCondicionalesTipo);
-const MAX_EQUIPOS = 24;
-// Equipos del torneo: [] si no es por equipos, null si dijo que sí pero puso menos de 2.
-function leerEquipos(){
+// Torneo por equipos: { porEquipos, jugadoresPorEquipo, maxEquipos } (vacío = sin límite), o { error } si un número no va.
+function leerConfigEquipos(){
   const c = document.getElementById('campo-equipos');
-  if(!c || c.style.display === 'none') return [];
-  const vistos = new Set(), lista = [];
-  for(const l of String(document.getElementById('f-equipos')?.value || '').split('\n')){
-    const n = l.trim().replace(/\s+/g, ' ').slice(0, 40);
-    if(n && !vistos.has(normalizar(n))){ vistos.add(normalizar(n)); lista.push(n); }
-  }
-  return lista.length >= 2 ? lista.slice(0, MAX_EQUIPOS) : null;
+  if(!c || c.style.display === 'none') return { porEquipos: false };
+  const num = id => { const v = String(document.getElementById(id)?.value || '').trim(); return v === '' ? null : Number(v); };
+  const j = num('f-jugadores-equipo'), m = num('f-max-equipos');
+  if(j !== null && !(Number.isInteger(j) && j >= 1 && j <= 50)) return { error: 'Jugadores por equipo: entre 1 y 50', foco: 'f-jugadores-equipo' };
+  if(m !== null && !(Number.isInteger(m) && m >= 2 && m <= 64)) return { error: 'Máximo de equipos: entre 2 y 64 (o dejalo vacío)', foco: 'f-max-equipos' };
+  return { porEquipos: true, jugadoresPorEquipo: j, maxEquipos: m };
 }
+const jugadoresMax = ev => typeof ev?.jugadoresPorEquipo === 'number' ? ev.jugadoresPorEquipo : 0;
+const equiposMax = ev => typeof ev?.maxEquipos === 'number' ? ev.maxEquipos : 0;
 // Lee las respuestas extra del formulario (solo las que tienen algo).
 function leerExtras(){
   const out = {};
@@ -6475,28 +6529,123 @@ function leerExtras(){
 // Bloque "Lo que tenés que saber" en el detalle del evento.
 function extrasHTML(ev){
   const campos = EXTRAS_TIPO[ev.ocasion] || [], x = ev.extras || {};
-  const eq = equiposDe(ev);
-  const filas = campos.filter(c => x[c.k] && !(c.k === 'porEquipos' && eq.length)).map(c => `<div class="extra-fila"><small>${esc(c.l.replace(/^¿/, '').replace(/\?$/, ''))}</small><b>${esc(x[c.k])}</b></div>`);
-  if(eq.length) filas.push(`<div class="extra-fila extra-equipos"><small>Equipos (${eq.length})</small><div class="equipos-pills">${eq.map(e => `<span>${esc(e)}</span>`).join('')}</div></div>`);
+  const filas = campos.filter(c => x[c.k]).map(c => `<div class="extra-fila"><small>${esc(c.l.replace(/^¿/, '').replace(/\?$/, ''))}</small><b>${esc(x[c.k])}</b></div>`);
+  const cupoEq = [jugadoresMax(ev) ? `${jugadoresMax(ev)} por equipo` : '', equiposMax(ev) ? `Hasta ${equiposMax(ev)} equipos` : ''].filter(Boolean).join(' · ');
+  if(ev.porEquipos && cupoEq) filas.push(`<div class="extra-fila"><small>Equipos</small><b>${esc(cupoEq)}</b></div>`);
   return filas.length ? `<div class="extras-lista">${filas.join('')}</div>` : '';
 }
 // Equipos de un torneo (solo nombres válidos).
-function equiposDe(ev){ return Array.isArray(ev?.equipos) ? ev.equipos.filter(e => typeof e === 'string' && e.trim()).slice(0, MAX_EQUIPOS) : []; }
-// Al anotarse en un torneo por equipos: ¿en cuál juega? Devuelve el nombre, '' (va a mirar) o null (volvió).
-function elegirEquipo(ev){
+// ---------- Torneos por equipos: los arma la gente que se anota y los demás se suman ----------
+// events/{id}/equipos/{equipoId} = { nombre, creador, ts, miembros: { uid: { n: nombre, ts } } }. El capitán es el primero que entró.
+function miembrosDe(t){ return Object.entries(t?.miembros || {}).filter(([, m]) => m && typeof m.n === 'string').map(([uid, m]) => ({ uid, n: m.n, ts: m.ts || 0 })).sort((a, b) => a.ts - b.ts); }
+function miEquipo(lista, uid = state.uid){ return (lista || []).find(t => t.miembros && t.miembros[uid]); }
+function nombreJugador(n){ const p = String(n || '').trim().split(/\s+/); return p.length > 1 ? `${p[0]} ${p[p.length - 1][0]}.` : (p[0] || ''); }
+function nombreEquipo(t){ return String(t || '').trim().replace(/\s+/g, ' ').slice(0, 40); }
+function idEquipo(){ return 'eq' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+// Al anotarse: sumarse a un equipo, armar uno o ninguno por ahora.
+// Devuelve { tipo: 'unir', id } | { tipo: 'crear', nombre } | { tipo: 'nada' }, o null si volvió.
+async function elegirEquipo(ev){
+  let lista = [];
+  try{ lista = await DataService.listarEquipos(ev.id); } catch(e){ console.warn('equipos', e); }
+  const max = jugadoresMax(ev), puedeCrear = !equiposMax(ev) || lista.length < equiposMax(ev);
   return new Promise(resolve => {
-    const eq = equiposDe(ev);
     state._resolverEquipo = resolve;
-    abrirHoja(`<div class="cuerpo hoja-equipos"><div class="cat">${iconoTipo(ev)}Torneo por equipos</div><h3>¿En qué equipo jugás?</h3>
-      <p class="hoja-sub">Así quien organiza arma la lista de cada equipo.</p>
-      <div class="equipos-ops">${eq.map((e, i) => `<button type="button" class="chip" data-equipo-i="${i}">${esc(e)}</button>`).join('')}
-        <button type="button" class="chip chip-mirar" data-equipo-i="-1">👀 Voy a mirar</button></div></div>
+    const listo = v => { const r = state._resolverEquipo; state._resolverEquipo = null; cerrarHoja(); r && r(v); };
+    abrirHoja(`<div class="cuerpo hoja-equipos"><div class="cat">${iconoTipo(ev)}Torneo por equipos</div><h3>¿Con qué equipo jugás?</h3>
+      <p class="hoja-sub">${lista.length ? 'Sumate a un equipo o armá el tuyo y pasale el evento a tus compañeros.' : 'Todavía no hay equipos: armá el tuyo y pasale el evento a tus compañeros para que se sumen.'}</p>
+      ${lista.length ? `<div class="equipos-hoja">${lista.map(t => { const n = miembrosDe(t).length, lleno = max && n >= max;
+        return `<button type="button" class="eq-op" data-eq-id="${esc(t.id)}"${lleno ? ' disabled' : ''}><b>${esc(t.nombre)}</b><span>${lleno ? 'Completo' : `${n}${max ? '/' + max : ''} ${n === 1 ? 'jugador' : 'jugadores'}`}</span></button>`; }).join('')}</div>` : ''}
+      ${puedeCrear ? `<div class="eq-nuevo"><input type="text" id="eq-nuevo-nombre" maxlength="40" placeholder="Nombre de tu equipo" aria-label="Nombre de tu equipo"><button type="button" class="btn btn-primario btn-mini" id="eq-nuevo-ok">Armar equipo</button></div>`
+        : '<p class="hoja-sub">Ya se armaron todos los equipos que entran en el torneo.</p>'}
+      <button type="button" class="eq-mirar" id="eq-sin">👀 Voy a mirar o elijo después</button></div>
       <div class="acciones"><button class="btn btn-secundario" onclick="cerrarHoja()">Volver</button></div>`);
-    document.querySelectorAll('#hoja-contenido [data-equipo-i]').forEach(b => b.onclick = () => {
-      const i = Number(b.dataset.equipoI), r = state._resolverEquipo;
-      state._resolverEquipo = null; cerrarHoja(); r && r(i < 0 ? '' : eq[i]);
-    });
+    document.querySelectorAll('#hoja-contenido [data-eq-id]').forEach(b => b.onclick = () => listo({ tipo: 'unir', id: b.dataset.eqId }));
+    document.getElementById('eq-sin').onclick = () => listo({ tipo: 'nada' });
+    const ok = document.getElementById('eq-nuevo-ok'), inp = document.getElementById('eq-nuevo-nombre');
+    if(ok) ok.onclick = () => {
+      const nombre = nombreEquipo(inp.value);
+      if(nombre.length < 2){ toast('Ponele nombre a tu equipo'); inp.focus(); return; }
+      if(lista.some(t => normalizar(t.nombre) === normalizar(nombre))){ toast('Ya hay un equipo con ese nombre: sumate a ese o elegí otro nombre'); inp.focus(); return; }
+      listo({ tipo: 'crear', nombre });
+    };
+    if(inp) inp.onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); ok.click(); } };
   });
+}
+// Hace lo que eligió (ya anotado al evento). Devuelve { ok, msj } para avisarle.
+async function aplicarEquipo(ev, el){
+  if(!el || el.tipo === 'nada') return { ok: true, msj: '' };
+  try{
+    const lista = await DataService.listarEquipos(ev.id), actual = miEquipo(lista);
+    const yo = { n: String(state.perfil?.nombre || '').slice(0, 60), ts: Date.now() };
+    if(el.tipo === 'crear'){
+      const nombre = nombreEquipo(el.nombre);
+      if(lista.some(t => normalizar(t.nombre) === normalizar(nombre))) return { ok: false, msj: 'Ya hay un equipo con ese nombre: sumate a ese o elegí otro nombre.' };
+      if(equiposMax(ev) && lista.length >= equiposMax(ev)) return { ok: false, msj: 'Ya se armaron todos los equipos que entran en el torneo.' };
+      await DataService.crearEquipo(ev.id, idEquipo(), { nombre, creador: state.uid, ts: Date.now(), miembros: { [state.uid]: yo } }, actual?.id);
+      return { ok: true, msj: `Armaste "${nombre}". Pasale el evento a tu equipo para que se sumen.` };
+    }
+    const t = lista.find(x => x.id === el.id);
+    if(!t) return { ok: false, msj: 'Ese equipo ya no existe: elegí otro desde el evento.' };
+    if(actual?.id === t.id) return { ok: true, msj: `Ya estás en "${t.nombre}".` };
+    await DataService.unirseEquipo(ev.id, t.id, state.uid, yo, jugadoresMax(ev), actual?.id);
+    return { ok: true, msj: `Estás en "${t.nombre}".` };
+  } catch(e){
+    console.warn('equipo', e);
+    return { ok: false, msj: e.message === 'LLENO' ? 'Ese equipo se completó: elegí otro desde el evento.' : 'No pudimos sumarte al equipo: probá de nuevo desde el evento.' };
+  }
+}
+// Bloque "Equipos" del detalle: los equipos armados, quiénes están y los botones para sumarse, cambiarse o salir.
+async function pintarEquipos(ev, estado, tok){
+  const cont = document.getElementById('bloque-equipos');
+  if(!cont) return;
+  const tit = '<h3 class="titulo-bloque">Equipos</h3>';
+  if(state.invitado || !state.uid){ cont.innerHTML = tit + '<p class="eq-resumen">Entrá con tu cuenta para ver los equipos y sumarte a uno.</p>'; return; }
+  let lista;
+  try{ lista = await DataService.listarEquipos(ev.id); }
+  catch(e){ console.warn('equipos', e); cont.innerHTML = tit + '<p class="eq-resumen">No se pudieron cargar los equipos.</p>'; return; }
+  if(tok !== state.tok || !document.body.contains(cont)) return;
+  const max = jugadoresMax(ev), maxEq = equiposMax(ev), esCreador = ev.creador === state.uid;
+  const anotado = esCreador || ['confirmado', 'aprobado', 'solicitado'].includes(estado);
+  const mio = miEquipo(lista), abierto = !esCancelado(ev) && finEvento(ev) > Date.now();
+  const resumen = [lista.length ? `${lista.length} ${lista.length === 1 ? 'equipo armado' : 'equipos armados'}` : 'Todavía no se armó ningún equipo',
+    maxEq ? `hasta ${maxEq}` : '', max ? `${max} por equipo` : ''].filter(Boolean).join(' · ');
+  const tarjeta = t => {
+    const ms = miembrosDe(t), lleno = max && ms.length >= max, esMio = t === mio;
+    const acc = !abierto ? '' : esMio ? `<button type="button" class="btn btn-secundario btn-mini" data-eq-salir="${esc(t.id)}">Salir del equipo</button>`
+      : (anotado && !lleno ? `<button type="button" class="btn btn-primario btn-mini" data-eq-unir="${esc(t.id)}">${mio ? 'Cambiarme acá' : 'Sumarme'}</button>` : '');
+    const borrar = esCreador && abierto ? `<button type="button" class="eq-borrar" data-eq-borrar="${esc(t.id)}">Eliminar</button>` : '';
+    return `<div class="equipo-card${esMio ? ' mio' : ''}">
+      <div class="eq-cab"><b>${esc(t.nombre)}</b>${esMio ? '<span class="tag si">Tu equipo</span>' : ''}<span class="eq-n${lleno ? ' lleno' : ''}">${lleno ? 'Completo · ' : ''}${ms.length}${max ? '/' + max : ''}</span></div>
+      <div class="eq-miembros">${ms.map((m, i) => `<span class="${i === 0 ? 'cap' : ''}" role="button" tabindex="0" data-usuario="${esc(m.uid)}"${i === 0 ? ' title="Capitán (armó el equipo)"' : ''}>${i === 0 ? '★ ' : ''}${esc(nombreJugador(m.n))}</span>`).join('')}</div>
+      ${acc || borrar ? `<div class="eq-acc">${acc}${borrar}</div>` : ''}</div>`;
+  };
+  const puedeCrear = abierto && anotado && (!maxEq || lista.length < maxEq);
+  cont.innerHTML = tit + `<p class="eq-resumen">${esc(resumen)}</p>` + lista.map(tarjeta).join('')
+    + (puedeCrear ? `<div class="eq-nuevo"><input type="text" id="eq-nuevo-det" maxlength="40" placeholder="${mio ? 'Armar otro equipo' : 'Nombre de tu equipo'}" aria-label="Nombre del equipo"><button type="button" class="btn btn-secundario btn-mini" id="eq-crear-det">Armar equipo</button></div>` : '')
+    + (!anotado && abierto ? '<p class="eq-resumen">Anotate al evento para armar un equipo o sumarte a uno.</p>' : '');
+  const rehacer = async (fn) => {
+    cont.querySelectorAll('button').forEach(b => b.disabled = true);
+    const r = await fn();
+    if(r?.msj) toast(r.msj);
+    pintarEquipos(ev, estado, state.tok);
+  };
+  cont.querySelectorAll('[data-eq-unir]').forEach(b => b.onclick = () => rehacer(() => aplicarEquipo(ev, { tipo: 'unir', id: b.dataset.eqUnir })));
+  cont.querySelectorAll('[data-eq-salir]').forEach(b => b.onclick = () => rehacer(async () => {
+    try{ await DataService.salirEquipo(ev.id, b.dataset.eqSalir, state.uid); return { msj: 'Saliste del equipo' }; }
+    catch(e){ console.warn(e); return { msj: 'No se pudo. Probá de nuevo.' }; }
+  }));
+  cont.querySelectorAll('[data-eq-borrar]').forEach(b => b.onclick = async () => {
+    const t = lista.find(x => x.id === b.dataset.eqBorrar);
+    if(!t || !(await confirmar('Eliminar equipo', `Se borra "${t.nombre}" y sus integrantes quedan anotados, pero sin equipo.`, 'Eliminar'))) return;
+    rehacer(async () => { try{ await DataService.borrarEquipo(ev.id, t.id); return { msj: 'Equipo eliminado' }; } catch(e){ console.warn(e); return { msj: 'No se pudo eliminar el equipo' }; } });
+  });
+  const crear = document.getElementById('eq-crear-det'), inp = document.getElementById('eq-nuevo-det');
+  if(crear) crear.onclick = () => {
+    const nombre = nombreEquipo(inp.value);
+    if(nombre.length < 2){ toast('Ponele nombre a tu equipo'); inp.focus(); return; }
+    rehacer(() => aplicarEquipo(ev, { tipo: 'crear', nombre }));
+  };
+  if(inp) inp.onkeydown = e => { if(e.key === 'Enter'){ e.preventDefault(); crear.click(); } };
 }
 // ---------- Preguntas frecuentes de cada evento (guardarropa, reingreso...) ----------
 const FAQ_SUGERIDAS = {
@@ -6665,8 +6814,9 @@ async function publicarEventoUnaVez(){
   const musica = sinMusica ? '' : (val('f-musica') || (estilo === 'otro' ? estiloOtro : ESTILOS[estilo]) || '').slice(0, 80);
   // Preguntas frecuentes del evento y equipos (torneos)
   const faq = leerFaq();
-  const equipos = leerEquipos();
-  if(equipos === null){ toast('Poné al menos 2 equipos, uno por renglón'); irAPasoCrear(3); document.getElementById('f-equipos')?.focus(); return; }
+  const eqCfg = leerConfigEquipos();
+  if(eqCfg.error){ toast(eqCfg.error); irAPasoCrear(3); document.getElementById(eqCfg.foco)?.focus(); return; }
+  const equiposCampos = eqCfg.porEquipos ? { porEquipos: true, ...(eqCfg.jugadoresPorEquipo ? { jugadoresPorEquipo: eqCfg.jugadoresPorEquipo } : {}), ...(eqCfg.maxEquipos ? { maxEquipos: eqCfg.maxEquipos } : {}) } : {};
   const conVip = tipo !== 'previa' && document.getElementById('switch-vip').classList.contains('on');
   const vip = conVip ? leerVip() : [];
   const reglas = val('f-reglas');
@@ -6683,7 +6833,7 @@ async function publicarEventoUnaVez(){
   if(evEdit) return guardarEdicion(evEdit, {
     nombre, lugar, direccion: privada ? direccion : null, fechaTs, hora: horaStr, horaFin, capacidad, capacidadDesconocida: sinTope, edadMinima,
     precio, pagoInfo, pagoTitular, linkEntradas: linkVenta ? linkVenta.url.slice(0, 300) : '', lineup,
-    categoria: estilo, estiloOtro, musica, faq, equipos, dresscode: val('f-dresscode') || 'Libre', ocasion: OCASIONES[val('f-ocasion')] ? val('f-ocasion') : '', vip,
+    categoria: estilo, estiloOtro, musica, faq, eqCfg, dresscode: val('f-dresscode') || 'Libre', ocasion: OCASIONES[val('f-ocasion')] ? val('f-ocasion') : '', vip,
     bebida: tipo === 'previa' && document.getElementById('switch-bebida').classList.contains('on'),
     tipo, privacidad: privada ? 'privada' : 'publica',
     listaVip: conVip, inscripcionHasta, extras: leerExtras(),
@@ -6698,7 +6848,7 @@ async function publicarEventoUnaVez(){
     nombre, creador: state.uid, creadorNombre: state.perfil.nombre,
     organizador: state.perfil.nombre, verificado: !!state.perfil.verificado,
     categoria: estilo, ...(estiloOtro ? { estiloOtro } : {}), tipoLugar: tipo==='previa' ? 'Previa' : 'Fiesta', tipo, ocasion: OCASIONES[val('f-ocasion')] ? val('f-ocasion') : '',
-    ...(faq.length ? { faq } : {}), ...(equipos.length ? { equipos } : {}),
+    ...(faq.length ? { faq } : {}), ...equiposCampos,
     privacidad: privada ? 'privada' : 'publica',
     fechaTs, hora: horaStr,
     lugar, lat: exacta ? coords.lat : coords.lat + jitter(), lng: exacta ? coords.lng : coords.lng + jitter(), ubicacionExacta: exacta,
@@ -7422,7 +7572,7 @@ async function editarEvento(ev){
   }
   modoEdicionUI(true);
   state.tipoElegido = true;
-  renderCamposTipo(esPrevia ? 'previa' : (ev.ocasion || 'fiesta'), ev.extras || {}, Array.isArray(ev.equipos) ? ev.equipos : []);
+  renderCamposTipo(esPrevia ? 'previa' : (ev.ocasion || 'fiesta'), ev.extras || {}, { jugadoresPorEquipo: jugadoresMax(ev) || '', maxEquipos: equiposMax(ev) || '' });
   irAPasoCrear(3);
   state.abriendoEdicion = true;
   try{ ir('crear'); } finally { state.abriendoEdicion = false; }
@@ -7464,7 +7614,12 @@ async function guardarEdicion(ev, d){
   if(Object.keys(d.extras || {}).length || ev.extras) cambios.extras = d.extras || {};
   if(d.estiloOtro || ev.estiloOtro) cambios.estiloOtro = d.estiloOtro || '';
   if((d.faq || []).length || ev.faq) cambios.faq = d.faq || [];
-  if((d.equipos || []).length || ev.equipos) cambios.equipos = d.equipos || [];
+  const eqC = d.eqCfg || { porEquipos: false };
+  if(eqC.porEquipos || ev.porEquipos) cambios.porEquipos = !!eqC.porEquipos;
+  if(eqC.porEquipos) ['jugadoresPorEquipo', 'maxEquipos'].forEach(k => {
+    if(eqC[k]) cambios[k] = eqC[k];
+    else if(typeof ev[k] === 'number') cambios[k] = firebase.firestore.FieldValue.delete();
+  });
   // Fecha límite: se guarda, se cambia o se borra (solo si cambió)
   if(d.inscripcionHasta) cambios.inscripcionHasta = d.inscripcionHasta;
   else if(typeof ev.inscripcionHasta === 'number') cambios.inscripcionHasta = firebase.firestore.FieldValue.delete();

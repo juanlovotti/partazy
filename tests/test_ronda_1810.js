@@ -11,6 +11,10 @@ put('users/B', { nombre: 'Beto Paz', usuario: 'beto', iniciales: 'BP', ciudad: '
 put('users/B/privado/datos', { nacimiento: '1998-01-01' }); put('usernames/beto', { uid: 'B' });
 put('users/O', { nombre: 'Productora Luna', usuario: 'luna', iniciales: 'P', ciudad: 'Córdoba', intereses: [], foto: GOOGLE, tipoCuenta: 'organizacion' });
 put('users/O/privado/datos', { nacimiento: '1990-01-01' }); put('usernames/luna', { uid: 'O' });
+for(const [u, n] of [['C', 'Caro Ruiz'], ['D', 'Dani Sosa'], ['E', 'Eze Molina']]){
+  put('users/' + u, { nombre: n, usuario: u.toLowerCase() + 'user', iniciales: n[0], ciudad: 'Córdoba', intereses: [], foto: '' });
+  put(`users/${u}/privado/datos`, { nacimiento: '1998-01-01' });
+}
 
 const abrir = (usuario) => new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://partazy.com/',
   beforeParse(w){ w.firebase = makeFirebase(store, () => usuario); w.navigator.geolocation = undefined;
@@ -112,40 +116,84 @@ const fecha = new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
   A.resetFormularioCrear();
   ok(!A.document.querySelector('#f-faq .faq-fila') && $A('f-estilo-otro').value === '', 'un evento nuevo arranca sin preguntas ni estilo');
 
-  // ---------- Torneo por equipos ----------
+  // ---------- Torneo por equipos: los arman los que se anotan ----------
   A.ir('crear'); A.resetFormularioCrear(); A.elegirTipo('fiesta'); A.elegirOcasion('deportivo'); llenar('Torneo de fútbol 5');
   const vis = id => $A(id) && $A(id).closest('.campo').style.display !== 'none';
-  ok(!vis('fx-porEquipos') && !vis('f-equipos'), 'deporte: "¿por equipos?" no aparece si no es un torneo');
+  ok(!vis('fx-porEquipos') && !vis('f-jugadores-equipo'), 'deporte: "¿por equipos?" no aparece si no es un torneo');
   $A('fx-modalidad').value = 'Torneo / competencia'; $A('fx-modalidad').dispatchEvent(new A.Event('change', { bubbles: true }));
-  ok(vis('fx-porEquipos') && !vis('f-equipos'), 'torneo: pregunta si se juega por equipos');
+  ok(vis('fx-porEquipos') && !vis('f-jugadores-equipo'), 'torneo: pregunta si se juega por equipos');
   $A('fx-porEquipos').value = 'Sí'; $A('fx-porEquipos').dispatchEvent(new A.Event('change', { bubbles: true }));
-  ok(vis('f-equipos'), 'por equipos: pide los nombres de los equipos');
-  $A('f-equipos').value = 'Los Halcones';
+  ok(vis('f-jugadores-equipo') && vis('f-max-equipos') && !$A('f-equipos'), 'por equipos: pide cuántos por equipo y cuántos equipos (no los nombres: los arma la gente)');
+  $A('f-jugadores-equipo').value = '3'; $A('f-max-equipos').value = '1';
   await A.publicarEvento(); await sleep(60);
-  ok(!evs().some(e => e.nombre === 'Torneo de fútbol 5') && /al menos 2 equipos/.test(txt($A('toast'))), 'con un solo equipo no publica y avisa');
+  ok(!evs().some(e => e.nombre === 'Torneo de fútbol 5') && /entre 2 y 64/.test(txt($A('toast'))), 'un máximo de equipos que no va: no publica y avisa');
   $A('fx-modalidad').value = 'Recreativo'; A.actualizarCondicionalesTipo();
-  ok(!('porEquipos' in A.leerExtras()) && JSON.stringify(A.leerEquipos()) === '[]', 'si deja de ser torneo, los equipos no se guardan');
+  ok(!('porEquipos' in A.leerExtras()) && A.leerConfigEquipos().porEquipos === false, 'si deja de ser torneo, no queda por equipos');
   $A('fx-modalidad').value = 'Torneo / competencia'; A.actualizarCondicionalesTipo();
-  $A('f-equipos').value = 'Los Halcones\n  La Naranja \n\nlos halcones';
+  $A('f-max-equipos').value = '2';
   await A.publicarEvento(); await sleep(250);
   const t = evs().find(e => e.nombre === 'Torneo de fútbol 5');
-  ok(t && JSON.stringify(t.equipos) === '["Los Halcones","La Naranja"]' && t.extras.porEquipos === 'Sí', 'se guardan los equipos (sin repetidos ni renglones vacíos)');
-  ok(/Equipos \(2\)/.test(A.extrasHTML(t).replace(/<[^>]+>/g, ' ')), 'el evento muestra los equipos');
+  ok(t && t.porEquipos === true && t.jugadoresPorEquipo === 3 && t.maxEquipos === 2 && !('equipos' in t), 'se guarda: por equipos, 3 por equipo, hasta 2 equipos');
+  ok(/3 por equipo · Hasta 2 equipos/.test(A.extrasHTML(t).replace(/<[^>]+>/g, ' ')), 'el evento muestra cuántos por equipo y cuántos equipos');
+  const equipos = () => [...store.docs.entries()].filter(([k]) => k.startsWith(`events/${t.id}/equipos/`)).map(([k, v]) => ({ id: k.split('/').pop(), ...v }));
+  const eqNom = n => equipos().find(e => e.nombre === n);
 
-  // Alguien se anota y elige su equipo
+  // B se anota y arma su equipo
   const B = abrir({ uid: 'B', email: 'b@t.com' }); await sleep(900); try{ B.cerrarTutorial(); }catch(e){}
   const $B = id => B.document.getElementById(id);
   B.abrirDetalle(t.id); await sleep(300);
-  $B('btn-accion-detalle').click(); await sleep(80);
-  const ops = [...B.document.querySelectorAll('#hoja-contenido [data-equipo-i]')].map(txt);
-  ok(/¿En qué equipo jugás\?/.test(txt($B('hoja-contenido'))) && ops.includes('La Naranja') && ops.some(o => /Voy a mirar/.test(o)), 'al anotarse elige su equipo (o "Voy a mirar")');
-  B.document.querySelector('#hoja-contenido [data-equipo-i="1"]').click(); await sleep(250);
-  const at = store.docs.get(`events/${t.id}/attendees/B`);
-  ok(at && at.estado === 'confirmado' && at.equipo === 'La Naranja', 'queda confirmado en "La Naranja"');
+  ok(/Todavía no se armó ningún equipo/.test(txt($B('bloque-equipos'))) && /Anotate al evento/.test(txt($B('bloque-equipos'))), 'el evento tiene la sección Equipos (vacía) e invita a anotarse');
+  $B('btn-accion-detalle').click(); await sleep(120);
+  ok(/¿Con qué equipo jugás\?/.test(txt($B('hoja-contenido'))) && $B('eq-nuevo-nombre') && /Voy a mirar/.test(txt($B('hoja-contenido'))), 'al anotarse: armar su equipo o "Voy a mirar"');
+  $B('eq-nuevo-nombre').value = '  Los   Halcones '; $B('eq-nuevo-ok').click(); await sleep(300);
+  ok(store.docs.get(`events/${t.id}/attendees/B`)?.estado === 'confirmado' && eqNom('Los Halcones') && Object.keys(eqNom('Los Halcones').miembros).join() === 'B', 'B queda confirmado y arma "Los Halcones" (es el primer integrante)');
+  ok(/Armaste "Los Halcones"/.test(txt($B('toast'))), 'le avisa que pase el evento a su equipo');
+
+  // C se suma al equipo de B; D arma otro
+  const C = abrir({ uid: 'C', email: 'c@t.com' }); await sleep(900); try{ C.cerrarTutorial(); }catch(e){}
+  const $C = id => C.document.getElementById(id);
+  C.abrirDetalle(t.id); await sleep(300);
+  $C('btn-accion-detalle').click(); await sleep(120);
+  const op = C.document.querySelector('#hoja-contenido [data-eq-id]');
+  ok(op && /Los Halcones/.test(txt(op)) && /1\/3 jugador/.test(txt(op)), 've los equipos armados con cuántos tienen (1/3)');
+  $C('eq-nuevo-nombre').value = 'los halcones'; $C('eq-nuevo-ok').click(); await sleep(40);
+  ok(/Ya hay un equipo con ese nombre/.test(txt($C('toast'))) && $C('hoja-vista').classList.contains('show'), 'no deja armar otro equipo con el mismo nombre');
+  op.click(); await sleep(300);
+  ok(Object.keys(eqNom('Los Halcones').miembros).sort().join() === 'B,C', 'C se suma a "Los Halcones"');
+  const Dw = abrir({ uid: 'D', email: 'd@t.com' }); await sleep(900); try{ Dw.cerrarTutorial(); }catch(e){}
+  const $D = id => Dw.document.getElementById(id);
+  Dw.abrirDetalle(t.id); await sleep(300);
+  $D('btn-accion-detalle').click(); await sleep(120);
+  $D('eq-nuevo-nombre').value = 'La Naranja'; $D('eq-nuevo-ok').click(); await sleep(300);
+  ok(eqNom('La Naranja') && equipos().length === 2, 'D arma "La Naranja"');
+  Dw.abrirDetalle(t.id); await sleep(400);
+  const bloqueD = txt($D('bloque-equipos'));
+  ok(/2 equipos armados · hasta 2 · 3 por equipo/.test(bloqueD) && /Tu equipo/.test(bloqueD) && /★ Beto P\./.test(bloqueD) && !$D('eq-nuevo-det'), 'la sección Equipos muestra quién está en cada uno (★ capitán), "Tu equipo", y no deja armar más (máximo 2)');
+  Dw.document.querySelector('[data-eq-unir]').click(); await sleep(350);
+  ok(Object.keys(eqNom('Los Halcones').miembros).sort().join() === 'B,C,D' && !eqNom('La Naranja'), 'D se cambia a "Los Halcones" y su equipo vacío se borra');
+  ok(/Completo · 3\/3/.test(txt($D('bloque-equipos'))), 'con 3 de 3, el equipo figura completo');
+
+  // E no entra en un equipo completo
+  const E = abrir({ uid: 'E', email: 'e@t.com' }); await sleep(900); try{ E.cerrarTutorial(); }catch(e){}
+  const $E = id => E.document.getElementById(id);
+  E.abrirDetalle(t.id); await sleep(300);
+  $E('btn-accion-detalle').click(); await sleep(120);
+  ok(E.document.querySelector('#hoja-contenido [data-eq-id]').disabled && /Completo/.test(txt($E('hoja-contenido'))), 'un equipo completo no se puede elegir');
+  $E('eq-sin').click(); await sleep(300);
+  ok(store.docs.get(`events/${t.id}/attendees/E`)?.estado === 'confirmado' && equipos().every(q => !q.miembros.E), '"Voy a mirar": queda anotado sin equipo');
+  let err = ''; try{ await E.eval('DataService').unirseEquipo(t.id, eqNom('Los Halcones').id, 'E', { n: 'Eze', ts: 1 }, 3); } catch(e){ err = e.message; }
+  ok(err === 'LLENO', 'sumarse a un equipo lleno da LLENO (' + err + ')');
+
+  // C ya no va: sale también del equipo
+  C.abrirDetalle(t.id); await sleep(300);
+  const pc = C.salirDelEvento(t.id, 'confirmado'); await sleep(40); $C('modal-ok').click(); await pc; await sleep(300);
+  ok(Object.keys(eqNom('Los Halcones').miembros).sort().join() === 'B,D', '"Ya no voy": sale también de su equipo');
+
   // Quien organiza ve una lista por equipo
-  A.abrirDetalle(t.id); await sleep(250); await A.cargarConfirmados(evs().find(e => e.id === t.id), A.eval('state').tok); await sleep(30);
+  A.abrirDetalle(t.id); await sleep(300); await A.cargarConfirmados(evs().find(e => e.id === t.id), A.eval('state').tok); await sleep(30);
   const tits = [...A.document.querySelectorAll('#lista-confirmados .equipo-tit')].map(txt);
-  ok(tits.some(x => /^La Naranja\s*1 persona/.test(x)) && tits.some(x => /^Los Halcones\s*0 personas/.test(x)), 'quien organiza ve cuántos hay en cada equipo: ' + JSON.stringify(tits));
+  ok(tits.some(x => /^Los Halcones\s*2 personas/.test(x)) && tits.some(x => /^Sin equipo\s*2 personas/.test(x)), 'quien organiza ve cuántos hay en cada equipo: ' + JSON.stringify(tits));
+  ok(A.document.querySelector('#bloque-equipos [data-eq-borrar]'), 'quien organiza puede eliminar un equipo');
 
   // ---------- Miniaturas sin foto ----------
   const mini = A.fotoMiniHTML({ id: 'x', ocasion: 'deportivo', imagen: '' });

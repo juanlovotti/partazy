@@ -172,10 +172,19 @@ service cloud.firestore {
         && texto(d.get('linkEntradas', ''), 300)
         && texto(d.get('estiloOtro', ''), 30)
         && (!('faq' in d) || (d.faq is list && d.faq.size() <= 5))
-        && (!('equipos' in d) || (d.equipos is list && d.equipos.size() <= 24))
+        && d.get('porEquipos', false) is bool
+        && (!('jugadoresPorEquipo' in d) || (d.jugadoresPorEquipo is int && d.jugadoresPorEquipo >= 1 && d.jugadoresPorEquipo <= 50))
+        && (!('maxEquipos' in d) || (d.maxEquipos is int && d.maxEquipos >= 2 && d.maxEquipos <= 64))
         && (d.get('linkEntradas', '') == '' || d.get('linkEntradas', '').matches('^https://.*'))
         && (!d.get('deOrganizacion', false)
             || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('tipoCuenta', 'persona') == 'organizacion');
+    }
+
+    // Integrante de un equipo: { n: nombre, ts }
+    function miembroEquipoValido(m) {
+      return request.auth.uid in m && m[request.auth.uid] is map
+        && m[request.auth.uid].keys().hasOnly(['n', 'ts'])
+        && texto(m[request.auth.uid].n, 60) && m[request.auth.uid].ts is int;
     }
 
     // Las entradas con QR son solo para cuentas de organización
@@ -379,6 +388,33 @@ service cloud.firestore {
         allow delete: if esCreador(eventId) || esAdmin();
       }
 
+      // Equipos de un torneo: los arma quien se anota y los demás se suman.
+      // Cada uno solo se agrega o se saca a sí mismo; quien organiza puede borrar un equipo.
+      match /equipos/{equipoId} {
+        allow read: if logueado();
+        allow create: if logueado() && equipoId.matches('^[A-Za-z0-9_-]{1,40}$')
+          && get(evPath(eventId)).data.get('porEquipos', false) == true
+          && get(evPath(eventId)).data.get('estado', 'publicado') != 'cancelado'
+          && request.resource.data.keys().hasOnly(['nombre', 'creador', 'miembros', 'ts'])
+          && texto(request.resource.data.nombre, 40) && request.resource.data.nombre.size() > 0
+          && request.resource.data.creador == request.auth.uid
+          && request.resource.data.ts is int
+          && request.resource.data.miembros is map
+          && request.resource.data.miembros.size() == 1
+          && miembroEquipoValido(request.resource.data.miembros)
+          && existsAfter(atPath(eventId, request.auth.uid));
+        allow update: if logueado()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['miembros'])
+          && request.resource.data.miembros is map
+          && request.resource.data.miembros.diff(resource.data.miembros).affectedKeys().hasOnly([request.auth.uid])
+          && (!(request.auth.uid in request.resource.data.miembros)
+              || (miembroEquipoValido(request.resource.data.miembros)
+                  && request.resource.data.miembros.size() <= get(evPath(eventId)).data.get('jugadoresPorEquipo', 50)
+                  && existsAfter(atPath(eventId, request.auth.uid))));
+        allow delete: if esCreador(eventId) || esAdmin()
+          || (logueado() && resource.data.miembros.keys().hasOnly([request.auth.uid]));
+      }
+
       // Asistencias
       match /attendees/{uid} {
         allow read: if soy(uid) || esCreador(eventId);
@@ -386,7 +422,6 @@ service cloud.firestore {
         allow create: if soy(uid)
           && request.resource.data.uid == uid
           && texto(request.resource.data.nombre, 60)
-          && texto(request.resource.data.get('equipo', ''), 40)
           && (
             // 1) Pedir unirse a una previa privada
             (request.resource.data.estado == 'solicitado'

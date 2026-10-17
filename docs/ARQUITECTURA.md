@@ -61,6 +61,7 @@ Buscá el nombre para saltar. En orden:
 | `events/{id}/votos/{uid}` | Voto de ambiente en vivo | Logueados |
 | `events/{id}/vistas/{uid}` | Vista única (va junto con el +1 a `vistasCount`) | Solo la persona (get) |
 | `events/{id}/acreditaciones/{uid}` | Pedidos de prensa | La persona y quien organiza |
+| `events/{id}/equipos/{equipoId}` | Equipos de un torneo (nombre e integrantes) | Logueados |
 | `chats/{eventId}/messages` | Grupo del evento | Quien organiza y aprobados/confirmados |
 | `friendships/{a_b}` | Amistades (ids ordenados). Las aceptadas se pueden listar ("amigos" en los perfiles; índice `users`+`estado`) | Los dos; aceptadas: logueados |
 | `dms/{a_b}` y `/mensajes` | Mensajes directos y solicitudes de mensaje | Los dos |
@@ -120,7 +121,7 @@ Buscá el nombre para saltar. En orden:
 - Crear evento va en 3 pasos (`irAPasoCrear`): lo básico → tipo → dónde y detalles. Al editar se ve todo junto (`.form-pasos.todo`).
 - `categoria`: estilo de música (`ESTILOS`). Si es `otro`, lo que escribió quien organiza va en `estiloOtro` (≤ 30) y se muestra en su lugar (`etiquetaEstilo(cat, ev)`).
 - `faq` (opcional, ≤ 5): preguntas frecuentes **de cada evento** (`[{p, r}]`: guardarropa, reingreso...). Las organizaciones ya no tienen preguntas propias en su página.
-- `equipos` (opcional, ≤ 24 nombres): torneos por equipos (deporte → modalidad "Torneo" → "¿Se juega por equipos?" Sí). Al anotarse cada persona elige su equipo (`attendees/{uid}.equipo`, ≤ 40) o "Voy a mirar"; quien organiza ve una lista por equipo.
+- Torneos por equipos (deporte → modalidad "Torneo" → "¿Se juega por equipos?" Sí): el evento guarda `porEquipos: true` y, opcionales, `jugadoresPorEquipo` (1-50) y `maxEquipos` (2-64). Los equipos los arma la gente que se anota: `events/{id}/equipos/{equipoId}` = `{ nombre, creador, ts, miembros: { uid: { n, ts } } }` (el capitán es el primero que entró). Cada uno solo se agrega o se saca a sí mismo (regla `miembros.diff(...)`), y para sumarse tiene que estar anotado. El último que se va borra el equipo; quien organiza puede borrar cualquiera. "Ya no voy" también saca del equipo.
 - Publicar: un solo envío a la vez (`state._publicando`) y sin duplicar si la escucha en vivo trae el evento antes de terminar de guardarse. "Organizando" cuenta los eventos propios que no terminaron ni se cancelaron (`misEventosOrganizando`).
 - Miniaturas de las listas sin foto: el ícono del tipo sobre sus colores (`fotoMiniHTML`), en vez de la portada dibujada recortada.
 
