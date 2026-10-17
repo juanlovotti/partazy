@@ -18,7 +18,7 @@ const ev = (id, o) => put('events/' + id, Object.assign({ nombre: id, creador: '
   privacidad: 'publica', fechaTs: Date.now() + 3 * 864e5, hora: '23:30', lugar: 'Güemes', lat: -31.42, lng: -64.19, precio: 0, capacidad: 100, confirmadosCount: 1, edadMinima: 18,
   dresscode: 'Libre', musica: 'Techno', bebida: false, listaVip: false, ambiente: 'verde', ambienteLabel: 'Recién creado', ambienteDesc: '', imagen: '', descripcion: 'x', reglas: 'y',
   verificado: true, conQR: true, deOrganizacion: true }, o));
-ev('casiLleno', { nombre: 'Casi Lleno', capacidad: 100, confirmadosCount: 90 });
+ev('casiLleno', { nombre: 'Casi Lleno', capacidad: 100, confirmadosCount: 90, faq: [{ p: '¿Hay guardarropa?', r: 'Sí, en la entrada.' }] });
 ev('lleno', { nombre: 'Agotadisimo', capacidad: 50, confirmadosCount: 50, fechaTs: Date.now() + 10 * 864e5 });
 // "Esta noche" termina a las 08:00: el evento cae siempre antes de ese corte, corra la prueba a la hora que corra
 const finNoche = (() => { const d = new Date(); if(d.getHours() >= 8) d.setDate(d.getDate() + 1); d.setHours(8, 0, 0, 0); return d.getTime(); })();
@@ -49,8 +49,12 @@ let fallos = 0; const check = (c, m) => { console.log((c ? '✔ ' : '✘ ') + m)
   check(pag.includes('Techno desde 2019.') && pag.includes('Marcelo T. de Alvear 651') && pag.includes('Viernes y sábados'), 'página de organización: descripción, dirección y horarios');
   const links = [...B.document.querySelectorAll('#usuario-contenido a.link-ext, #usuario-contenido a.ig-chip')].map(a => a.href);
   check(links.some(h => h.startsWith('https://www.google.com/maps/dir/')) && links.includes('https://instagram.com/vortex.cba') && links.some(h => h.startsWith('https://vortex.com.ar')), '"Cómo llegar" (Google Maps), Instagram y web como links');
-  check(B.document.querySelectorAll('#usuario-contenido details.faq').length === 1 && pag.includes('¿Hay guardarropa?'), 'preguntas frecuentes propias de la organización');
+  check(!B.document.querySelector('#usuario-contenido details.faq') && !pag.includes('Preguntas frecuentes'), 'la página de la organización no tiene preguntas frecuentes propias (van en cada evento)');
   check(pag.includes('Agenda · próximas fechas') && pag.includes('Casi Lleno'), 'agenda con sus próximas fechas');
+
+  B.abrirDetalle('casiLleno'); await sleep(200);
+  check(B.document.querySelectorAll('#detalle-contenido .bloque-faq details.faq').length === 1 && txt($B('detalle-contenido')).includes('¿Hay guardarropa?'), 'las preguntas frecuentes se ven en el evento');
+  B.abrirUsuario('O'); await sleep(120);
 
   // ---------- Seguir ----------
   B.document.querySelector('[data-seguir="O"]').click(); await sleep(150);
@@ -131,9 +135,10 @@ let fallos = 0; const check = (c, m) => { console.log((c ? '✔ ' : '✘ ') + m)
   check($O('btn-mi-pagina').style.display !== 'none', 'la organización ve "Ver mi página pública"');
   O.editarPerfil(); await sleep(20);
   check($O('ep-org').style.display === 'flex' && $O('ep-bio').value === 'Techno desde 2019.', 'Editar perfil muestra la sección "Página de tu organización" con sus datos');
-  $O('ep-faq-p1').value = '¿Se puede reingresar?'; $O('ep-faq-r1').value = 'No.';
+  check(!$O('ep-faq-p0') && !$O('ep-faq-p1') && $O('ep-banner-input'), 'Editar perfil: sin preguntas frecuentes de la organización y con banner');
+  $O('ep-bio').value = 'Techno desde 2019. Abrimos todos los findes.';
   await O.guardarPerfil(); await sleep(100);
-  check(store.docs.get('users/O').faq.length === 2, 'guarda las preguntas frecuentes');
+  check(store.docs.get('users/O').bio.includes('todos los findes'), 'guarda la página de la organización');
 
   // ---------- Ayuda y privacidad ----------
   B.abrirAyuda(); await sleep(20);

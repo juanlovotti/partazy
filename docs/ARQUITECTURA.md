@@ -118,10 +118,19 @@ Buscá el nombre para saltar. En orden:
 - Estadísticas (solo quien organiza): vistas únicas, anotados, conversión y compartidos.
 - `extras` (opcional, mapa ≤ 10 claves): respuestas de las preguntas según el tipo (`EXTRAS_TIPO` en app.js: deporte, menú, disertante, etc.). Se muestran en el detalle.
 - Crear evento va en 3 pasos (`irAPasoCrear`): lo básico → tipo → dónde y detalles. Al editar se ve todo junto (`.form-pasos.todo`).
+- `categoria`: estilo de música (`ESTILOS`). Si es `otro`, lo que escribió quien organiza va en `estiloOtro` (≤ 30) y se muestra en su lugar (`etiquetaEstilo(cat, ev)`).
+- `faq` (opcional, ≤ 5): preguntas frecuentes **de cada evento** (`[{p, r}]`: guardarropa, reingreso...). Las organizaciones ya no tienen preguntas propias en su página.
+- `equipos` (opcional, ≤ 24 nombres): torneos por equipos (deporte → modalidad "Torneo" → "¿Se juega por equipos?" Sí). Al anotarse cada persona elige su equipo (`attendees/{uid}.equipo`, ≤ 40) o "Voy a mirar"; quien organiza ve una lista por equipo.
+- Publicar: un solo envío a la vez (`state._publicando`) y sin duplicar si la escucha en vivo trae el evento antes de terminar de guardarse. "Organizando" cuenta los eventos propios que no terminaron ni se cancelaron (`misEventosOrganizando`).
+- Miniaturas de las listas sin foto: el ícono del tipo sobre sus colores (`fotoMiniHTML`), en vez de la portada dibujada recortada.
 
 ## Perfil
 
 - "Mis datos" (☰): lo que la persona cargó al registrarse, solo para ella. El mail ya no se muestra en el perfil.
+- Organizaciones: en vez de "intereses" eligen qué tipo de eventos organizan (`ORG_TIPOS`); la música aparece solo si alguno lleva música (fiestas, peñas, en vivo...). Todo se guarda junto en `intereses` y el perfil lo muestra como "Organiza" y "Música".
+- "Otro" en la música: lo que se escribe (hasta 3, separados por coma) se guarda como un gusto más.
+- `banner` (solo organizaciones, JPEG ≤ 120.000 caracteres): portada arriba de su página.
+- Foto de Google: las organizaciones no la usan (ni el nombre de la cuenta de Google al registrarse). Si una persona cambia su nombre por otro con otra inicial, la foto de Google se saca y queda la inicial nueva.
 - `ocultarAmigos` / `ocultarSeguidores`: la app no muestra la lista de amigos ni el número de seguidores. (Las amistades aceptadas siguen siendo legibles por usuarios con cuenta en las reglas; para privacidad total habría que mover las amistades públicas a un documento aparte.)
 
 

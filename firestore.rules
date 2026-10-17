@@ -128,7 +128,8 @@ service cloud.firestore {
         && (!('tipoCuenta' in d) || d.tipoCuenta in ['persona', 'organizacion'])
         && texto(d.get('bio', ''), 300) && texto(d.get('direccionPublica', ''), 150)
         && texto(d.get('horarios', ''), 200) && texto(d.get('instagram', ''), 60) && texto(d.get('web', ''), 150)
-        && (!('faq' in d) || (d.faq is list && d.faq.size() <= 5))
+        && (!('banner' in d) || (texto(d.banner, 120000)
+              && (d.banner.size() == 0 || (d.banner.matches('^data:image/jpeg;base64,.*') && d.get('tipoCuenta', 'persona') == 'organizacion'))))
         && (!('intereses' in d) || (d.intereses is list && d.intereses.size() <= 20))
         && (!('nombreBusqueda' in d) || texto(d.nombreBusqueda, 60))
         && (!('palabras' in d) || (d.palabras is list && d.palabras.size() <= 10));
@@ -169,6 +170,9 @@ service cloud.firestore {
         && d.get('ubicacionExacta', false) is bool
         && d.get('fotoGrande', false) is bool
         && texto(d.get('linkEntradas', ''), 300)
+        && texto(d.get('estiloOtro', ''), 30)
+        && (!('faq' in d) || (d.faq is list && d.faq.size() <= 5))
+        && (!('equipos' in d) || (d.equipos is list && d.equipos.size() <= 24))
         && (d.get('linkEntradas', '') == '' || d.get('linkEntradas', '').matches('^https://.*'))
         && (!d.get('deOrganizacion', false)
             || get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('tipoCuenta', 'persona') == 'organizacion');
@@ -382,6 +386,7 @@ service cloud.firestore {
         allow create: if soy(uid)
           && request.resource.data.uid == uid
           && texto(request.resource.data.nombre, 60)
+          && texto(request.resource.data.get('equipo', ''), 40)
           && (
             // 1) Pedir unirse a una previa privada
             (request.resource.data.estado == 'solicitado'

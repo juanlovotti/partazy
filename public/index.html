@@ -356,7 +356,7 @@
         <div class="campo" id="campo-dresscode"><label for="f-dresscode">Dress code</label><input id="f-dresscode" maxlength="60" placeholder="Ej: Negro, libre, temática..." type="text"/></div>
         <div class="campo" id="campo-estilo">
 <label for="f-estilo">Estilo de música (opcional)</label>
-<select id="f-estilo">
+<select id="f-estilo" onchange="actualizarEstiloOtro()">
 <option value="">Sin especificar</option>
 <option value="electronica">Electrónica</option>
 <option value="techno">Techno</option>
@@ -368,8 +368,13 @@
 <option value="trap">Trap</option>
 <option value="rock">Rock</option>
 <option value="pop">Pop</option>
+<option value="rnb">R&amp;B</option>
+<option value="folklore">Folklore</option>
+<option value="tango">Tango</option>
 <option value="variado">Variado</option>
+<option value="otro">Otro…</option>
 </select>
+<input id="f-estilo-otro" maxlength="30" placeholder="¿Cuál? Ej: jazz, salsa, metal" type="text" aria-label="Otro estilo de música" style="display:none; margin-top:10px;"/>
 <div class="ayuda">Si lo elegís, tu evento le aparece a quien busca ese estilo: llega a más gente.</div>
 </div>
         <div class="campo" id="campo-musica"><label for="f-musica">Música en detalle (opcional)</label><input id="f-musica" maxlength="80" placeholder="Ej: DJs invitados, line-up..." type="text"/></div>
@@ -424,6 +429,13 @@ Ivo Paz +1"></textarea>
 <div class="ayuda">⏳ Después de esa fecha nadie más se puede anotar. Sirve para cerrar la lista de un egreso, una cena o un viaje.</div>
 </div>
         <div class="campo"><label for="f-reglas">Reglas del evento</label><textarea id="f-reglas" maxlength="500" placeholder="Ej: Respetar el lugar, no ingresar con más invitados de los acordados..."></textarea></div>
+        <div class="campo" id="campo-faq">
+<label>Preguntas frecuentes (opcional)</label>
+<div class="ayuda" style="margin:0 0 10px;">Lo que siempre te preguntan sobre este evento. Hasta 5, aparecen en la página del evento.</div>
+<div id="f-faq"></div>
+<div class="faq-sug" id="faq-sug"></div>
+<button type="button" class="btn btn-secundario btn-mini" id="btn-faq-mas" onclick="agregarFaq()">+ Escribir otra pregunta</button>
+</div>
       </section>
       <div class="nav-pasos" id="nav-pasos">
         <button type="button" class="btn btn-secundario" id="btn-paso-atras" onclick="pasoCrear(-1)">Atrás</button>
@@ -463,6 +475,7 @@ Ivo Paz +1"></textarea>
       </div>
     </div>
     <div id="vista-perfil">
+      <div class="banner-org" id="perfil-banner" hidden></div>
       <div class="perfil-header">
         <div class="avatar-grande" id="perfil-avatar">··</div>
         <h2 id="perfil-nombre">Cargando...</h2>
@@ -484,8 +497,7 @@ Ivo Paz +1"></textarea>
         <button class="btn btn-secundario" onclick="invitarAmigos()">📨 Invitar</button>
       </div>
       <div id="perfil-verificacion" style="padding:0 20px 22px;"></div>
-      <div style="padding:0 20px 10px;"><h3 class="titulo-bloque">Intereses</h3></div>
-      <div class="interes-pills" id="perfil-intereses"></div>
+      <div id="perfil-intereses"></div>
       <div style="padding:0 20px 10px;"><h3 class="titulo-bloque">Próximos eventos</h3></div>
       <div class="lista-simple" id="perfil-proximos" style="padding-bottom:24px;"></div>
       <div id="perfil-compartidos-bloque" style="display:none;">
@@ -555,15 +567,14 @@ Ivo Paz +1"></textarea>
       </div>
       <div id="ep-org" style="display:none; flex-direction:column; gap:14px;">
         <h3 class="titulo-bloque" style="margin:8px 0 0;">Página de tu organización</h3>
+        <div class="campo"><label for="ep-banner-input">Portada (banner)</label>
+          <label for="ep-banner-input" class="banner-sel" id="ep-banner" role="button" tabindex="0"><span>Tocá para subir una foto horizontal</span></label>
+          <input type="file" id="ep-banner-input" accept="image/*" hidden>
+          <div class="ayuda" id="ep-banner-estado">Se ve arriba de tu página. Ideal: una foto del lugar o de un evento, apaisada.</div>
+          <button type="button" class="link-btn" id="ep-banner-quitar" style="display:none; margin-top:6px; color:var(--gris);">Quitar portada</button></div>
         <div class="campo"><label for="ep-dir-pub">Dirección del lugar (pública)</label><input type="text" id="ep-dir-pub" maxlength="150" placeholder="Ej: Av. Colón 1234, Centro"></div>
         <div class="campo"><label for="ep-horarios">Horarios</label><input type="text" id="ep-horarios" maxlength="200" placeholder="Ej: Viernes y sábados de 00 a 06 hs"></div>
         <div class="campo"><label for="ep-web">Página web</label><input type="text" id="ep-web" maxlength="150" placeholder="https://..." autocapitalize="none"></div>
-        <h3 class="titulo-bloque" style="margin:8px 0 0;">Preguntas frecuentes (opcional)</h3>
-        <div class="campo"><label for="ep-faq-p0">Pregunta 1</label><input type="text" id="ep-faq-p0" maxlength="120" placeholder="Ej: ¿Hay guardarropa?"><textarea id="ep-faq-r0" maxlength="400" placeholder="Respuesta" style="margin-top:8px; min-height:60px;"></textarea></div>
-        <div class="campo"><label for="ep-faq-p1">Pregunta 2</label><input type="text" id="ep-faq-p1" maxlength="120" placeholder="Ej: ¿Se puede reingresar?"><textarea id="ep-faq-r1" maxlength="400" placeholder="Respuesta" style="margin-top:8px; min-height:60px;"></textarea></div>
-        <div class="campo"><label for="ep-faq-p2">Pregunta 3</label><input type="text" id="ep-faq-p2" maxlength="120" placeholder="Ej: ¿Hay estacionamiento?"><textarea id="ep-faq-r2" maxlength="400" placeholder="Respuesta" style="margin-top:8px; min-height:60px;"></textarea></div>
-        <div class="campo"><label for="ep-faq-p3">Pregunta 4</label><input type="text" id="ep-faq-p3" maxlength="120" placeholder=""><textarea id="ep-faq-r3" maxlength="400" placeholder="Respuesta" style="margin-top:8px; min-height:60px;"></textarea></div>
-        <div class="campo"><label for="ep-faq-p4">Pregunta 5</label><input type="text" id="ep-faq-p4" maxlength="120" placeholder=""><textarea id="ep-faq-r4" maxlength="400" placeholder="Respuesta" style="margin-top:8px; min-height:60px;"></textarea></div>
       </div>
       <div class="campo"><label for="ep-ciudad">Ciudad o barrio</label><input type="text" id="ep-ciudad" maxlength="80" list="lista-barrios"></div>
       <div class="campo"><label>Tus gustos</label><div class="intereses-sel" id="ep-intereses"></div></div>

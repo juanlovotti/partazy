@@ -954,9 +954,12 @@ function imgSafe(url){
   return FALLBACK_IMG;
 }
 // Valor seguro para background-image (evita romper el CSS o el atributo con comillas/paréntesis)
-function cssUrl(url){
+function cssUrl(url){ return esc(cssUrlJS(url)); }
+// Lo mismo para asignar desde JS (el.style.backgroundImage = ...): sin escapar para HTML,
+// porque ahí "&quot;" deja el CSS inválido y la imagen no se ve.
+function cssUrlJS(url){
   const u = imgSafe(url).replace(/["'()\\\s]/g, c => '%' + c.charCodeAt(0).toString(16).padStart(2,'0'));
-  return esc(`url("${u}")`);
+  return `url("${u}")`;
 }
 
 // Iniciales para el avatar sin foto (ej. "Juan Pérez" → "JP").
@@ -987,8 +990,14 @@ function sumarConfirmadoEnCache(id){
 // =========================================================
 // Gustos de la persona, en dos grupos: la música que le gusta y los planes que le copan.
 // Se guardan juntos en users/{uid}.intereses (así las cuentas viejas siguen funcionando).
-const INTERESES_MUSICA = ['Techno','House','Electrónica','Cachengue','Reggaetón','Cumbia','Cuarteto','Rock','Pop','Trap'];
+const INTERESES_MUSICA = ['Techno','House','Electrónica','Cachengue','Reggaetón','Cumbia','Cuarteto','Rock','Pop','Trap','R&B','Folklore','Tango'];
 const INTERESES_PLANES = ['Previas','After','Universitarias','Peñas','Egresados','Música en vivo','Gastronomía','Charlas y talleres','Arte y cultura','Deportes','Ferias'];
+// Organizaciones: qué tipo de eventos organizan. Los que llevan música hacen aparecer la pregunta de la música.
+const ORG_TIPOS = ['Fiestas','Previas','After','Peñas','Egresados','Universitarias','Música en vivo','Gastronomía','Charlas y talleres','Arte y cultura','Deportes','Ferias'];
+const ORG_TIPOS_CON_MUSICA = new Set(['Fiestas','Previas','After','Peñas','Egresados','Universitarias','Música en vivo']);
+const OTRO_MUSICA = '__otro';
+// Géneros que alguien escribió a mano en "Otro" (lo que no está en ninguna lista)
+function gustosPropios(sel){ return (sel || []).filter(i => !INTERESES_MUSICA.includes(i) && !INTERESES_PLANES.includes(i) && !ORG_TIPOS.includes(i)); }
 const INTERESES = [...INTERESES_MUSICA, ...INTERESES_PLANES];
 let modoAuth = 'ingresar'; // 'ingresar' | 'crear'
 
@@ -1116,16 +1125,46 @@ function edadUsuario(){ return edadDesde(state.privado?.nacimiento); }
 function renderSelectorIntereses(contId, seleccion, esOrg){
   const sel = seleccion || [];
   if(esOrg === undefined){ const op = document.querySelector(`#${contId.split('-')[0]}-tipo [data-tipo-cuenta].activo`); esOrg = op ? op.dataset.tipoCuenta === 'organizacion' : esOrganizacion(state.perfil); }
-  const chip = i => `<div class="chip ${sel.includes(i) ? 'activo' : ''}" role="button" tabindex="0" aria-pressed="${sel.includes(i)}" data-interes="${esc(i)}">${esc(i)}</div>`;
-  document.getElementById(contId).innerHTML = `
-    <div class="grupo-intereses" data-grupo="musica"><div class="grupo-tit">🎧 ${esOrg ? '¿Qué música se escucha en tus eventos?' : 'Música que te gusta'}</div><div class="grupo-chips">${INTERESES_MUSICA.map(chip).join('')}</div></div>
-    <div class="grupo-intereses" data-grupo="planes"><div class="grupo-tit">🎉 ${esOrg ? '¿Qué tipo de eventos organizás?' : 'Planes que te copan'}</div><div class="grupo-chips">${INTERESES_PLANES.map(chip).join('')}</div></div>`;
+  const propios = gustosPropios(sel);
+  const chip = (i, extra = '') => `<div class="chip ${sel.includes(i) ? 'activo' : ''}" role="button" tabindex="0" aria-pressed="${sel.includes(i)}" data-interes="${esc(i)}"${extra}>${esc(i)}</div>`;
+  const chipOtro = `<div class="chip ${propios.length ? 'activo' : ''}" role="button" tabindex="0" aria-pressed="${!!propios.length}" data-interes="${OTRO_MUSICA}">Otro</div>`;
+  const musica = `<div class="grupo-intereses" data-grupo="musica"><div class="grupo-tit">🎧 ${esOrg ? '¿Qué música suena en tus eventos?' : 'Música que te gusta'}</div>
+      <div class="grupo-chips">${INTERESES_MUSICA.map(i => chip(i)).join('')}${chipOtro}</div>
+      <input type="text" class="otro-musica" maxlength="60" placeholder="¿Cuál? Ej: jazz, metal, salsa" aria-label="Otro estilo de música" value="${esc(propios.join(', '))}"></div>`;
+  const planes = esOrg
+    ? `<div class="grupo-intereses" data-grupo="planes"><div class="grupo-tit">🎪 ¿Qué tipo de eventos organizás?</div><div class="grupo-chips">${ORG_TIPOS.map(i => chip(i, ORG_TIPOS_CON_MUSICA.has(i) ? ' data-musical="1"' : '')).join('')}</div></div>`
+    : `<div class="grupo-intereses" data-grupo="planes"><div class="grupo-tit">🎉 Planes que te copan</div><div class="grupo-chips">${INTERESES_PLANES.map(i => chip(i)).join('')}</div></div>`;
+  const cont = document.getElementById(contId);
+  cont.classList.toggle('es-org', !!esOrg);
+  cont.innerHTML = esOrg ? planes + musica : musica + planes;
   const lab = document.getElementById(contId)?.closest('.campo')?.querySelector('label');
   if(lab) lab.textContent = esOrg ? 'Tu propuesta' : (contId.startsWith('rg') ? '¿Qué te gusta?' : 'Tus gustos');
 }
 // Lee los intereses marcados en un selector.
 function interesesElegidos(contId){
-  return [...document.querySelectorAll('#' + contId + ' .chip.activo')].map(c => c.dataset.interes);
+  const cont = document.getElementById(contId);
+  if(!cont) return [];
+  const activos = [...cont.querySelectorAll('.chip.activo')].map(c => c.dataset.interes);
+  let lista = activos.filter(i => i !== OTRO_MUSICA);
+  if(activos.includes(OTRO_MUSICA)){
+    const txt = cont.querySelector('.otro-musica')?.value || '';
+    const propios = txt.split(',').map(x => x.trim().replace(/\s+/g, ' ').slice(0, 25)).filter(Boolean).slice(0, 3);
+    lista = lista.concat(propios.map(p => p[0].toUpperCase() + p.slice(1)));
+  }
+  // Una organización que no hace eventos con música no guarda música
+  if(cont.classList.contains('es-org') && !cont.querySelector('.chip.activo[data-musical]'))
+    lista = lista.filter(i => !INTERESES_MUSICA.includes(i) && ORG_TIPOS.includes(i));
+  return [...new Set(lista)].slice(0, 20);
+}
+// Perfil: en las organizaciones se muestra "Organiza" (tipos) y "Música"; en las personas, sus gustos.
+function interesesPerfilHTML(u, vacio){
+  const l = Array.isArray(u?.intereses) ? u.intereses : [];
+  const pills = arr => `<div class="interes-pills">${arr.map(i => `<span class="chip activo">${esc(i)}</span>`).join('')}</div>`;
+  if(!l.length) return vacio || '';
+  if(!esOrganizacion(u)) return `<div class="subtitulo"><h3 class="titulo-bloque">Intereses</h3></div>${pills(l)}`;
+  const tipos = l.filter(i => ORG_TIPOS.includes(i)), musica = l.filter(i => !ORG_TIPOS.includes(i));
+  return (tipos.length ? `<div class="subtitulo"><h3 class="titulo-bloque">Organiza</h3></div>${pills(tipos)}` : '')
+    + (musica.length ? `<div class="subtitulo"><h3 class="titulo-bloque">Música</h3></div>${pills(musica)}` : '');
 }
 
 // Muestra u oculta la barra de navegación.
@@ -1141,13 +1180,16 @@ function mostrarBienvenida(){
 // Formulario de "completá tu perfil" (primera vez).
 function mostrarRegistro(user){
   setNav(false);
-  document.getElementById('rg-nombre').value = user.displayName || '';
+  const rgNom = document.getElementById('rg-nombre');
+  rgNom.value = user.displayName || ''; rgNom.dataset.google = user.displayName || '';
+  state.fotoGoogle = user.photoURL || '';
   document.getElementById('rg-error').textContent = '';
   state.fotoPerfilNueva = null;
   elegirTipoCuenta('rg-tipo', 'persona');
   pintarFotoPerfil('rg-foto', user.photoURL || '', '+');
   const sugerido = sugerirUsuario(user.displayName || (user.email || '').split('@')[0]);
   document.getElementById('rg-usuario').value = sugerido;
+  document.getElementById('rg-usuario').dataset.auto = '1';
   comprobarUsuario(sugerido, 'rg-usuario-estado');
   const max = new Date(); max.setFullYear(max.getFullYear() - 18);
   document.getElementById('rg-nacimiento').max = max.toISOString().slice(0, 10);
@@ -1189,7 +1231,7 @@ async function completarRegistro(){
     iniciales: inicialesDe(apodo || nombre),
     ciudad: document.getElementById('rg-ciudad').value.trim() || state.ciudadActual || '',
     intereses: interesesElegidos('rg-intereses'),
-    foto: state.fotoPerfilNueva || user.photoURL || '',
+    foto: state.fotoPerfilNueva || (tipoCuenta === 'organizacion' ? '' : (user.photoURL || '')),
     createdAt: Date.now()
   };
   try{
@@ -1785,6 +1827,10 @@ function sugerirUsuario(nombre){
 }
 // ¿La foto es una URL https o una imagen JPEG embebida?
 function fotoValida(f){ return typeof f === 'string' && (/^https:\/\//.test(f) || /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(f)); }
+// ¿Es la foto que vino de la cuenta de Google (no una que subió la persona)?
+function esFotoDeGoogle(f){ return typeof f === 'string' && /^https:\/\/[^/]*googleusercontent\.com\//.test(f); }
+// Foto que se muestra: una organización nunca muestra la foto personal de la cuenta de Google.
+function fotoDe(u){ return u && fotoValida(u.foto) && !(esOrganizacion(u) && esFotoDeGoogle(u.foto)) ? u.foto : ''; }
 
 // Comprueba si un @usuario está libre (o ya es mío) y lo muestra debajo del campo
 async function comprobarUsuario(v, estadoId){
@@ -2042,6 +2088,11 @@ function eventoVisible(ev){
   if(ev.creador === state.uid || state.esAdmin) return true;
   if(state.bloqueados.has(ev.creador)) return false;
   return (ev.denuncias || 0) < UMBRAL_DENUNCIAS;
+}
+// Mis eventos que todavía no terminaron (sin cancelados ni repetidos): el número de "Organizando".
+function misEventosOrganizando(uid = state.uid){
+  const vistos = new Set(), ahora = Date.now();
+  return state.eventos.filter(e => e.creador === uid && !esCancelado(e) && finEvento(e) > ahora && !vistos.has(e.id) && vistos.add(e.id));
 }
 // Todos los eventos cargados que se pueden mostrar.
 function eventosVisibles(){ return state.eventos.filter(eventoVisible); }
@@ -2420,10 +2471,25 @@ function elegirTipoCuenta(contId, tipo){
   const ints = document.getElementById(pref + '-intereses');
   if(ints) renderSelectorIntereses(pref + '-intereses', interesesElegidos(pref + '-intereses'), org);
   const nom = document.getElementById(pref + '-nombre'); if(nom) nom.maxLength = org ? 40 : 60;
+  if(pref === 'rg' && nom){
+    // Una organización no se llama como la cuenta de Google ni usa su foto: se escribe el nombre de la organización
+    nom.placeholder = org ? 'Ej: Productora Luna, Bar El Patio' : '';
+    if(org && nom.value === nom.dataset.google){ nom.value = ''; sugerirUsuarioRegistro(); }
+    if(!org && !nom.value && nom.dataset.google){ nom.value = nom.dataset.google; sugerirUsuarioRegistro(); }
+    if(!state.fotoPerfilNueva) pintarFotoPerfil('rg-foto', org ? '' : (state.fotoGoogle || ''), '+');
+  }
   const ayuda = document.getElementById(pref + '-tipo-ayuda');
   if(ayuda) ayuda.textContent = org
     ? 'Para boliches, bares, productoras, centros de estudiantes y DJs. Después podés pedir la verificación ✓ desde tu perfil.'
     : 'Para salir, conocer gente y asistir o armar previas.';
+}
+// En el registro, mientras no toques el @usuario, se arma solo a partir del nombre.
+function sugerirUsuarioRegistro(){
+  const u = document.getElementById('rg-usuario'), n = document.getElementById('rg-nombre');
+  if(!u || !n || u.dataset.auto !== '1' || !n.value.trim()) return;
+  u.value = sugerirUsuario(n.value);
+  clearTimeout(sugerirUsuarioRegistro._t);
+  sugerirUsuarioRegistro._t = setTimeout(() => comprobarUsuario(u.value, 'rg-usuario-estado'), 350);
 }
 // Lee si se eligió Persona u Organizador.
 function tipoCuentaElegido(contId){
@@ -2702,16 +2768,50 @@ function bloquesOrganizacion(u){
     u.horarios ? `<div class="info-fila"><span>🕒</span><div>${esc(u.horarios)}</div></div>` : '',
     web ? `<div class="info-fila"><span>🌐</span><div>${aExterno(web.url, web.texto)}</div></div>` : ''
   ].join('');
-  const faq = (Array.isArray(u.faq) ? u.faq : []).filter(x => x && x.p && x.r);
   return `
     ${u.bio ? `<div style="padding:0 20px 18px;"><p class="texto-desc">${esc(u.bio)}</p></div>` : ''}
     ${filas ? `<div class="subtitulo"><h3 class="titulo-bloque">Info útil</h3></div><div class="info-util">${filas}</div>` : ''}
-    ${faq.length ? `<div class="subtitulo"><h3 class="titulo-bloque">Preguntas frecuentes</h3></div>
-      <div class="lista-faq">${faq.map(x => `<details class="faq"><summary>${esc(x.p)}</summary><p>${esc(x.r)}</p></details>`).join('')}</div>` : ''}`;
+`;
 }
 
-// Edición de la info de organización (5 preguntas frecuentes como máximo)
+// Preguntas frecuentes de un evento (5 como máximo)
 const MAX_FAQ = 5;
+// Portada (banner) de una organización: se recorta apaisada (3:1) y se comprime.
+async function prepararBanner(file){
+  const img = await leerImagen(file);
+  await verificarFoto(img);
+  const W = 1200, H = 400, c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const k = Math.max(W / img.width, H / img.height), w = W / k, h = H / k;
+  c.getContext('2d').drawImage(img, (img.width - w) / 2, (img.height - h) / 2, w, h, 0, 0, W, H);
+  for(const q of [0.72, 0.6, 0.5, 0.4, 0.32]){
+    const d = c.toDataURL('image/jpeg', q);
+    if(d.length <= 110000) return d;
+  }
+  throw new Error('La imagen es demasiado pesada');
+}
+function bannerValido(b){ return typeof b === 'string' && /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/.test(b); }
+function bannerHTML(u){ return esOrganizacion(u) && bannerValido(u.banner) ? `<div class="banner-org" style="background-image:${cssUrl(u.banner)}"></div>` : ''; }
+function pintarBannerEdit(b){
+  const el = document.getElementById('ep-banner'), quitar = document.getElementById('ep-banner-quitar');
+  if(!el) return;
+  const hay = bannerValido(b);
+  el.style.backgroundImage = hay ? cssUrlJS(b) : '';
+  el.classList.toggle('con-foto', hay);
+  const t = el.querySelector('span'); if(t) t.textContent = hay ? 'Tocá para cambiar la portada' : 'Tocá para subir una foto horizontal';
+  if(quitar) quitar.style.display = hay ? '' : 'none';
+}
+async function elegirBanner(input){
+  const f = input.files && input.files[0]; input.value = '';
+  if(!f) return;
+  const est = document.getElementById('ep-banner-estado');
+  est.textContent = 'Revisando la foto...';
+  try{
+    state.bannerNuevo = await prepararBanner(f); state.quitarBanner = false;
+    pintarBannerEdit(state.bannerNuevo);
+    est.textContent = '¡Lista! Se guarda cuando toques "Guardar cambios".';
+  } catch(e){ est.textContent = e.message || 'No se pudo usar esa foto'; }
+}
 // Llena los campos extra de organización al editar el perfil.
 function pintarCamposOrg(p){
   document.getElementById('ep-bio').value = p.bio || '';
@@ -2719,26 +2819,16 @@ function pintarCamposOrg(p){
   document.getElementById('ep-horarios').value = p.horarios || '';
   document.getElementById('ep-instagram').value = p.instagram || '';
   document.getElementById('ep-web').value = p.web || '';
-  const faq = Array.isArray(p.faq) ? p.faq : [];
-  for(let i = 0; i < MAX_FAQ; i++){
-    document.getElementById('ep-faq-p' + i).value = faq[i]?.p || '';
-    document.getElementById('ep-faq-r' + i).value = faq[i]?.r || '';
-  }
+  pintarBannerEdit(esOrganizacion(p) ? p.banner : '');
 }
 // Lee los campos extra de organización del formulario.
 function leerCamposOrg(){
   const v = id => document.getElementById(id).value.trim();
-  const faq = [];
-  for(let i = 0; i < MAX_FAQ; i++){
-    const p = v('ep-faq-p' + i).slice(0, 120), r = v('ep-faq-r' + i).slice(0, 400);
-    if(p && r) faq.push({ p, r });
-  }
   return {
     bio: v('ep-bio').slice(0, 300),
     direccionPublica: v('ep-dir-pub').slice(0, 150),
     horarios: v('ep-horarios').slice(0, 200),
-    web: v('ep-web').slice(0, 150),
-    faq
+    web: v('ep-web').slice(0, 150)
   };
 }
 
@@ -3196,7 +3286,7 @@ function cuandoChat(ts){
 function avatarHTML(u){
   const esMio = u === state.perfil || u?.uid === state.uid;
   const oculta = !esMio && (u?.denuncias || 0) >= UMBRAL_DENUNCIAS; // foto denunciada: se oculta hasta revisarla
-  if(fotoValida(u?.foto) && !oculta) return `<img src="${esc(u.foto)}" alt="" referrerpolicy="no-referrer">`;
+  if(fotoDe(u) && !oculta) return `<img src="${esc(u.foto)}" alt="" referrerpolicy="no-referrer">`;
   return esc(u?.iniciales || inicialesDe(u?.nombre));
 }
 // Campos para buscar por nombre, apodo o @usuario
@@ -3596,9 +3686,10 @@ async function renderUsuario(uid){
     acciones += `<button class="btn btn-secundario" data-dm="${esc(uid)}">💬 Enviar mensaje</button>`;
 
   const intereses = Array.isArray(u.intereses) ? u.intereses : [];
-  const organiza = bloqueado ? [] : state.eventos.filter(e => e.creador === uid && eventoVisible(e));
+  const organiza = bloqueado ? [] : misEventosOrganizando(uid).filter(eventoVisible);
   cont.innerHTML = `
-    <div class="perfil-header">
+    ${!bloqueado ? bannerHTML(u) : ''}
+    <div class="perfil-header${!bloqueado && bannerHTML(u) ? ' con-banner' : ''}">
       <div class="avatar-grande">${avatarHTML(u)}</div>
       <h2>${esc(nombreVisible(u))}${insignia(u)}</h2>
       ${u.usuario ? `<div class="handle">@${esc(u.usuario)}</div>` : ''}
@@ -3622,8 +3713,7 @@ async function renderUsuario(uid){
     </div>
     ${org && !bloqueado ? bloquesOrganizacion(u) : ''}
     <div id="perfil-amigos-lista"></div>
-    ${intereses.length ? `<div class="subtitulo"><h3 class="titulo-bloque">Intereses</h3></div>
-      <div class="interes-pills">${intereses.map(i => `<span class="chip activo">${esc(i)}</span>`).join('')}</div>` : ''}
+    ${interesesPerfilHTML(u)}
     ${(() => {
       const comp = (state.red.planes[uid]?.compartidos || []).map(eventoEnCache).filter(e => e && eventoVisible(e) && !esCancelado(e));
       return !bloqueado && comp.length ? `<div class="subtitulo"><h3 class="titulo-bloque">${ICO_REPOST}Compartió</h3></div>
@@ -3632,7 +3722,7 @@ async function renderUsuario(uid){
     <div class="subtitulo"><h3 class="titulo-bloque">${org ? 'Agenda · próximas fechas' : 'Organizando'}</h3></div>
     <div class="lista-simple" style="padding-bottom:24px;">${organiza.length ? organiza.map(e => `
       <div class="item-simple" role="button" tabindex="0" data-abrir="${esc(e.id)}">
-        <div class="foto-mini" style="background-image:${cssFoto(e)}"></div>
+        ${fotoMiniHTML(e)}
         <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs</span></div>
       </div>`).join('') : emptyState('No está organizando eventos próximos.')}</div>`;
   if(!bloqueado && !org && !u.ocultarAmigos) cargarAmigosDePerfil(uid, tok);   // después de pintar (si ya está en caché se completa al toque)
@@ -3838,7 +3928,7 @@ function mensajeDMHTML(m, extra){
     const ev = eventoEnCache(m.eventoId);
     const detalle = [m.eventoFechaTs ? fmtFecha(m.eventoFechaTs) : '', m.eventoLugar || ''].filter(Boolean).join(' · ');
     cuerpo += `<div class="msj-evento" data-abrir="${esc(m.eventoId)}" role="button" tabindex="0">
-        <div class="foto-mini" style="background-image:${ev ? cssFoto(ev) : cssUrl('')}"></div>
+        ${fotoMiniHTML(ev)}
         <div><b>${esc(m.eventoNombre || 'Evento')}</b><span>${esc(detalle)}</span></div>
       </div>`;
   }
@@ -4148,7 +4238,7 @@ async function irAMisEntradas(){
         <p style="color:var(--gris); font-size:13px; margin-top:2px;">Tenés ${prox.length} eventos. Tocá uno para ver tu entrada y el grupo.</p></div>
         <div class="lista-entradas">${prox.map(e => `
           <div class="entrada-mini" role="button" tabindex="0" data-ticket="${esc(e.id)}">
-            <div class="foto-mini" style="background-image:${cssFoto(e)}"></div>
+            ${fotoMiniHTML(e)}
             <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs · ${esc(lugarPublico(e))}</span>${e.creador === state.uid ? '<span class="badge-org">Organizás</span>' : ''}${esCancelado(e) ? '<span style="color:var(--peligro); font-weight:700;">Cancelado</span>' : ''}</div>
             <div class="ir">Ver<br>entrada</div>
           </div>`).join('')}</div>`;
@@ -4199,6 +4289,8 @@ document.addEventListener('click', e => {
   if(interes){
     interes.classList.toggle('activo');
     interes.setAttribute('aria-pressed', interes.classList.contains('activo'));
+    // "Otro": se escribe cuál
+    if(interes.dataset.interes === OTRO_MUSICA && interes.classList.contains('activo')) interes.closest('.grupo-intereses')?.querySelector('.otro-musica')?.focus();
     return;
   }
   const abrir = e.target.closest('[data-abrir]');
@@ -4262,6 +4354,10 @@ const ESTILO_PORTADA = {
   reggaeton:   { c1:'#1A0A1E', c2:'#9D174D', ac:'#F472B6', pat:'rayas',    mot:'llama',  w:'REGGAETÓN' },
   cumbia:      { c1:'#052421', c2:'#0F766E', ac:'#4CB944', pat:'ondas',    mot:'notas',  w:'CUMBIA' },
   trap:        { c1:'#0B0B0F', c2:'#27272A', ac:'#A3E635', pat:'grid',     mot:'rayo',   w:'TRAP' },
+  rnb:         { c1:'#140A1F', c2:'#5B21B6', ac:'#C4B5FD', pat:'ondas',    mot:'microfono', w:'R&amp;B' },
+  folklore:    { c1:'#2A1406', c2:'#92400E', ac:'#FCD34D', pat:'guarda',   mot:'guitarra', w:'FOLKLORE' },
+  tango:       { c1:'#160406', c2:'#7F1D1D', ac:'#FCA5A5', pat:'circulos', mot:'notas',  w:'TANGO' },
+  otro:        { c1:'#141214', c2:'#3B1C0A', ac:'#F26A1B', pat:'ondas',    mot:'notas',  w:'MÚSICA' },
   rock:        { c1:'#0A0A0A', c2:'#450A0A', ac:'#EF4444', pat:'rayas',    mot:'rayo',   w:'ROCK' },
   pop:         { c1:'#2E1065', c2:'#DB2777', ac:'#FDE68A', pat:'puntos',   mot:'brillo', w:'POP' },
   variado:     { c1:'#141214', c2:'#3B1C0A', ac:'#F26A1B', pat:'rayas',    mot:'copas',  w:'PARTY' },
@@ -4370,6 +4466,14 @@ function portadaEvento(ev){
 }
 // ¿El evento tiene foto real?
 function tieneFoto(src){ return typeof src === 'string' && (/^data:image\/(png|jpe?g|webp|gif);base64,/.test(src) || /^https:\/\//.test(src)); }
+// Miniatura para las listas: la foto si hay; si no, el ícono del tipo sobre sus colores
+// (la portada dibujada, achicada y recortada, no se entiende).
+function fotoMiniHTML(ev){
+  if(!ev) return '<div class="foto-mini"></div>';
+  if(tieneFoto(ev.imagen)) return `<div class="foto-mini" style="background-image:${cssUrl(ev.imagen)}"></div>`;
+  const est = OCASION_PORTADA[ev.ocasion] || ESTILO_PORTADA[ev.categoria] || ESTILO_PORTADA.variado;
+  return `<div class="foto-mini foto-mini-tipo" style="--c1:${est.c1}; --c2:${est.c2}; --ac:${est.ac};" aria-hidden="true">${iconoTipo(ev)}</div>`;
+}
 // Fondo de la portada: la foto si hay, si no el diseño del tipo de evento
 function cssFoto(ev, src){
   const f = src !== undefined ? src : ev?.imagen;
@@ -4518,7 +4622,8 @@ function esCompu(){ try{ return window.matchMedia('(min-width:900px)').matches; 
 // Pasos del tutorial: cada uno con un dibujito de la pantalla real, un título corto y una sola idea.
 // Los textos cambian según dónde están los botones (compu o celu).
 function pasosTutorial(){
-  const nombre = (nombreVisible(state.perfil) || '').split(' ')[0];
+  const nv = (nombreVisible(state.perfil) || '').trim();
+  const nombre = esOrganizacion(state.perfil) ? nv : nv.split(' ')[0];
   const compu = esCompu();
   const dedo = '<span class="tm-dedo" aria-hidden="true"></span>';
   return [
@@ -4988,17 +5093,23 @@ async function guardarMisPlanes(){
 const PARECIDOS = {
   techno: ['electronica', 'house'], house: ['electronica', 'techno'], electronica: ['techno', 'house'],
   cachengue: ['reggaeton', 'cumbia', 'trap'], reggaeton: ['cachengue', 'trap'], trap: ['reggaeton', 'cachengue'],
-  cumbia: ['cachengue', 'cuarteto'], cuarteto: ['cumbia', 'cachengue'], rock: ['pop'], pop: ['rock']
+  cumbia: ['cachengue', 'cuarteto'], cuarteto: ['cumbia', 'cachengue'], rock: ['pop'], pop: ['rock', 'rnb'],
+  rnb: ['trap', 'reggaeton', 'pop'], folklore: ['tango'], tango: ['folklore']
 };
+// Gusto del perfil → clave del estilo del evento ("r&b" → "rnb")
+const GUSTO_A_ESTILO = { 'r&b': 'rnb' };
 // Mis gustos, normalizados (techno, reggaeton, previas...).
 function misGustos(){ return (state.perfil?.intereses || []).map(normalizar); }
 // Cuánto le puede interesar un evento según sus gustos: { puntos, motivo } (motivo = el gusto que coincide).
 function afinidad(ev, gustos = misGustos()){
   let mejor = { puntos: 0, motivo: '' };
   const musica = normalizar(ev.musica || '');
-  for(const g of gustos){
+  const otro = normalizar(ev.estiloOtro || '');
+  for(const g0 of gustos){
+    const g = GUSTO_A_ESTILO[g0] || g0;
     let pts = 0;
     if(g === 'previas') pts = ev.tipo === 'previa' ? 2 : 0;
+    else if(g === 'fiestas') pts = ['fiesta', 'universitaria', 'tematica'].includes(ev.ocasion) ? 2 : 0;
     else if(g === 'universitarias') pts = esUniversitaria(ev) ? 2 : 0;
     else if(g === 'after') pts = ev.ocasion === 'after' ? 2 : 0;
     else if(g === 'penas') pts = ev.ocasion === 'pena' ? 2 : 0;
@@ -5009,9 +5120,9 @@ function afinidad(ev, gustos = misGustos()){
     else if(g === 'arte y cultura') pts = ev.ocasion === 'cultural' ? 2 : 0;
     else if(g === 'deportes') pts = ev.ocasion === 'deportivo' ? 2 : 0;
     else if(g === 'ferias') pts = ev.ocasion === 'feria' ? 2 : 0;
-    else if(ev.categoria === g || (musica && musica.includes(g))) pts = 2;
+    else if(ev.categoria === g || (musica && musica.includes(g)) || (otro && otro.includes(g))) pts = 2;
     else if((PARECIDOS[g] || []).includes(ev.categoria)) pts = 1;
-    if(pts > mejor.puntos) mejor = { puntos: pts, motivo: (state.perfil.intereses || []).find(i => normalizar(i) === g) || g };
+    if(pts > mejor.puntos) mejor = { puntos: pts, motivo: (state.perfil.intereses || []).find(i => normalizar(i) === g0) || g0 };
   }
   return mejor;
 }
@@ -5049,7 +5160,7 @@ function amigosParaMencionar(q){
 }
 // Carita chiquita (foto o iniciales).
 function avatarMini(u){
-  return `<i class="av-mini">${u && fotoValida(u.foto) ? `<img src="${esc(u.foto)}" alt="" referrerpolicy="no-referrer">` : esc(u?.iniciales || inicialesDe(u?.nombre))}</i>`;
+  return `<i class="av-mini">${fotoDe(u) ? `<img src="${esc(u.foto)}" alt="" referrerpolicy="no-referrer">` : esc(u?.iniciales || inicialesDe(u?.nombre))}</i>`;
 }
 // Amigos mencionados en un texto (@usuario) → sus uids. Solo cuentan los amigos.
 function mencionadosEn(texto){
@@ -5555,7 +5666,7 @@ async function renderDetalle(id){
           </button>
         </div>
         <div class="hero-bottom">
-          <div class="cat">${iconoTipo(ev)}${esc(etiquetaTipo(ev))}${ev.categoria ? ' · ' + esc(etiquetaEstilo(ev.categoria)) : ''}${ev.verificado?' · verificado':''}</div>
+          <div class="cat">${iconoTipo(ev)}${esc(etiquetaTipo(ev))}${ev.categoria ? ' · ' + esc(etiquetaEstilo(ev.categoria, ev)) : ''}${ev.verificado?' · verificado':''}</div>
           <h1>${esc(ev.nombre)}</h1>
         </div>
       </div>
@@ -5621,6 +5732,7 @@ async function renderDetalle(id){
       ${esCreador && ev.listaVip ? '<div class="bloque" id="bloque-vip"></div>' : ''}
 
       ${ev.reglas ? `<div class="bloque"><h3 class="titulo-bloque">Reglas</h3><p class="texto-desc">${esc(ev.reglas)}</p></div>` : ''}
+      ${faqEventoHTML(ev)}
 
       <div class="bloque">
         <h3 class="titulo-bloque">Compartir</h3>
@@ -5663,7 +5775,7 @@ async function renderDetalle(id){
       const h = document.getElementById('hero-img');
       if(!f || tok !== state.tok || !h) return;
       const pre = new Image();
-      pre.onload = () => { h.style.backgroundImage = cssUrl(f); h.classList.remove('cargando'); };
+      pre.onload = () => { h.style.backgroundImage = cssUrlJS(f); h.classList.remove('cargando'); };
       pre.src = f;
     });
     const bPuerta = document.getElementById('btn-puerta');
@@ -5714,8 +5826,15 @@ async function accionDetalle(ev, estado, lleno, adentro, yaCompro){
     toast(`Este evento es +${ev.edadMinima}.`); return;
   }
 
+  // Torneo por equipos: antes de anotarse, elige en cuál juega (o si va a mirar)
+  let equipo = '';
+  if(equiposDe(ev).length && ev.creador !== state.uid){
+    const e = await elegirEquipo(ev);
+    if(e === null) return;
+    equipo = e;
+  }
   const btn = document.getElementById('btn-accion-detalle');
-  const base = { uid: state.uid, nombre: state.perfil.nombre, ts: Date.now() };
+  const base = { uid: state.uid, nombre: state.perfil.nombre, ts: Date.now(), ...(equipo ? { equipo } : {}) };
 
   try{
     if(ev.privacidad === 'privada'){
@@ -5746,7 +5865,7 @@ async function accionDetalle(ev, estado, lleno, adentro, yaCompro){
     sumarConfirmadoEnCache(ev.id);
     renderPerfilVista();
     state.misPlanes.add(ev.id); sincronizarPlanes();
-    toast('¡Listo! Ya estás confirmado.');
+    toast(equipo ? `¡Listo! Estás confirmado en ${equipo}.` : '¡Listo! Ya estás confirmado.');
     abrirTicket(ev.id);
   } catch(e){
     console.error(e);
@@ -5821,13 +5940,23 @@ async function cargarConfirmados(ev, tok){
       .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
     const cont = document.getElementById('lista-confirmados');
     if(!cont || tok !== state.tok) return;
-    cont.innerHTML = lista.length ? `
-      <div style="font-size:12px; color:var(--gris); margin-bottom:4px;">${lista.length} ${lista.length === 1 ? 'persona' : 'personas'}${ev.conQR ? ' · con entrada QR' : ' · sin QR: controlá en la puerta con esta lista'}</div>
-      ${lista.map(a => `<div class="solicitud">
+    const fila = a => `<div class="solicitud">
         <div class="avatar" data-usuario="${esc(a.uid)}">${esc(inicialesDe(a.nombre))}</div>
         <div class="nom" data-usuario="${esc(a.uid)}">${esc(a.nombre)}${a.uid === state.uid ? ' (vos)' : ''}<small>${a.estado === 'aprobado' ? 'Aprobado' : 'Confirmado'}${ev.conQR && a.ticket ? ' · ' + esc(a.ticket) : ''}</small></div>
         <span class="ig-slot" data-ig="${esc(a.uid)}"></span>
-      </div>`).join('')}` : emptyState('Todavía no hay confirmados.');
+      </div>`;
+    // Torneo por equipos: una lista por equipo (y al final quienes van a mirar)
+    const eq = equiposDe(ev);
+    let cuerpo = lista.map(fila).join('');
+    if(eq.length){
+      const nombres = [...eq, ...new Set(lista.map(a => a.equipo).filter(n => n && !eq.includes(n)))];
+      const grupo = (tit, l) => `<div class="equipo-tit"><b>${esc(tit)}</b><span>${l.length} ${l.length === 1 ? 'persona' : 'personas'}</span></div>${l.map(fila).join('') || '<div class="equipo-vacio">Todavía nadie</div>'}`;
+      const sin = lista.filter(a => !a.equipo || !nombres.includes(a.equipo));
+      cuerpo = nombres.map(n => grupo(n, lista.filter(a => a.equipo === n))).join('') + (sin.length ? grupo('Sin equipo', sin) : '');
+    }
+    cont.innerHTML = lista.length ? `
+      <div style="font-size:12px; color:var(--gris); margin-bottom:4px;">${lista.length} ${lista.length === 1 ? 'persona' : 'personas'}${ev.conQR ? ' · con entrada QR' : ' · sin QR: controlá en la puerta con esta lista'}</div>
+      ${cuerpo}` : emptyState('Todavía no hay confirmados.');
     pintarIGs(cont);
   } catch(e){
     console.warn('confirmados', e);
@@ -5845,7 +5974,7 @@ async function cargarSolicitudes(eventId, tok){
     cont.innerHTML = sols.length ? sols.map(s => `
       <div class="solicitud">
         <div class="avatar" data-usuario="${esc(s.uid)}">${esc(inicialesDe(s.nombre))}</div>
-        <div class="nom" data-usuario="${esc(s.uid)}">${esc(s.nombre)}<small>Pidió unirse ${esc(hace(s.ts))}</small></div>
+        <div class="nom" data-usuario="${esc(s.uid)}">${esc(s.nombre)}<small>Pidió unirse ${esc(hace(s.ts))}${s.equipo ? ' · ' + esc(s.equipo) : ''}</small></div>
         <span class="ig-slot" data-ig="${esc(s.uid)}"></span>
         <button class="btn btn-secundario btn-mini" data-solicitud="${esc(s.uid)}" data-evento="${esc(eventId)}" data-accion="rechazar">Rechazar</button>
         <button class="btn btn-primario btn-mini" data-solicitud="${esc(s.uid)}" data-evento="${esc(eventId)}" data-accion="aprobar">Aprobar</button>
@@ -6199,10 +6328,19 @@ async function onImagenSeleccionada(input){
 // Estilo elegido por quien crea el evento (no se adivina)
 const ESTILOS = {
   electronica:'Electrónica', techno:'Techno', house:'House', cachengue:'Cachengue', cuarteto:'Cuarteto',
-  reggaeton:'Reggaetón', cumbia:'Cumbia', trap:'Trap', rock:'Rock', pop:'Pop', universitaria:'Fiesta universitaria', variado:'Variado'
+  reggaeton:'Reggaetón', cumbia:'Cumbia', trap:'Trap', rock:'Rock', pop:'Pop', rnb:'R&B', folklore:'Folklore', tango:'Tango',
+  universitaria:'Fiesta universitaria', variado:'Variado', otro:'Otro'
 };
-// Nombre del estilo de música.
-function etiquetaEstilo(cat){ return ESTILOS[cat] || cat || ''; }
+// Nombre del estilo de música ("Otro" muestra lo que escribió quien organiza).
+function etiquetaEstilo(cat, ev){ return cat === 'otro' ? (ev?.estiloOtro || 'Otro') : (ESTILOS[cat] || cat || ''); }
+// Muestra el campo "¿Cuál?" cuando el estilo es "Otro".
+function actualizarEstiloOtro(){
+  const sel = document.getElementById('f-estilo'), inp = document.getElementById('f-estilo-otro');
+  if(!sel || !inp) return;
+  const on = sel.value === 'otro';
+  inp.style.display = on ? '' : 'none';
+  if(on && !inp.value && document.activeElement === sel) setTimeout(() => inp.focus(), 0);
+}
 // Tipos de evento (los de "universitaria" y "temática" quedan solo para eventos viejos)
 const OCASIONES = { fiesta: 'Fiesta', previa: 'Previa', after: 'After', pena: 'Peña', egresados: 'Egresados', cumple: 'Cumpleaños',
   musical: 'Música en vivo', gastronomico: 'Gastronomía', charla: 'Charla / Seminario', taller: 'Taller / Curso', cultural: 'Arte y cultura',
@@ -6225,6 +6363,7 @@ const EXTRAS_TIPO = {
   deportivo: [
     { k: 'deporte', l: '¿Qué deporte o actividad?', ph: 'Ej: fútbol 5, running, vóley, pádel, trekking' },
     { k: 'modalidad', l: 'Modalidad', t: 'sel', ops: ['Recreativo', 'Entrenamiento', 'Torneo / competencia', 'Clase'] },
+    { k: 'porEquipos', l: '¿Se juega por equipos?', t: 'sel', ops: ['No', 'Sí'], si: ['modalidad', 'Torneo / competencia'] },
     { k: 'nivel', l: 'Nivel', t: 'sel', ops: ['Para todos', 'Principiante', 'Intermedio', 'Avanzado'] },
     { k: 'objetivo', l: '¿Cuál es el objetivo?', ph: 'Ej: armar equipo, juntar fondos, preparar una carrera' },
     { k: 'pausas', l: '¿Hay pausas o descansos?', ph: 'Ej: 10 min de hidratación cada hora' },
@@ -6273,26 +6412,61 @@ const EXTRAS_TIPO = {
     { k: 'regalo', l: 'Regalo / vaquita', ph: 'Ej: vaquita de $5.000 al alias juli.cumple' }]
 };
 // Dibuja las preguntas del tipo elegido (conserva lo que ya estaba escrito).
-function renderCamposTipo(k, valores){
+function renderCamposTipo(k, valores, equipos){
   const cont = document.getElementById('campos-tipo');
   if(!cont) return;
   const ant = valores || leerExtras();
+  const equiposTxt = equipos ? equipos.join('\n') : (document.getElementById('f-equipos')?.value || '');
   const campos = EXTRAS_TIPO[k] || [];
   if(!campos.length){ cont.innerHTML = ''; cont.style.display = 'none'; return; }
   cont.style.display = '';
   const id = c => 'fx-' + c.k;
+  // Campos que dependen de otro (ej. "¿Se juega por equipos?" solo en torneos)
+  const si = c => c.si ? ` data-si-k="${c.si[0]}" data-si-v="${esc(c.si[1])}"` : '';
   cont.innerHTML = `<div class="campos-tipo-tit">${iconoTipo({ ocasion: k })}Sobre ${esc((OCASIONES[k] || 'el evento').toLowerCase())}</div>` + campos.map(c => {
     const v = ant[c.k] || '';
-    if(c.t === 'sel') return `<div class="campo"><label for="${id(c)}">${esc(c.l)}</label><select id="${id(c)}" data-extra="${c.k}"><option value="">Sin especificar</option>${c.ops.map(o => `<option${o === v ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></div>`;
-    if(c.t === 'multi'){ const sel = v.split(',').map(x => x.trim());
-      return `<div class="campo"><label>${esc(c.l)}</label><div class="multi-ops" data-extra="${c.k}" data-multi="1">${c.ops.map(o => `<button type="button" class="chip${sel.includes(o) ? ' activo' : ''}" onclick="this.classList.toggle('activo')">${esc(o)}</button>`).join('')}</div></div>`; }
-    return `<div class="campo"><label for="${id(c)}">${esc(c.l)}</label><input type="${c.t === 'num' ? 'number' : 'text'}" id="${id(c)}" data-extra="${c.k}" maxlength="120" placeholder="${esc(c.ph || '')}" value="${esc(v)}"></div>`;
+    let h;
+    if(c.t === 'sel') h = `<div class="campo"${si(c)}><label for="${id(c)}">${esc(c.l)}</label><select id="${id(c)}" data-extra="${c.k}"><option value="">Sin especificar</option>${c.ops.map(o => `<option${o === v ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select></div>`;
+    else if(c.t === 'multi'){ const sel = v.split(',').map(x => x.trim());
+      h = `<div class="campo"${si(c)}><label>${esc(c.l)}</label><div class="multi-ops" data-extra="${c.k}" data-multi="1">${c.ops.map(o => `<button type="button" class="chip${sel.includes(o) ? ' activo' : ''}" onclick="this.classList.toggle('activo')">${esc(o)}</button>`).join('')}</div></div>`; }
+    else h = `<div class="campo"${si(c)}><label for="${id(c)}">${esc(c.l)}</label><input type="${c.t === 'num' ? 'number' : 'text'}" id="${id(c)}" data-extra="${c.k}" maxlength="120" placeholder="${esc(c.ph || '')}" value="${esc(v)}"></div>`;
+    if(c.k === 'porEquipos') h += `<div class="campo" id="campo-equipos" data-si-k="porEquipos" data-si-v="Sí"><label for="f-equipos">Nombres de los equipos</label>
+      <textarea id="f-equipos" maxlength="1100" placeholder="Un equipo por renglón:
+Los Halcones
+La Naranja Mecánica">${esc(equiposTxt)}</textarea>
+      <div class="ayuda">Al anotarse, cada persona elige su equipo (o "Voy a mirar"). Vos ves la lista de cada uno.</div></div>`;
+    return h;
   }).join('');
+  actualizarCondicionalesTipo();
+}
+// Muestra u oculta los campos que dependen de la respuesta de otro.
+function actualizarCondicionalesTipo(){
+  const cont = document.getElementById('campos-tipo');
+  if(!cont) return;
+  cont.querySelectorAll('[data-si-k]').forEach(c => {
+    const ref = cont.querySelector(`[data-extra="${c.dataset.siK}"]`);
+    const refVisible = ref && ref.closest('.campo')?.style.display !== 'none';
+    c.style.display = refVisible && ref.value === c.dataset.siV ? '' : 'none';
+  });
+}
+document.getElementById('campos-tipo')?.addEventListener('change', actualizarCondicionalesTipo);
+const MAX_EQUIPOS = 24;
+// Equipos del torneo: [] si no es por equipos, null si dijo que sí pero puso menos de 2.
+function leerEquipos(){
+  const c = document.getElementById('campo-equipos');
+  if(!c || c.style.display === 'none') return [];
+  const vistos = new Set(), lista = [];
+  for(const l of String(document.getElementById('f-equipos')?.value || '').split('\n')){
+    const n = l.trim().replace(/\s+/g, ' ').slice(0, 40);
+    if(n && !vistos.has(normalizar(n))){ vistos.add(normalizar(n)); lista.push(n); }
+  }
+  return lista.length >= 2 ? lista.slice(0, MAX_EQUIPOS) : null;
 }
 // Lee las respuestas extra del formulario (solo las que tienen algo).
 function leerExtras(){
   const out = {};
   document.querySelectorAll('#campos-tipo [data-extra]').forEach(el => {
+    if(el.closest('.campo')?.style.display === 'none') return;   // pregunta que no aplica (ej. equipos fuera de un torneo)
     const v = el.dataset.multi ? [...el.querySelectorAll('.chip.activo')].map(b => b.textContent).join(', ') : String(el.value || '').trim();
     if(v) out[el.dataset.extra] = v.slice(0, 120);
   });
@@ -6301,8 +6475,85 @@ function leerExtras(){
 // Bloque "Lo que tenés que saber" en el detalle del evento.
 function extrasHTML(ev){
   const campos = EXTRAS_TIPO[ev.ocasion] || [], x = ev.extras || {};
-  const filas = campos.filter(c => x[c.k]).map(c => `<div class="extra-fila"><small>${esc(c.l.replace(/^¿/, '').replace(/\?$/, ''))}</small><b>${esc(x[c.k])}</b></div>`);
+  const eq = equiposDe(ev);
+  const filas = campos.filter(c => x[c.k] && !(c.k === 'porEquipos' && eq.length)).map(c => `<div class="extra-fila"><small>${esc(c.l.replace(/^¿/, '').replace(/\?$/, ''))}</small><b>${esc(x[c.k])}</b></div>`);
+  if(eq.length) filas.push(`<div class="extra-fila extra-equipos"><small>Equipos (${eq.length})</small><div class="equipos-pills">${eq.map(e => `<span>${esc(e)}</span>`).join('')}</div></div>`);
   return filas.length ? `<div class="extras-lista">${filas.join('')}</div>` : '';
+}
+// Equipos de un torneo (solo nombres válidos).
+function equiposDe(ev){ return Array.isArray(ev?.equipos) ? ev.equipos.filter(e => typeof e === 'string' && e.trim()).slice(0, MAX_EQUIPOS) : []; }
+// Al anotarse en un torneo por equipos: ¿en cuál juega? Devuelve el nombre, '' (va a mirar) o null (volvió).
+function elegirEquipo(ev){
+  return new Promise(resolve => {
+    const eq = equiposDe(ev);
+    state._resolverEquipo = resolve;
+    abrirHoja(`<div class="cuerpo hoja-equipos"><div class="cat">${iconoTipo(ev)}Torneo por equipos</div><h3>¿En qué equipo jugás?</h3>
+      <p class="hoja-sub">Así quien organiza arma la lista de cada equipo.</p>
+      <div class="equipos-ops">${eq.map((e, i) => `<button type="button" class="chip" data-equipo-i="${i}">${esc(e)}</button>`).join('')}
+        <button type="button" class="chip chip-mirar" data-equipo-i="-1">👀 Voy a mirar</button></div></div>
+      <div class="acciones"><button class="btn btn-secundario" onclick="cerrarHoja()">Volver</button></div>`);
+    document.querySelectorAll('#hoja-contenido [data-equipo-i]').forEach(b => b.onclick = () => {
+      const i = Number(b.dataset.equipoI), r = state._resolverEquipo;
+      state._resolverEquipo = null; cerrarHoja(); r && r(i < 0 ? '' : eq[i]);
+    });
+  });
+}
+// ---------- Preguntas frecuentes de cada evento (guardarropa, reingreso...) ----------
+const FAQ_SUGERIDAS = {
+  fiesta: ['¿Hay guardarropa?', '¿Se puede reingresar?', '¿Hasta qué hora se puede entrar?'],
+  previa: ['¿Hay que llevar algo?', '¿Puedo ir con alguien más?', '¿Hasta qué hora es?'],
+  charla: ['¿Queda grabado?', '¿Hay que llevar algo?', '¿Hay estacionamiento?'],
+  deportivo: ['¿Hay vestuarios?', '¿Qué pasa si llueve?', '¿Hay estacionamiento?'],
+  general: ['¿Se puede ir con chicos?', '¿Aceptan tarjeta?', '¿Hay estacionamiento?']
+};
+function faqSugeridas(){
+  const k = document.getElementById('f-ocasion')?.value || '';
+  if(state.tipoEventoActivo === 'previa' || k === 'previa') return FAQ_SUGERIDAS.previa;
+  if(['charla', 'taller'].includes(k)) return FAQ_SUGERIDAS.charla;
+  if(k === 'deportivo') return FAQ_SUGERIDAS.deportivo;
+  if(OCASIONES_FIESTA.has(k) || ['pena', 'musical'].includes(k)) return FAQ_SUGERIDAS.fiesta;
+  return FAQ_SUGERIDAS.general;
+}
+function filaFaqHTML(p = '', r = ''){
+  return `<div class="faq-fila"><input type="text" class="faq-p" maxlength="120" placeholder="Pregunta. Ej: ¿Hay guardarropa?" aria-label="Pregunta" value="${esc(p)}">
+    <textarea class="faq-r" maxlength="300" placeholder="Respuesta" aria-label="Respuesta">${esc(r)}</textarea>
+    <button type="button" class="faq-quitar" onclick="quitarFaq(this)" aria-label="Quitar pregunta">✕</button></div>`;
+}
+function pintarFaqForm(lista){
+  const cont = document.getElementById('f-faq');
+  if(!cont) return;
+  cont.innerHTML = (lista || []).filter(x => x && typeof x.p === 'string').slice(0, MAX_FAQ).map(x => filaFaqHTML(x.p, x.r || '')).join('');
+  pintarSugerenciasFaq();
+}
+function pintarSugerenciasFaq(){
+  const cont = document.getElementById('f-faq'), sug = document.getElementById('faq-sug'), mas = document.getElementById('btn-faq-mas');
+  if(!cont || !sug) return;
+  const n = cont.querySelectorAll('.faq-fila').length, usadas = new Set([...cont.querySelectorAll('.faq-p')].map(i => normalizar(i.value)));
+  const libres = n >= MAX_FAQ ? [] : faqSugeridas().filter(q => !usadas.has(normalizar(q)));
+  sug.innerHTML = libres.map(q => `<button type="button" class="chip" data-faq-sug="${esc(q)}">+ ${esc(q)}</button>`).join('');
+  sug.querySelectorAll('[data-faq-sug]').forEach(b => b.onclick = () => agregarFaq(b.dataset.faqSug));
+  if(mas) mas.style.display = n >= MAX_FAQ ? 'none' : '';
+}
+function agregarFaq(p = ''){
+  const cont = document.getElementById('f-faq');
+  if(!cont || cont.querySelectorAll('.faq-fila').length >= MAX_FAQ) return;
+  cont.insertAdjacentHTML('beforeend', filaFaqHTML(p, ''));
+  const fila = cont.lastElementChild;
+  (p ? fila.querySelector('.faq-r') : fila.querySelector('.faq-p')).focus();
+  pintarSugerenciasFaq();
+}
+function quitarFaq(btn){ btn.closest('.faq-fila')?.remove(); pintarSugerenciasFaq(); }
+// Las preguntas con respuesta (las que quedaron a medias no se guardan).
+function leerFaq(){
+  return [...document.querySelectorAll('#f-faq .faq-fila')].map(f => ({
+    p: f.querySelector('.faq-p').value.trim().replace(/\s+/g, ' ').slice(0, 120),
+    r: f.querySelector('.faq-r').value.trim().slice(0, 300)
+  })).filter(x => x.p && x.r).slice(0, MAX_FAQ);
+}
+// Bloque "Preguntas frecuentes" en el detalle del evento.
+function faqEventoHTML(ev){
+  const l = Array.isArray(ev?.faq) ? ev.faq.filter(x => x && typeof x.p === 'string' && typeof x.r === 'string' && x.p && x.r).slice(0, MAX_FAQ) : [];
+  return l.length ? `<div class="bloque bloque-faq"><h3 class="titulo-bloque">Preguntas frecuentes</h3><div class="lista-faq">${l.map(x => `<details class="faq"><summary>${esc(x.p)}</summary><p>${esc(x.r)}</p></details>`).join('')}</div></div>` : '';
 }
 function elegirOcasion(k){
   document.getElementById('f-ocasion').value = OCASIONES[k] ? k : '';
@@ -6321,6 +6572,7 @@ function elegirOcasion(k){
   if(tl) tl.placeholder = crono ? 'Un renglón por momento. Podés poner la hora:\n18:00 Apertura\n18:30 Primera parte' : 'Un artista por renglón. Podés poner la hora:\n23:30 DJ Invitado\n01:00 Banda principal';
   const lm = document.querySelector('label[for="f-musica"]'); if(lm) lm.textContent = 'Música (opcional)';
   renderCamposTipo(k);
+  pintarSugerenciasFaq();
   actualizarCampoVip && document.getElementById('switch-vip') && actualizarCampoVip();
 }
 // Elegir el tipo en el paso 2 (Previa también está acá). Pasa solo al paso siguiente.
@@ -6341,7 +6593,13 @@ function irAPrevia(){
 function esUniversitaria(e){ return e.ocasion === 'universitaria' || e.categoria === 'universitaria'; }
 
 // Valida el formulario y crea el evento (o guarda la edición). Muestra la vista previa antes.
+// Un solo envío a la vez (doble toque, o volver y tocar "Publicar" de nuevo, no crean dos eventos).
 async function publicarEvento(){
+  if(state._publicando) return;
+  state._publicando = true;
+  try{ return await publicarEventoUnaVez(); } finally { state._publicando = false; }
+}
+async function publicarEventoUnaVez(){
   const val = id => document.getElementById(id).value.trim();
   const tipo = state.tipoEventoActivo;
   const privada = esPrivadaEnForm();
@@ -6402,7 +6660,13 @@ async function publicarEvento(){
   // El estilo de música es opcional (y en una previa no se pide)
   const sinMusica = ['charla', 'taller'].includes(val('f-ocasion'));
   const estilo = tipo === 'previa' || sinMusica || !ESTILOS[val('f-estilo')] ? '' : val('f-estilo');
-  const musica = sinMusica ? '' : (val('f-musica') || ESTILOS[estilo] || '').slice(0, 80);
+  const estiloOtro = estilo === 'otro' ? val('f-estilo-otro').replace(/\s+/g, ' ').slice(0, 30) : '';
+  if(estilo === 'otro' && !estiloOtro){ toast('Escribí qué estilo de música va a sonar'); irAPasoCrear(3); document.getElementById('f-estilo-otro').focus(); return; }
+  const musica = sinMusica ? '' : (val('f-musica') || (estilo === 'otro' ? estiloOtro : ESTILOS[estilo]) || '').slice(0, 80);
+  // Preguntas frecuentes del evento y equipos (torneos)
+  const faq = leerFaq();
+  const equipos = leerEquipos();
+  if(equipos === null){ toast('Poné al menos 2 equipos, uno por renglón'); irAPasoCrear(3); document.getElementById('f-equipos')?.focus(); return; }
   const conVip = tipo !== 'previa' && document.getElementById('switch-vip').classList.contains('on');
   const vip = conVip ? leerVip() : [];
   const reglas = val('f-reglas');
@@ -6419,7 +6683,7 @@ async function publicarEvento(){
   if(evEdit) return guardarEdicion(evEdit, {
     nombre, lugar, direccion: privada ? direccion : null, fechaTs, hora: horaStr, horaFin, capacidad, capacidadDesconocida: sinTope, edadMinima,
     precio, pagoInfo, pagoTitular, linkEntradas: linkVenta ? linkVenta.url.slice(0, 300) : '', lineup,
-    categoria: estilo, musica, dresscode: val('f-dresscode') || 'Libre', ocasion: OCASIONES[val('f-ocasion')] ? val('f-ocasion') : '', vip,
+    categoria: estilo, estiloOtro, musica, faq, equipos, dresscode: val('f-dresscode') || 'Libre', ocasion: OCASIONES[val('f-ocasion')] ? val('f-ocasion') : '', vip,
     bebida: tipo === 'previa' && document.getElementById('switch-bebida').classList.contains('on'),
     tipo, privacidad: privada ? 'privada' : 'publica',
     listaVip: conVip, inscripcionHasta, extras: leerExtras(),
@@ -6433,7 +6697,8 @@ async function publicarEvento(){
   const nuevo = {
     nombre, creador: state.uid, creadorNombre: state.perfil.nombre,
     organizador: state.perfil.nombre, verificado: !!state.perfil.verificado,
-    categoria: estilo, tipoLugar: tipo==='previa' ? 'Previa' : 'Fiesta', tipo, ocasion: OCASIONES[val('f-ocasion')] ? val('f-ocasion') : '',
+    categoria: estilo, ...(estiloOtro ? { estiloOtro } : {}), tipoLugar: tipo==='previa' ? 'Previa' : 'Fiesta', tipo, ocasion: OCASIONES[val('f-ocasion')] ? val('f-ocasion') : '',
+    ...(faq.length ? { faq } : {}), ...(equipos.length ? { equipos } : {}),
     privacidad: privada ? 'privada' : 'publica',
     fechaTs, hora: horaStr,
     lugar, lat: exacta ? coords.lat : coords.lat + jitter(), lng: exacta ? coords.lng : coords.lng + jitter(), ubicacionExacta: exacta,
@@ -6465,7 +6730,8 @@ async function publicarEvento(){
     await DataService.crearEvento(nuevoId, nuevo, privada ? direccion : null, state.imagenMini ? state.imagenNueva : null, {
       uid: state.uid, nombre: state.perfil.nombre, estado: 'confirmado', ts: Date.now(), ticket: ticketCode()
     });
-    state.eventos.push({ id: nuevoId, ...nuevo });
+    // La escucha en vivo puede haberlo sumado antes de que termine de guardarse: no duplicarlo
+    if(!state.eventos.some(e => e.id === nuevoId)) state.eventos.push({ id: nuevoId, ...nuevo });
     state.eventos.sort((a,b) => a.fechaTs - b.fechaTs);
     state.ultimoCreado = nuevoId;
     if(esOrganizacion(state.perfil) && !privada) avisarSeguidores(nuevoId, nombre).then(fans => avisarAmigosEvento(nuevoId, nombre, fans));
@@ -6491,9 +6757,11 @@ function elegirQuienCobra(q){
   const c = document.getElementById('campo-titular'); if(c) c.style.display = q === 'otro' ? 'block' : 'none';
 }
 function resetFormularioCrear(){
-  ['f-nombre','f-lugar','f-direccion','f-fecha','f-hora','f-capacidad','f-edad','f-dresscode','f-estilo','f-musica','f-descripcion','f-reglas','f-precio','f-pago-info','f-pago-titular','f-hora-fin','f-lineup','f-link-entradas','f-ocasion','f-vip','f-insc-fecha','f-insc-hora'].forEach(id=>{
+  ['f-nombre','f-lugar','f-direccion','f-fecha','f-hora','f-capacidad','f-edad','f-dresscode','f-estilo','f-estilo-otro','f-musica','f-descripcion','f-reglas','f-precio','f-pago-info','f-pago-titular','f-hora-fin','f-lineup','f-link-entradas','f-ocasion','f-vip','f-insc-fecha','f-insc-hora'].forEach(id=>{
     const el = document.getElementById(id); if(el) el.value='';
   });
+  actualizarEstiloOtro(); pintarFaqForm([]);
+  const ct = document.getElementById('campos-tipo'); if(ct){ ct.innerHTML = ''; ct.style.display = 'none'; }
   const setSwitch = (id, on) => { const el = document.getElementById(id); el.classList.toggle('on', on); el.setAttribute('aria-checked', on ? 'true' : 'false'); };
   setSwitch('switch-pago', false); setSwitch('switch-vip', false); setSwitch('switch-qr', true);
   elegirQuienCobra('yo');
@@ -6527,7 +6795,7 @@ function filasEventoHTML(ev){
   return [
     f('📅', esc(horarioEvento(ev))),
     f('📍', esc(lugarPublico(ev)) + (ev.privacidad === 'privada' ? ' · 🔒 dirección al aprobar' : ''), dist ? `a ${esc(dist)} de vos` : ''),
-    ev.musica || ev.categoria ? f('🎵', esc(ev.musica || etiquetaEstilo(ev.categoria))) : '',
+    ev.musica || ev.categoria ? f('🎵', esc(ev.musica || etiquetaEstilo(ev.categoria, ev))) : '',
     f('🎟️', esc(precioTxt(ev)), ev.pagoInfo && ev.precio > 0 ? esc(ev.pagoInfo) : ''),
     f(`<span class="punto-ambiente amb-${a.clase}${a.vivo ? ' amb-vivo' : ''}" style="display:inline-block; width:10px; height:10px;"></span>`, esc(a.label), esc(a.desc)),
     ev.edadMinima !== undefined ? f('🔞', esc(clasificacion(ev)), ev.dresscode && ev.dresscode !== 'Libre' ? 'Dress code: ' + esc(ev.dresscode) : '') : '',
@@ -6546,6 +6814,7 @@ function cerrarHoja(resultado){
   document.getElementById('hoja-vista').classList.remove('show');
   soltarModalHist();
   if(state._resolverPrevia){ const r = state._resolverPrevia; state._resolverPrevia = null; r(!!resultado); }
+  if(state._resolverEquipo){ const r = state._resolverEquipo; state._resolverEquipo = null; r(null); }
 }
 // Vista previa rápida de un evento desde la tarjeta.
 function abrirVistaRapida(id){
@@ -6887,7 +7156,7 @@ function eventosFiltradosExplorar(){
   if(state.busqueda){
     const q = normalizar(state.busqueda);
     eventos = eventos.filter(e =>
-      normalizar(e.nombre).includes(q) || normalizar(etiquetaEstilo(e.categoria)).includes(q) ||
+      normalizar(e.nombre).includes(q) || normalizar(etiquetaEstilo(e.categoria, e)).includes(q) ||
       normalizar(lugarPublico(e)).includes(q)  || normalizar(e.musica).includes(q) || normalizar(etiquetaTipo(e)).includes(q));
   }
   return eventos;
@@ -6924,7 +7193,7 @@ async function pintarMapaEventos(encuadrar){
       : L.marker([e.lat, e.lng], { icon: L.divIcon({ className: '', html: `<div class="pin-evento ${a.clase}"></div>`, iconSize: [26, 26], iconAnchor: [13, 26], popupAnchor: [0, -24] }) }).addTo(capa);
     const dist = state.userCoords ? ` · ${textoDistancia(e, distanciaKm(centro.lat, centro.lng, e.lat, e.lng))}` : '';
     m.bindPopup(`<div class="popup-ev" data-abrir="${esc(e.id)}"><div class="f" style="background-image:${cssFoto(e)}"></div>
-      <div class="c">${esc(etiquetaEstilo(e.categoria))} · ${esc(etiquetaTipo(e))}${e.privacidad === 'privada' ? ' · 🔒 zona aproximada' : ''}</div><b>${esc(e.nombre)}</b>
+      <div class="c">${esc(etiquetaEstilo(e.categoria, e))} · ${esc(etiquetaTipo(e))}${e.privacidad === 'privada' ? ' · 🔒 zona aproximada' : ''}</div><b>${esc(e.nombre)}</b>
       <span>${esc(fmtFecha(e.fechaTs))}${esc(dist)} · ${esc(precioTxt(e))}</span>
       <button class="btn btn-primario">Ver evento</button></div>`);
     puntos.push([e.lat, e.lng]);
@@ -7125,8 +7394,10 @@ async function editarEvento(ev){
   setv('f-capacidad', ev.capacidadDesconocida ? '' : ev.capacidad); setv('f-edad', ev.edadMinima);
   setv('f-dresscode', ev.dresscode === 'Libre' ? '' : ev.dresscode);
   setv('f-estilo', ESTILOS[ev.categoria] ? (ev.categoria === 'universitaria' ? 'variado' : ev.categoria) : '');
+  setv('f-estilo-otro', ev.estiloOtro || ''); actualizarEstiloOtro();
   elegirOcasion(esPrevia ? 'previa' : (ev.ocasion || 'fiesta'));
-  setv('f-musica', ev.musica === ESTILOS[ev.categoria] ? '' : ev.musica);
+  setv('f-musica', ev.musica === ESTILOS[ev.categoria] || (ev.estiloOtro && ev.musica === ev.estiloOtro) ? '' : ev.musica);
+  pintarFaqForm(Array.isArray(ev.faq) ? ev.faq : []);
   setv('f-descripcion', ev.descripcion === 'Evento creado desde Partazy.' ? '' : ev.descripcion);
   setv('f-reglas', ev.reglas === 'Respetar el lugar y a los demás asistentes.' ? '' : ev.reglas);
   setv('f-lineup', ev.lineup);
@@ -7151,7 +7422,7 @@ async function editarEvento(ev){
   }
   modoEdicionUI(true);
   state.tipoElegido = true;
-  renderCamposTipo(esPrevia ? 'previa' : (ev.ocasion || 'fiesta'), ev.extras || {});
+  renderCamposTipo(esPrevia ? 'previa' : (ev.ocasion || 'fiesta'), ev.extras || {}, Array.isArray(ev.equipos) ? ev.equipos : []);
   irAPasoCrear(3);
   state.abriendoEdicion = true;
   try{ ir('crear'); } finally { state.abriendoEdicion = false; }
@@ -7191,6 +7462,9 @@ async function guardarEdicion(ev, d){
     descripcion: d.descripcion, reglas: d.reglas, editadoTs: Date.now(),
   };
   if(Object.keys(d.extras || {}).length || ev.extras) cambios.extras = d.extras || {};
+  if(d.estiloOtro || ev.estiloOtro) cambios.estiloOtro = d.estiloOtro || '';
+  if((d.faq || []).length || ev.faq) cambios.faq = d.faq || [];
+  if((d.equipos || []).length || ev.equipos) cambios.equipos = d.equipos || [];
   // Fecha límite: se guarda, se cambia o se borra (solo si cambió)
   if(d.inscripcionHasta) cambios.inscripcionHasta = d.inscripcionHasta;
   else if(typeof ev.inscripcionHasta === 'number') cambios.inscripcionHasta = firebase.firestore.FieldValue.delete();
@@ -7255,6 +7529,9 @@ async function guardarEdicion(ev, d){
 async function renderPerfilVista(){
   if(!state.perfil) return;
   document.getElementById('perfil-avatar').innerHTML = avatarHTML(state.perfil);
+  const pb = document.getElementById('perfil-banner'), hayBanner = esOrganizacion(state.perfil) && bannerValido(state.perfil.banner);
+  pb.hidden = !hayBanner; pb.style.backgroundImage = hayBanner ? cssUrlJS(state.perfil.banner) : '';
+  pb.nextElementSibling.classList.toggle('con-banner', hayBanner);
   document.getElementById('perfil-nombre').innerHTML = esc(nombreVisible(state.perfil)) + insignia(state.perfil);
   actualizarFilaQR();
   renderTarjetaVerificacion();
@@ -7272,11 +7549,11 @@ async function renderPerfilVista(){
   pc.innerHTML = txtCalif; pc.style.display = txtCalif ? '' : 'none';
   const bioEl = document.getElementById('perfil-bio');
   bioEl.textContent = state.perfil.bio || ''; bioEl.style.display = state.perfil.bio && !esOrganizacion(state.perfil) ? '' : 'none';
-  document.getElementById('stat-organizados').textContent = state.eventos.filter(e => e.creador === state.uid).length;
+  document.getElementById('stat-organizados').textContent = misEventosOrganizando().length;
   const intereses = state.perfil.intereses || [];
-  document.getElementById('perfil-intereses').innerHTML = intereses.length
-    ? intereses.map(i => `<span class="chip activo">${esc(i)}</span>`).join('')
-    : emptyState('Todavía no elegiste intereses. Tocá el lápiz para agregarlos.');
+  document.getElementById('perfil-intereses').innerHTML = interesesPerfilHTML(state.perfil,
+    `<div class="subtitulo"><h3 class="titulo-bloque">${esOrganizacion(state.perfil) ? 'Organiza' : 'Intereses'}</h3></div>` +
+    emptyState(esOrganizacion(state.perfil) ? 'Todavía no elegiste qué tipo de eventos organizás. Tocá el lápiz para agregarlo.' : 'Todavía no elegiste intereses. Tocá el lápiz para agregarlos.'));
 
   const cont = document.getElementById('perfil-proximos');
   try{
@@ -7284,12 +7561,12 @@ async function renderPerfilVista(){
     document.getElementById('stat-eventos').textContent = prox.length;
     cont.innerHTML = prox.length ? prox.map(e => e.creador === state.uid ? `
       <div class="item-simple" role="button" tabindex="0" data-abrir="${esc(e.id)}">
-        <div class="foto-mini" style="background-image:${cssFoto(e)}"></div>
+        ${fotoMiniHTML(e)}
         <div class="txt"><h5>${esc(e.nombre)}<span class="badge-org">ORGANIZÁS</span></h5><span>${esc(fmtFecha(e.fechaTs))} hs</span></div>
         ${esCancelado(e) ? '' : `<button class="btn-editar-mini" data-editar="${esc(e.id)}">✏️ Editar</button>`}
       </div>` : `
       <div class="item-simple" role="button" tabindex="0" data-ticket="${esc(e.id)}">
-        <div class="foto-mini" style="background-image:${cssFoto(e)}"></div>
+        ${fotoMiniHTML(e)}
         <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs</span></div>
       </div>`).join('') : emptyState('Todavía no confirmaste ningún evento.');
   } catch(e){
@@ -7309,7 +7586,7 @@ function pintarMisCompartidos(){
   b.style.display = lista.length ? '' : 'none';
   document.getElementById('perfil-compartidos').innerHTML = lista.map(e => `
     <div class="item-simple" role="button" tabindex="0" data-abrir="${esc(e.id)}">
-      <div class="foto-mini" style="background-image:${cssFoto(e)}"></div>
+      ${fotoMiniHTML(e)}
       <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs · lo ven tus amigos</span>${state.misNotas?.[e.id] ? `<span class="nota-mia">${textoConMenciones(state.misNotas[e.id])}</span>` : ''}
         <span class="mi-nota-acciones"><button class="btn-nota" data-editar-nota="${esc(e.id)}">✏️ ${state.misNotas?.[e.id] ? 'Editar' : 'Comentar'}</button>${state.misNotas?.[e.id] ? `<button class="btn-nota peligro" data-borrar-nota="${esc(e.id)}">🗑 Borrar</button>` : ''}</span></div>
     </div>`).join('');
@@ -7361,6 +7638,7 @@ function editarPerfil(){
   comprobarUsuario(document.getElementById('ep-usuario').value, 'ep-usuario-estado');
   document.getElementById('ep-apodo').value = state.perfil.apodo || '';
   elegirTipoCuenta('ep-tipo', state.perfil.tipoCuenta || 'persona');
+  state.bannerNuevo = null; state.quitarBanner = false;
   pintarCamposOrg(state.perfil);
   document.getElementById('ep-bio').value = state.perfil.bio || '';
   const sw = (id, on) => { const el = document.getElementById(id); el.classList.toggle('on', on); el.setAttribute('aria-checked', on ? 'true' : 'false'); };
@@ -7368,7 +7646,7 @@ function editarPerfil(){
   sw('ep-edad', !state.perfil.ocultarEdad); sw('ep-enlinea', !state.perfil.ocultarEnLinea); sw('ep-planes', !state.perfil.ocultarPlanes); sw('ep-mensajes', state.perfil.mensajesDe !== 'amigos');
   document.getElementById('ep-ciudad').value = state.perfil.ciudad || '';
   autocompletarLugar(document.getElementById('ep-ciudad'));
-  renderSelectorIntereses('ep-intereses', state.perfil.intereses || []);
+  renderSelectorIntereses('ep-intereses', state.perfil.intereses || [], esOrganizacion(state.perfil));
 }
 
 // Sale de la edición del perfil sin guardar.
@@ -7405,6 +7683,13 @@ async function guardarPerfil(){
   if(tipoCuenta === 'organizacion') Object.assign(cambios, leerCamposOrg());
   if(state.fotoPerfilNueva) cambios.foto = state.fotoPerfilNueva;
   else if(state.quitarFoto) cambios.foto = '';
+  // La foto de Google no corresponde a una organización, ni a alguien que cambió su nombre por otro con otra inicial
+  else if(esFotoDeGoogle(state.perfil.foto) && (tipoCuenta === 'organizacion'
+    || normalizar((apodo || nombre).trim()[0]) !== normalizar((state.perfil.apodo || state.perfil.nombre || '').trim()[0]))) cambios.foto = '';
+  if(tipoCuenta === 'organizacion'){
+    if(state.bannerNuevo) cambios.banner = state.bannerNuevo;
+    else if(state.quitarBanner) cambios.banner = '';
+  }
 
   try{
     await DataService.actualizarPerfil(state.uid, cambios, state.perfil.usuario || '');
@@ -7471,12 +7756,16 @@ async function init(){
   // Perfil: foto, @usuario y normas
   document.getElementById('rg-foto-input').addEventListener('change', e => elegirFotoPerfil(e.target, 'rg-foto', 'rg-foto-estado'));
   document.getElementById('ep-foto-input').addEventListener('change', e => { state.quitarFoto = false; elegirFotoPerfil(e.target, 'ep-foto', 'ep-foto-estado'); });
+  document.getElementById('ep-banner-input').addEventListener('change', e => elegirBanner(e.target));
+  document.getElementById('ep-banner-quitar').addEventListener('click', () => { state.bannerNuevo = null; state.quitarBanner = true; pintarBannerEdit(''); });
   document.getElementById('ep-foto-quitar').addEventListener('click', () => {
     state.fotoPerfilNueva = null; state.quitarFoto = true;
     pintarFotoPerfil('ep-foto', '', state.perfil?.iniciales);
     document.getElementById('ep-foto-estado').textContent = 'Se va a quitar al guardar';
   });
   vigilarUsuario('rg-usuario', 'rg-usuario-estado');
+  document.getElementById('rg-usuario').addEventListener('input', e => { e.target.dataset.auto = '0'; });
+  document.getElementById('rg-nombre').addEventListener('input', sugerirUsuarioRegistro);
   document.getElementById('btn-enviar-verif').addEventListener('click', enviarVerificacion);
   document.getElementById('btn-escanear').addEventListener('click', alternarEscaner);
   document.getElementById('btn-validar').addEventListener('click', () => validarCodigo(document.getElementById('puerta-codigo').value));
