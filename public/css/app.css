@@ -1547,3 +1547,16 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 #perfil-fundador:empty{display:none;}
 .aviso-fundador{font-size:12.5px; color:var(--hueso); background:linear-gradient(120deg, rgba(232,180,17,.14), rgba(76,185,68,.12)); border:1px solid rgba(232,180,17,.35); border-radius:12px; padding:9px 12px; margin:-6px auto 14px; max-width:330px;}
 .aviso-fundador[hidden]{display:none;}
+
+/* Instagram de cada cuenta: chip en el perfil e íconito en las listas */
+.ig-chip{display:inline-flex; align-items:center; gap:6px; margin:8px auto 0; padding:5px 12px; border-radius:999px; border:1px solid var(--gris-linea); background:var(--negro-2);
+  color:var(--hueso); font-size:12.5px; font-weight:700; text-decoration:none;}
+.ig-chip svg{width:15px; height:15px;}
+.ig-chip:hover{border-color:#E1306C; color:#fff;}
+#perfil-ig:empty{display:none;}
+.ig-mini{display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; flex:none; border-radius:50%; border:1px solid var(--gris-linea); background:var(--negro-3); color:var(--hueso);}
+.ig-mini svg{width:16px; height:16px;}
+.ig-mini:hover{border-color:#E1306C; color:#fff;}
+.ig-slot{display:inline-flex; flex:none;}
+.ig-slot:empty{display:none;}
+.persona .acciones-p{align-items:center;}

@@ -468,6 +468,7 @@ Ivo Paz +1"></textarea>
         <h2 id="perfil-nombre">Cargando...</h2>
         <div class="handle" id="perfil-handle"></div>
         <div id="perfil-fundador"></div>
+        <div id="perfil-ig"></div>
         <div class="ubic" id="perfil-ubic">—</div>
         <div class="ubic" id="perfil-calif" style="display:none;"></div>
         <p class="bio" id="perfil-bio" style="display:none;"></p>
@@ -527,6 +528,7 @@ Ivo Paz +1"></textarea>
       </div>
       <div class="campo"><label for="ep-apodo">Apodo (opcional)</label><input type="text" id="ep-apodo" maxlength="40" placeholder="Cómo te dicen"></div>
       <div class="campo"><label for="ep-bio" id="ep-bio-label">Biografía</label><textarea id="ep-bio" maxlength="300" placeholder="Contá algo de vos: qué música te gusta, por dónde salís... (hasta 300 letras)"></textarea></div>
+      <div class="campo"><label for="ep-instagram">Instagram (opcional)</label><input type="text" id="ep-instagram" maxlength="60" placeholder="@tuusuario" autocapitalize="none" spellcheck="false" autocomplete="off"><div class="ayuda">Aparece en tu perfil y en las listas de los eventos, así saben quién sos.</div></div>
       <div class="switch-row en-form">
         <div class="txt">Mostrar mi edad en el perfil<small>Los demás nunca ven tu edad ni tu fecha de nacimiento. Apagalo y tampoco aparece en tu perfil (por ejemplo, si mostrás la pantalla o sacás captura).</small></div>
         <div class="switch on" id="ep-edad" onclick="toggleSwitch(this)" role="switch" aria-checked="true" aria-label="Mostrar mi edad en el perfil" tabindex="0"><div class="bola"></div></div>
@@ -555,7 +557,6 @@ Ivo Paz +1"></textarea>
         <h3 class="titulo-bloque" style="margin:8px 0 0;">Página de tu organización</h3>
         <div class="campo"><label for="ep-dir-pub">Dirección del lugar (pública)</label><input type="text" id="ep-dir-pub" maxlength="150" placeholder="Ej: Av. Colón 1234, Centro"></div>
         <div class="campo"><label for="ep-horarios">Horarios</label><input type="text" id="ep-horarios" maxlength="200" placeholder="Ej: Viernes y sábados de 00 a 06 hs"></div>
-        <div class="campo"><label for="ep-instagram">Instagram</label><input type="text" id="ep-instagram" maxlength="60" placeholder="@tuorganizacion" autocapitalize="none"></div>
         <div class="campo"><label for="ep-web">Página web</label><input type="text" id="ep-web" maxlength="150" placeholder="https://..." autocapitalize="none"></div>
         <h3 class="titulo-bloque" style="margin:8px 0 0;">Preguntas frecuentes (opcional)</h3>
         <div class="campo"><label for="ep-faq-p0">Pregunta 1</label><input type="text" id="ep-faq-p0" maxlength="120" placeholder="Ej: ¿Hay guardarropa?"><textarea id="ep-faq-r0" maxlength="400" placeholder="Respuesta" style="margin-top:8px; min-height:60px;"></textarea></div>
@@ -723,7 +724,7 @@ Ivo Paz +1"></textarea>
       <p>Esta política explica qué datos guarda Partazy, para qué y qué podés hacer con ellos, según la Ley 25.326 de Protección de Datos Personales. <b>Responsable:</b> PARTAZY, Córdoba, Argentina. <b>Contacto:</b> <span class="mail-contacto"></span>.</p>
       <h3>Qué datos guardamos</h3>
       <ul>
-        <li><b>Públicos para la comunidad:</b> nombre, apodo, @usuario, foto, ciudad, intereses y, si sos organización, la información de tu página.</li>
+        <li><b>Públicos para la comunidad:</b> nombre, apodo, @usuario, foto, ciudad, intereses, tu Instagram (si lo agregás) y, si sos organización, la información de tu página.</li>
         <li><b>Privados:</b> tu fecha de nacimiento (solo para verificar que tengas 18 años o más) y tu email.</li>
         <li><b>De uso:</b> los eventos que creás, tus asistencias, solicitudes, mensajes con tus amigos, notificaciones, denuncias y bloqueos.</li>
         <li><b>Visibles para tus amigos:</b> los eventos públicos a los que vas y los que compartís (para mostrar "Juan y 2 amigos más van" y las sugerencias). Lo podés desactivar en Editar perfil.</li>
@@ -1063,7 +1064,7 @@ Ivo Paz +1"></textarea>
 <div class="hoja-bg" id="hoja-cuenta" role="dialog" aria-modal="true" aria-labelledby="cuenta-titulo" onclick="if(event.target===this) cerrarPedirCuenta()"><div class="hoja hoja-cuenta">
   <button class="icon-btn cerrar" onclick="cerrarPedirCuenta()" aria-label="Cerrar">✕</button>
   <div class="cuenta-marca"><span class="lv lv-cuenta" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></span></div>
-  <h3 id="cuenta-titulo">Sumate a Partazy</h3>
+  <h3 id="cuenta-titulo">Sumate</h3>
   <p id="cuenta-texto">Creá tu cuenta gratis para anotarte a fiestas, recitales, charlas y todo lo que pasa cerca tuyo, armar tus propios eventos y ver qué hacen tus amigos.</p>
   <p class="aviso-fundador" data-pre-lanzamiento>✦ Si te sumás antes del lanzamiento oficial, quedás como <b>Fundador</b> para siempre.</p>
   <div class="ventajas"><span>🎟️ Anotate en un toque</span><span>🎧 Planes para vos</span><span>🎉 Armá tu evento</span><span>👥 Mirá qué hacen tus amigos</span><span>💬 Chateá</span></div>

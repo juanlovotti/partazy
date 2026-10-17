@@ -21,7 +21,7 @@ let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
   ok(w.document.body.classList.contains('modo-invitado') && /Noche Vortex/.test(txt($('pantalla-home'))), 'se ven los eventos');
   ok(!cuenta(), 'la ventana de registro todavía no salta');
   await sleep(1300);
-  ok(cuenta() && /Sumate a Partazy/.test(txt($('hoja-cuenta'))), 'a los segundos salta "Registrate o iniciá sesión"');
+  ok(cuenta() && /Sumate/.test(txt($('hoja-cuenta'))), 'a los segundos salta "Registrate o iniciá sesión"');
   w.cerrarPedirCuenta(); await sleep(50);
   ok(!cuenta() && act()==='pantalla-home', 'se puede cerrar y seguir mirando');
   // chips: libres

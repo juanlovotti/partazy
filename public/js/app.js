@@ -1368,7 +1368,7 @@ function salirDeInvitado(){
 // Ventana "Sumate / Necesitás una cuenta" (con el motivo).
 function pedirCuenta(motivo){
   const t = document.getElementById('cuenta-titulo'), x = document.getElementById('cuenta-texto');
-  t.textContent = motivo ? 'Necesitás una cuenta' : 'Sumate a Partazy';
+  t.textContent = motivo ? 'Necesitás una cuenta' : 'Sumate';
   x.textContent = motivo ? motivo + ' Es gratis y tarda un minuto.' : 'Creá tu cuenta gratis para anotarte a fiestas, recitales, charlas y todo lo que pasa cerca tuyo, armar tus propios eventos y ver qué hacen tus amigos.';
   const h = document.getElementById('hoja-cuenta');
   if(h.classList.contains('show')) return;
@@ -2677,6 +2677,23 @@ function verMiPagina(){
   renderUsuario(state.uid);
 }
 
+// Instagram de una cuenta: el chip del perfil y el íconito de las listas (solo con un @ válido).
+const SVG_IG = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>';
+function igChipHTML(u){
+  const ig = linkInstagram(u?.instagram);
+  return ig ? `<a class="ig-chip" href="${esc(ig.url)}" target="_blank" rel="noopener noreferrer">${SVG_IG}<span>${esc(ig.texto)}</span></a>` : '';
+}
+function igIconoHTML(u){
+  const ig = linkInstagram(u?.instagram);
+  return ig ? `<a class="ig-mini" href="${esc(ig.url)}" target="_blank" rel="noopener noreferrer" title="${esc(ig.texto)} en Instagram" aria-label="Instagram de ${esc(nombreVisible(u))}">${SVG_IG}</a>` : '';
+}
+// En las listas que solo traen el nombre (confirmados, solicitudes) buscamos el perfil y ponemos su Instagram.
+function pintarIGs(cont){
+  if(!cont) return;
+  cont.querySelectorAll('[data-ig]:empty').forEach(slot => {
+    getUsuario(slot.dataset.ig).then(u => { if(slot.isConnected) slot.innerHTML = igIconoHTML(u); }).catch(() => {});
+  });
+}
 // Bloques de la página de una organización (se insertan en el perfil público)
 function bloquesOrganizacion(u){
   const ig = linkInstagram(u.instagram), web = linkWeb(u.web);
@@ -2721,7 +2738,6 @@ function leerCamposOrg(){
     bio: v('ep-bio').slice(0, 300),
     direccionPublica: v('ep-dir-pub').slice(0, 150),
     horarios: v('ep-horarios').slice(0, 200),
-    instagram: v('ep-instagram').slice(0, 60),
     web: v('ep-web').slice(0, 150),
     faq
   };
@@ -3332,7 +3348,7 @@ function personaHTML(u, acciones, sub){
   return `<div class="persona">
       <div class="avatar" data-usuario="${esc(u.uid)}">${avatarHTML(u)}${puntoLinea(u)}</div>
       <div class="txt" data-usuario="${esc(u.uid)}" role="button" tabindex="0"><h5><i class="nom">${esc(nombreVisible(u))}</i>${insignia(u)}</h5><span>${esc(sub ?? (estadoLinea(u)?.on ? 'En línea' : (u.usuario ? '@' + u.usuario + (u.ciudad ? ' · ' + u.ciudad : '') : (u.ciudad ?? ''))))}</span></div>
-      <div class="acciones-p">${acciones || ''}</div>
+      <div class="acciones-p">${igIconoHTML(u)}${acciones || ''}</div>
     </div>`;
 }
 
@@ -3588,6 +3604,7 @@ async function renderUsuario(uid){
       <h2>${esc(nombreVisible(u))}${insignia(u)}</h2>
       ${u.usuario ? `<div class="handle">@${esc(u.usuario)}</div>` : ''}
       ${fundadorHTML(u)}
+      ${!esOrganizacion(u) && !bloqueado ? igChipHTML(u) : ''}
       ${esOrganizacion(u) ? `<div class="tags" style="justify-content:center; margin-top:8px;"><span class="tag">🎪 Organizador de eventos</span>${(u.califN || 0) ? `<span class="tag">${califOrgTxt(u)}</span>` : ''}${u.ocultarSeguidores && !esYo ? '' : `<span class="tag">${u.seguidores || 0} ${(u.seguidores || 0) === 1 ? 'seguidor' : 'seguidores'}</span>`}</div>` : ''}
       <div class="ubic">${esc([u.apodo ? u.nombre : '', u.ciudad].filter(Boolean).join(' · '))}</div>
       ${lineaEstadoHTML(u)}
@@ -5810,7 +5827,9 @@ async function cargarConfirmados(ev, tok){
       ${lista.map(a => `<div class="solicitud">
         <div class="avatar" data-usuario="${esc(a.uid)}">${esc(inicialesDe(a.nombre))}</div>
         <div class="nom" data-usuario="${esc(a.uid)}">${esc(a.nombre)}${a.uid === state.uid ? ' (vos)' : ''}<small>${a.estado === 'aprobado' ? 'Aprobado' : 'Confirmado'}${ev.conQR && a.ticket ? ' · ' + esc(a.ticket) : ''}</small></div>
+        <span class="ig-slot" data-ig="${esc(a.uid)}"></span>
       </div>`).join('')}` : emptyState('Todavía no hay confirmados.');
+    pintarIGs(cont);
   } catch(e){
     console.warn('confirmados', e);
     const cont = document.getElementById('lista-confirmados');
@@ -5828,9 +5847,11 @@ async function cargarSolicitudes(eventId, tok){
       <div class="solicitud">
         <div class="avatar" data-usuario="${esc(s.uid)}">${esc(inicialesDe(s.nombre))}</div>
         <div class="nom" data-usuario="${esc(s.uid)}">${esc(s.nombre)}<small>Pidió unirse ${esc(hace(s.ts))}</small></div>
+        <span class="ig-slot" data-ig="${esc(s.uid)}"></span>
         <button class="btn btn-secundario btn-mini" data-solicitud="${esc(s.uid)}" data-evento="${esc(eventId)}" data-accion="rechazar">Rechazar</button>
         <button class="btn btn-primario btn-mini" data-solicitud="${esc(s.uid)}" data-evento="${esc(eventId)}" data-accion="aprobar">Aprobar</button>
       </div>`).join('') : emptyState('No hay solicitudes pendientes.');
+    pintarIGs(cont);
   } catch(e){
     console.error(e);
     const cont = document.getElementById('lista-solicitudes');
@@ -7241,6 +7262,7 @@ async function renderPerfilVista(){
   document.getElementById('btn-mi-pagina').style.display = esOrganizacion(state.perfil) ? '' : 'none';
   document.getElementById('perfil-handle').textContent = state.perfil.usuario ? '@' + state.perfil.usuario : '';
   document.getElementById('perfil-fundador').innerHTML = fundadorHTML(state.perfil);
+  document.getElementById('perfil-ig').innerHTML = esOrganizacion(state.perfil) ? '' : igChipHTML(state.perfil);
   document.getElementById('perfil-aviso').innerHTML = state.perfil.usuario ? '' :
     `<button class="btn btn-primario" style="margin-bottom:16px;" onclick="editarPerfil()">Elegí tu @usuario para que te encuentren</button>`;
   const edad = edadUsuario();
@@ -7366,11 +7388,14 @@ async function guardarPerfil(){
   const ciudad = ciudadVal || state.perfil.ciudad;
   const usuario = normalizarUsuario(document.getElementById('ep-usuario').value);
   if(!(await comprobarUsuario(usuario, 'ep-usuario-estado'))){ toast('Elegí otro nombre de usuario'); return; }
+  const igTxt = document.getElementById('ep-instagram').value.trim();
+  if(igTxt && !linkInstagram(igTxt)){ toast('Revisá tu Instagram: poné solo tu @usuario'); document.getElementById('ep-instagram').focus(); return; }
   const tipoCuenta = tipoCuentaElegido('ep-tipo');
   const apodo = tipoCuenta === 'organizacion' ? '' : document.getElementById('ep-apodo').value.trim().slice(0, 40);
   const cambios = { nombre, usuario, apodo, tipoCuenta, ...camposBusqueda(nombre, usuario, apodo), ciudad,
     intereses: interesesElegidos('ep-intereses'), iniciales: inicialesDe(apodo || nombre),
     bio: document.getElementById('ep-bio').value.trim().slice(0, 300),
+    instagram: (linkInstagram(document.getElementById('ep-instagram').value)?.texto || '').slice(1, 61),
     ocultarEdad: !document.getElementById('ep-edad').classList.contains('on'),
     ocultarEnLinea: !document.getElementById('ep-enlinea').classList.contains('on'),
     ocultarPlanes: !document.getElementById('ep-planes').classList.contains('on'),
