@@ -119,6 +119,7 @@ Buscá el nombre para saltar. En orden:
 - Estadísticas (solo quien organiza): vistas únicas, anotados, conversión y compartidos.
 - `extras` (opcional, mapa ≤ 10 claves): respuestas de las preguntas según el tipo (`EXTRAS_TIPO` en app.js: deporte, menú, disertante, etc.). Se muestran en el detalle.
 - Crear evento va en 3 pasos (`irAPasoCrear`): lo básico → tipo → dónde y detalles. Al editar se ve todo junto (`.form-pasos.todo`).
+- Música: se pregunta una sola vez, con el estilo (`f-estilo`, con "Otro"). El texto libre `f-musica` queda solo para las previas (y para respetar lo que tenían eventos viejos). Peña arranca en Folklore.
 - `categoria`: estilo de música (`ESTILOS`). Si es `otro`, lo que escribió quien organiza va en `estiloOtro` (≤ 30) y se muestra en su lugar (`etiquetaEstilo(cat, ev)`).
 - `faq` (opcional, ≤ 5): preguntas frecuentes **de cada evento** (`[{p, r}]`: guardarropa, reingreso...). Las organizaciones ya no tienen preguntas propias en su página.
 - Torneos por equipos (deporte → modalidad "Torneo" → "¿Se juega por equipos?" Sí): el evento guarda `porEquipos: true` y, opcionales, `jugadoresPorEquipo` (1-50) y `maxEquipos` (2-64). Los equipos los arma la gente que se anota: `events/{id}/equipos/{equipoId}` = `{ nombre, creador, ts, miembros: { uid: { n, ts } } }` (el capitán es el primero que entró). Cada uno solo se agrega o se saca a sí mismo (regla `miembros.diff(...)`), y para sumarse tiene que estar anotado. El último que se va borra el equipo; quien organiza puede borrar cualquiera. "Ya no voy" también saca del equipo.
@@ -128,6 +129,7 @@ Buscá el nombre para saltar. En orden:
 ## Perfil
 
 - "Mis datos" (☰): lo que la persona cargó al registrarse, solo para ella. El mail ya no se muestra en el perfil.
+- Organizaciones: no ven "Para vos" ni la invitación a elegir música en Inicio.
 - Organizaciones: en vez de "intereses" eligen qué tipo de eventos organizan (`ORG_TIPOS`); la música aparece solo si alguno lleva música (fiestas, peñas, en vivo...). Todo se guarda junto en `intereses` y el perfil lo muestra como "Organiza" y "Música".
 - "Otro" en la música: lo que se escribe (hasta 3, separados por coma) se guarda como un gusto más.
 - `banner` (solo organizaciones, JPEG ≤ 120.000 caracteres): portada arriba de su página.

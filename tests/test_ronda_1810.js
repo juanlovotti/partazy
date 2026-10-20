@@ -64,6 +64,8 @@ const fecha = new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
   O.renderPerfilVista(); await sleep(30);
   const pi = txt($O('perfil-intereses'));
   ok(/^Organiza/.test(pi) && /Música/.test(pi) && !/Intereses/.test(pi), 'el perfil muestra "Organiza" y "Música" en vez de "Intereses": ' + pi.slice(0, 80));
+  O.ir('home'); O.renderHome(); await sleep(40);
+  ok(!O.document.querySelector('.cta-gustos') && $O('titulo-paravos').style.display === 'none' && $O('chip-paravos').style.display === 'none', 'una organización no ve "Para vos" ni "¿Qué música te gusta?"');
   ok(O.bannerHTML({ tipoCuenta: 'organizacion', banner: 'data:image/jpeg;base64,AAAA' }).includes('banner-org') && O.bannerHTML({ tipoCuenta: 'persona', banner: 'data:image/jpeg;base64,AAAA' }) === '', 'el banner solo se muestra en perfiles de organización');
 
   // ---------- Persona: géneros nuevos, "Otro", foto que sigue al nombre ----------
@@ -84,6 +86,14 @@ const fecha = new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
   A.mostrarVistaPrevia = async () => true;
   A.ir('crear'); A.resetFormularioCrear(); A.elegirTipo('fiesta'); A.elegirOcasion('fiesta'); llenar('Jazz en la terraza');
   ok(['rnb', 'folklore', 'tango', 'otro'].every(v => $A('f-estilo').querySelector(`option[value="${v}"]`)), 'estilo del evento: R&B, Folklore, Tango y "Otro"');
+  A.elegirOcasion('pena');
+  ok(!$A('fx-genero') && $A('campo-musica').style.display === 'none' && $A('campo-estilo').style.display !== 'none' && $A('f-estilo').value === 'folklore', 'peña: la música se pregunta una sola vez (estilo, que arranca en Folklore)');
+  A.elegirOcasion('musical');
+  ok(!$A('fx-genero') && $A('campo-musica').style.display === 'none', 'música en vivo: tampoco pregunta el género aparte');
+  A.elegirTipo('previa');
+  ok($A('campo-musica').style.display !== 'none' && $A('campo-estilo').style.display === 'none', 'previa: queda un solo campo de música (texto libre)');
+  A.elegirTipo('fiesta'); A.elegirOcasion('fiesta'); $A('f-estilo').value = '';
+  ok(!/profe/.test($A('f-pago-titular').placeholder), 'el ejemplo del titular de la cuenta no habla de un taller');
   $A('f-estilo').value = 'otro'; A.actualizarEstiloOtro();
   ok($A('f-estilo-otro').style.display !== 'none', '"Otro" pide escribir cuál');
   await A.publicarEvento(); await sleep(60);

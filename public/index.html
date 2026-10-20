@@ -356,7 +356,7 @@
         <div class="campo" id="campo-dresscode"><label for="f-dresscode">Dress code</label><input id="f-dresscode" maxlength="60" placeholder="Ej: Negro, libre, temática..." type="text"/></div>
         <div class="campo" id="campo-estilo">
 <label for="f-estilo">Estilo de música (opcional)</label>
-<select id="f-estilo" onchange="actualizarEstiloOtro()">
+<select id="f-estilo" onchange="actualizarEstiloOtro(); if(document.getElementById('campo-musica').style.display === 'none') document.getElementById('f-musica').value = '';">
 <option value="">Sin especificar</option>
 <option value="electronica">Electrónica</option>
 <option value="techno">Techno</option>
@@ -377,7 +377,7 @@
 <input id="f-estilo-otro" maxlength="30" placeholder="¿Cuál? Ej: jazz, salsa, metal" type="text" aria-label="Otro estilo de música" style="display:none; margin-top:10px;"/>
 <div class="ayuda">Si lo elegís, tu evento le aparece a quien busca ese estilo: llega a más gente.</div>
 </div>
-        <div class="campo" id="campo-musica"><label for="f-musica">Música en detalle (opcional)</label><input id="f-musica" maxlength="80" placeholder="Ej: DJs invitados, line-up..." type="text"/></div>
+        <div class="campo" id="campo-musica" style="display:none;"><label for="f-musica">Música (opcional)</label><input id="f-musica" maxlength="80" placeholder="Ej: cumbia, cachengue, lo que pinte" type="text"/></div>
         <div class="campo" id="campo-lineup"><label for="f-lineup" id="label-lineup">Line-up (opcional)</label><textarea id="f-lineup" maxlength="600" placeholder="Un artista por renglón. Podés poner la hora:
 23:30 DJ Invitado
 01:00 Banda principal"></textarea></div>
@@ -399,7 +399,7 @@
 </div>
 <div id="campo-titular" style="display:none;">
 <label for="f-pago-titular" style="margin-top:14px;">Titular de la cuenta</label>
-<input id="f-pago-titular" maxlength="60" placeholder="Ej: Claudia Guerrero (la profe del taller)" type="text"/>
+<input id="f-pago-titular" maxlength="60" placeholder="Nombre y apellido de quien recibe la plata" type="text"/>
 <div class="ayuda">Para cuando publicás el evento de otra persona: los asistentes ven a quién le pagan y que el evento lo publicaste vos.</div>
 </div>
 <label for="f-pago-info" style="margin-top:14px;">Cómo se paga</label>

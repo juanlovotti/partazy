@@ -4675,10 +4675,11 @@ function pasosTutorial(){
     { logo: true, t: nombre ? `¡Hola, ${esc(nombre)}!` : '¡Bienvenido/a!',
       p: 'Partazy es para encontrar <b>planes cerca tuyo</b>: fiestas, previas, recitales, charlas, talleres, ferias, partidos... Ver a dónde van tus amigos y anotarte. Son 5 pasos cortitos.' },
     { t: 'Encontrá un plan',
-      p: `En <b>Inicio</b> tenés lo de hoy y <b>Para vos</b>, armado con tus gustos. Filtrá por tipo (fiestas, charlas, deportes...) o buscá algo puntual.`,
+      p: esOrganizacion(state.perfil) ? `En <b>Inicio</b> tenés lo de hoy y lo que se viene cerca. Filtrá por tipo (fiestas, charlas, deportes...) o buscá algo puntual.`
+        : `En <b>Inicio</b> tenés lo de hoy y <b>Para vos</b>, armado con tus gustos. Filtrá por tipo (fiestas, charlas, deportes...) o buscá algo puntual.`,
       dibujo: `<div class="tm tm-buscar">
         <div class="tm-barra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="tm-tipeo"></span></div>
-        <div class="tm-chips"><i>Hoy</i><i class="on">Para vos 🎧</i><i>Charlas</i><i>Deportes</i></div></div>` },
+        <div class="tm-chips"><i>Hoy</i><i class="on">${esOrganizacion(state.perfil) ? 'Esta semana' : 'Para vos 🎧'}</i><i>Charlas</i><i>Deportes</i></div></div>` },
     { t: 'Anotate en un toque',
       p: `Abrí un evento y tocá <b>Confirmar asistencia</b> (o <b>Reservar</b> si es pago: ahí ves a quién pagarle y copiás el alias). Algunos tienen <b>fecha límite</b> para anotarse. Tu entrada queda en <b>Mis entradas</b> 🎟️, ${compu ? 'en el menú de la izquierda' : 'el ícono del ticket arriba'}.`,
       dibujo: `<div class="tm tm-evento">
@@ -5469,17 +5470,18 @@ function renderHome(){
   const sug = sugerencias(), ten = tendencia();
   const mostrar = (id, on) => { document.getElementById(id).style.display = on ? '' : 'none'; };
   // Para vos (según tus gustos de música) o, si no elegiste, una invitación a elegirlos
-  const pv = state.invitado ? [] : paraVos();
-  const sinGustos = !state.invitado && state.perfil && !misGustos().length;
+  const org = esOrganizacion(state.perfil);
+  const pv = state.invitado || org ? [] : paraVos();
+  const sinGustos = !state.invitado && !org && state.perfil && !misGustos().length;
   mostrar('titulo-paravos', pv.length || sinGustos); mostrar('lista-paravos', pv.length || sinGustos);
   document.getElementById('sub-paravos').textContent = pv.length ? `Porque te gusta ${gustosTexto()}` : '';
   document.querySelector('#titulo-paravos > span').style.display = pv.length ? '' : 'none';
   document.getElementById('lista-paravos').innerHTML = pv.length ? pv.map(x => tarjetaHTML(x.e, null, x.razon)).join('')
     : sinGustos ? `<div class="cta-gustos"><b>🎧 ¿Qué música te gusta?</b><span>Elegí tus estilos y te mostramos las fiestas que van con vos.</span><button class="btn btn-primario" onclick="elegirGustos()">Elegir mi música</button></div>` : '';
   const chipPV = document.getElementById('chip-paravos');
-  if(chipPV) chipPV.style.display = misGustos().length && !state.invitado ? '' : 'none';
+  if(chipPV) chipPV.style.display = misGustos().length && !state.invitado && !org ? '' : 'none';
   // Esta semana: primero lo que va con tu música (sin perder el orden por fecha entre iguales)
-  if(misGustos().length) deSemana.sort((a, b) => (afinidad(b).puntos > 0) - (afinidad(a).puntos > 0) || a.fechaTs - b.fechaTs);
+  if(misGustos().length && !org) deSemana.sort((a, b) => (afinidad(b).puntos > 0) - (afinidad(a).puntos > 0) || a.fechaTs - b.fechaTs);
   document.getElementById('lista-semana').innerHTML = deSemana.map(e => tarjetaHTML(e, null, afinidad(e).puntos === 2 ? `🎧 ${afinidad(e).motivo}` : '')).join('');
   // En "Tal vez te interese" no repetimos lo que ya está en "Para vos"
   const enPV = new Set(pv.map(x => x.e.id));
@@ -6450,10 +6452,8 @@ const EXTRAS_TIPO = {
     { k: 'pagos', l: 'Medios de pago', t: 'multi', ops: ['Efectivo', 'Transferencia', 'Tarjeta', 'Mercado Pago'] },
     { k: 'actividades', l: 'Actividades extra', ph: 'Ej: música en vivo, talleres para chicos' }],
   musical: [
-    { k: 'formato', l: 'Formato', t: 'sel', ops: ['Banda en vivo', 'Acústico', 'DJ set', 'Festival', 'Solista'] },
-    { k: 'genero', l: '¿Qué género?', ph: 'Ej: rock nacional, jazz, cumbia' }],
+    { k: 'formato', l: 'Formato', t: 'sel', ops: ['Banda en vivo', 'Acústico', 'DJ set', 'Festival', 'Solista'] }],
   pena: [
-    { k: 'genero', l: '¿Qué música?', ph: 'Ej: folklore, chacarera, zamba' },
     { k: 'comida', l: '¿Hay comida?', ph: 'Ej: empanadas y locro' }],
   egresados: [
     { k: 'institucion', l: '¿De qué colegio o facultad?', ph: 'Ej: Colegio Nacional de Monserrat' },
@@ -6530,6 +6530,8 @@ function leerExtras(){
 function extrasHTML(ev){
   const campos = EXTRAS_TIPO[ev.ocasion] || [], x = ev.extras || {};
   const filas = campos.filter(c => x[c.k]).map(c => `<div class="extra-fila"><small>${esc(c.l.replace(/^¿/, '').replace(/\?$/, ''))}</small><b>${esc(x[c.k])}</b></div>`);
+  // Eventos viejos de peña / música en vivo: el género se preguntaba aparte
+  if(x.genero && !campos.some(c => c.k === 'genero') && x.genero !== ev.musica) filas.unshift(`<div class="extra-fila"><small>Música</small><b>${esc(x.genero)}</b></div>`);
   const cupoEq = [jugadoresMax(ev) ? `${jugadoresMax(ev)} por equipo` : '', equiposMax(ev) ? `Hasta ${equiposMax(ev)} equipos` : ''].filter(Boolean).join(' · ');
   if(ev.porEquipos && cupoEq) filas.push(`<div class="extra-fila"><small>Equipos</small><b>${esc(cupoEq)}</b></div>`);
   return filas.length ? `<div class="extras-lista">${filas.join('')}</div>` : '';
@@ -6712,13 +6714,17 @@ function elegirOcasion(k){
   const vis = (id, on) => { const el = document.getElementById(id); if(el) el.style.display = on ? '' : 'none'; };
   const sinMusica = ['charla', 'taller'].includes(k);
   vis('campo-estilo', !previa && !sinMusica);
-  vis('campo-musica', !sinMusica);
+  // Una sola pregunta de música: el estilo (con "Otro" para escribirlo). En una previa, texto libre.
+  vis('campo-musica', previa);
+  const fe = document.getElementById('f-estilo');
+  if(k === 'pena' && fe && !fe.value && !state.editandoId){ fe.value = 'folklore'; actualizarEstiloOtro(); }
   vis('fila-vip', !previa && OCASIONES_FIESTA.has(k || ''));
   vis('campo-dresscode', !['deportivo', 'feria', 'charla', 'taller'].includes(k));
   const ll = document.getElementById('label-lineup'), tl = document.getElementById('f-lineup');
   const crono = { charla: 'Cronograma', taller: 'Cronograma', deportivo: 'Cronograma', feria: 'Horarios y actividades', cultural: 'Programa', gastronomico: 'Pasos o momentos' }[k];
   if(ll) ll.textContent = (crono || 'Line-up') + ' (opcional)';
-  if(tl) tl.placeholder = crono ? 'Un renglón por momento. Podés poner la hora:\n18:00 Apertura\n18:30 Primera parte' : 'Un artista por renglón. Podés poner la hora:\n23:30 DJ Invitado\n01:00 Banda principal';
+  const ejLineup = { pena: '22:00 Guitarreros invitados\n23:30 Ballet folklórico', musical: '21:00 Banda soporte\n22:30 Banda principal' }[k] || '23:30 DJ Invitado\n01:00 Banda principal';
+  if(tl) tl.placeholder = crono ? 'Un renglón por momento. Podés poner la hora:\n18:00 Apertura\n18:30 Primera parte' : 'Un artista por renglón. Podés poner la hora:\n' + ejLineup;
   const lm = document.querySelector('label[for="f-musica"]'); if(lm) lm.textContent = 'Música (opcional)';
   renderCamposTipo(k);
   pintarSugerenciasFaq();
@@ -6811,7 +6817,9 @@ async function publicarEventoUnaVez(){
   const estilo = tipo === 'previa' || sinMusica || !ESTILOS[val('f-estilo')] ? '' : val('f-estilo');
   const estiloOtro = estilo === 'otro' ? val('f-estilo-otro').replace(/\s+/g, ' ').slice(0, 30) : '';
   if(estilo === 'otro' && !estiloOtro){ toast('Escribí qué estilo de música va a sonar'); irAPasoCrear(3); document.getElementById('f-estilo-otro').focus(); return; }
-  const musica = sinMusica ? '' : (val('f-musica') || (estilo === 'otro' ? estiloOtro : ESTILOS[estilo]) || '').slice(0, 80);
+  // El texto libre de música solo vale en una previa (o si un evento viejo ya lo tenía y no cambió el estilo)
+  const musicaLibre = document.getElementById('campo-musica').style.display !== 'none' || evEdit ? val('f-musica') : '';
+  const musica = sinMusica ? '' : (musicaLibre || (estilo === 'otro' ? estiloOtro : ESTILOS[estilo]) || '').slice(0, 80);
   // Preguntas frecuentes del evento y equipos (torneos)
   const faq = leerFaq();
   const eqCfg = leerConfigEquipos();

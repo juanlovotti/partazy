@@ -1622,3 +1622,5 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 .equipo-tit span{font-size:12px; color:var(--gris);}
 .equipo-vacio{font-size:12.5px; color:var(--gris); padding:6px 0;}
 .hoja .cuerpo.hoja-equipos{margin-top:0; padding-top:24px;}
+#btn-faq-mas{background:rgba(76,185,68,.12); color:#9FE394; border:1px solid rgba(76,185,68,.42);}
+#btn-faq-mas:hover{background:rgba(76,185,68,.2); border-color:rgba(76,185,68,.6);}
