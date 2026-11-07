@@ -38,6 +38,15 @@
               "value": "public, max-age=86400"
             }
           ]
+        },
+        {
+          "source": "**/*.@(mp4|webm)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=86400"
+            }
+          ]
         }
       ],
       "cleanUrls": true
