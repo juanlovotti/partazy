@@ -17,7 +17,7 @@
 <!-- Una sola dirección: si entran por partazy.web.app (o las otras de Firebase), los mandamos a partazy.com -->
 <script>(function(){var h=location.hostname;if(h==='partazy.web.app'||h==='partazy.firebaseapp.com'||h==='www.partazy.com'){location.replace('https://partazy.com'+location.pathname+location.search+location.hash);}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#141214">
+<meta name="theme-color" content="#02070A">
 <!-- La app es oscura: así el "modo oscuro" de Samsung/Chrome no le cambia los colores (logo, naranja) -->
 <meta name="color-scheme" content="dark only">
 <meta name="darkreader-lock">
@@ -28,15 +28,15 @@
 <meta property="og:title" content="PARTAZY · Todo lo que pasa cerca tuyo">
 <meta property="og:description" content="Fiestas, recitales, charlas y más. Mirá a dónde van tus amigos y armá tu plan. Sumate gratis.">
 <meta property="og:url" content="https://partazy.com/">
-<meta property="og:image" content="https://partazy.com/og-partazy.png?v=3">
+<meta property="og:image" content="https://partazy.com/og-partazy.png?v=4">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta property="og:locale" content="es_AR">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://partazy.com/og-partazy.png?v=3">
-<link rel="icon" href="/favicon.svg?v=3" type="image/svg+xml">
-<link rel="icon" href="/favicon-32.png?v=3" sizes="32x32" type="image/png">
-<link rel="apple-touch-icon" href="/icono-180.png?v=3">
+<meta name="twitter:image" content="https://partazy.com/og-partazy.png?v=4">
+<link rel="icon" href="/favicon.svg?v=4" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png?v=4" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/icono-180.png?v=4">
 <link rel="manifest" href="/manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -56,7 +56,7 @@
   <defs>
     <clipPath id="ptz-p"><path d="M20 13a2 2 0 0 1 2-2h12a14 14 0 0 1 0 28h-4v12a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2z M34 19.5a5.5 5.5 0 1 1 0 11h-4v-11z" clip-rule="evenodd"/></clipPath>
     <clipPath id="ptz-c"><circle cx="10" cy="10" r="10"/></clipPath>
-    <linearGradient id="ptz-base" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8B411"/><stop offset=".55" stop-color="#F26A1B"/><stop offset="1" stop-color="#4CB944"/></linearGradient>
+    <linearGradient id="ptz-base" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFA98C"/><stop offset=".55" stop-color="#FC734D"/><stop offset="1" stop-color="#0297DE"/></linearGradient>
     <filter id="ptz-blur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4.5"/></filter>
     <filter id="ptz-blur2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter>
   </defs>
@@ -66,7 +66,7 @@
 <!-- Loader inicial -->
 <div class="loader" id="loader">
   <!-- Logo animado: el vinilo de la P gira mientras carga y las letras aparecen de a una -->
-  <div class="lv lv-carga" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></div>
+  <div class="lv lv-carga" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#0297DE"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#FFA98C"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#FC734D"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#0297DE"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#FC734D" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#6CCBF5"/><circle cx="12" cy="4" r="4" fill="#FFA98C" opacity=".6"/></g></g></svg></div>
   <div style="font-family:var(--font-mono); font-size:11px; color:var(--gris); letter-spacing:2px;" id="loader-txt">CONECTANDO...</div>
 </div>
 
@@ -77,7 +77,7 @@
     <div class="auth-wrap">
       <button class="link-btn btn-seguir-mirando" onclick="seguirMirando()" style="align-self:flex-start; margin-bottom:8px; color:var(--gris); font-weight:600;">‹ Seguir mirando sin cuenta</button>
       <div class="auth-hero">
-        <h1 class="logo-ingreso" aria-label="PARTAZY"><span class="lv lv-login" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></span></h1>
+        <h1 class="logo-ingreso" aria-label="PARTAZY"><span class="lv lv-login" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#0297DE"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#FFA98C"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#FC734D"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#0297DE"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#FC734D" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#6CCBF5"/><circle cx="12" cy="4" r="4" fill="#FFA98C" opacity=".6"/></g></g></svg></span></h1>
         <div class="eq" aria-hidden="true"><i style="--i:0"></i><i style="--i:1"></i><i style="--i:2"></i><i style="--i:3"></i><i style="--i:4"></i><i style="--i:5"></i><i style="--i:6"></i><i style="--i:7"></i><i style="--i:8"></i></div>
         <p class="tagline">Fiestas, recitales, charlas y todo lo que pasa cerca tuyo.<br>Encontrá tu plan de hoy.</p>
       </div>
@@ -154,7 +154,7 @@
   <!-- ============ HOME ============ -->
   <div class="screen" id="pantalla-home">
     <div class="topbar">
-      <div class="logo"><span class="lv lv-inicio" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></span></div>
+      <div class="logo"><span class="lv lv-inicio" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#0297DE"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#FFA98C"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#FC734D"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#0297DE"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#FC734D" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#6CCBF5"/><circle cx="12" cy="4" r="4" fill="#FFA98C" opacity=".6"/></g></g></svg></span></div>
       <div class="buscador-mini" role="button" tabindex="0" onclick="irABuscar()" aria-label="Buscar"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span>Buscar eventos, fiestas, charlas...</span></div>
       <div class="topbar-acciones">
         <div class="icon-btn btn-buscar-mini" role="button" tabindex="0" onclick="irABuscar()" aria-label="Buscar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></div>
@@ -977,7 +977,7 @@ Ivo Paz +1"></textarea>
 
   <!-- ============ NAVBAR ============ -->
   <nav class="navbar" aria-label="Navegación principal">
-    <div class="nav-marca solo-escritorio" role="button" tabindex="0" onclick="ir('home')" aria-label="PARTAZY · Inicio"><span class="lv lv-nav"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></span></div>
+    <div class="nav-marca solo-escritorio" role="button" tabindex="0" onclick="ir('home')" aria-label="PARTAZY · Inicio"><span class="lv lv-nav"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#0297DE"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#FFA98C"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#FC734D"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#0297DE"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#FC734D" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#6CCBF5"/><circle cx="12" cy="4" r="4" fill="#FFA98C" opacity=".6"/></g></g></svg></span></div>
     <button class="nav-toggle solo-escritorio" id="nav-toggle" onclick="alternarNav()" aria-label="Achicar el menú" title="Achicar el menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
     <button class="nav-item activo" data-nav="home" onclick="ir('home')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
@@ -1074,7 +1074,7 @@ Ivo Paz +1"></textarea>
 <!-- "Sumate / Necesitás una cuenta": modo invitado -->
 <div class="hoja-bg" id="hoja-cuenta" role="dialog" aria-modal="true" aria-labelledby="cuenta-titulo" onclick="if(event.target===this) cerrarPedirCuenta()"><div class="hoja hoja-cuenta">
   <button class="icon-btn cerrar" onclick="cerrarPedirCuenta()" aria-label="Cerrar">✕</button>
-  <div class="cuenta-marca"><span class="lv lv-cuenta" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#8BD44A"/><circle cx="12" cy="4" r="4" fill="#E8B411" opacity=".6"/></g></g></svg></span></div>
+  <div class="cuenta-marca"><span class="lv lv-cuenta" role="img" aria-label="PARTAZY"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#0297DE"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#FFA98C"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#FC734D"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#0297DE"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#FC734D" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#6CCBF5"/><circle cx="12" cy="4" r="4" fill="#FFA98C" opacity=".6"/></g></g></svg></span></div>
   <h3 id="cuenta-titulo">Sumate</h3>
   <p id="cuenta-texto">Creá tu cuenta gratis para anotarte a fiestas, recitales, charlas y todo lo que pasa cerca tuyo, armar tus propios eventos y ver qué hacen tus amigos.</p>
   <p class="aviso-fundador" data-pre-lanzamiento>✦ Si te sumás antes del lanzamiento oficial, quedás como <b>Fundador</b> para siempre.</p>

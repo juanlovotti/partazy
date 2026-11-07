@@ -22,9 +22,9 @@ const PF = 'M20 13a2 2 0 0 1 2-2h12a14 14 0 0 1 0 28h-4v12a2 2 0 0 1-2 2h-6a2 2 
 const OJO = 'M34 19.5a5.5 5.5 0 1 1 0 11h-4v-11z';
 const LOGO = `<span class="lv" role="img" aria-label="PARTAZY">
   <svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><defs><clipPath id="pp"><path d="${PF} ${OJO}" clip-rule="evenodd"/></clipPath>
-  <linearGradient id="pg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E8B411"/><stop offset=".55" stop-color="#F26A1B"/><stop offset="1" stop-color="#4CB944"/></linearGradient>
+  <linearGradient id="pg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFA98C"/><stop offset=".55" stop-color="#FC734D"/><stop offset="1" stop-color="#0297DE"/></linearGradient>
   <filter id="pb" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4.5"/></filter></defs>
-  <g clip-path="url(#pp)"><rect width="64" height="64" fill="url(#pg)"/><g filter="url(#pb)"><circle cx="24" cy="14" r="11" fill="#4CB944"/><circle cx="24" cy="48" r="11" fill="#E8B411"/><circle cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg><span class="lv-txt">artazy</span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><defs><clipPath id="pc"><circle cx="10" cy="10" r="10"/></clipPath><filter id="pb2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter></defs><g clip-path="url(#pc)"><rect width="20" height="20" fill="#4CB944"/><g filter="url(#pb2)"><circle cx="15" cy="15" r="6" fill="#F26A1B" opacity=".75"/><circle cx="4" cy="5" r="6" fill="#8BD44A"/></g></g></svg></span>`;
+  <g clip-path="url(#pp)"><rect width="64" height="64" fill="url(#pg)"/><g filter="url(#pb)"><circle cx="24" cy="14" r="11" fill="#0297DE"/><circle cx="24" cy="48" r="11" fill="#FFA98C"/><circle cx="44" cy="26" r="9" fill="#FC734D"/></g></g></svg><span class="lv-txt">artazy</span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><defs><clipPath id="pc"><circle cx="10" cy="10" r="10"/></clipPath><filter id="pb2" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3"/></filter></defs><g clip-path="url(#pc)"><rect width="20" height="20" fill="#0297DE"/><g filter="url(#pb2)"><circle cx="15" cy="15" r="6" fill="#FC734D" opacity=".75"/><circle cx="4" cy="5" r="6" fill="#6CCBF5"/></g></g></svg></span>`;
 
 // ---------- Esqueleto común ----------
 function pagina({ ruta, titulo, descripcion, cuerpo, scripts = '', clase = '' }){
@@ -36,7 +36,7 @@ function pagina({ ruta, titulo, descripcion, cuerpo, scripts = '', clase = '' })
 <script>(function(){var h=location.hostname;if(h==='partazy.web.app'||h==='partazy.firebaseapp.com'||h==='www.partazy.com'){location.replace('https://partazy.com'+location.pathname+location.search+location.hash);}})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark only">
-<meta name="theme-color" content="#141214">
+<meta name="theme-color" content="#02070A">
 <title>${esc(titulo)} · PARTAZY</title>
 <meta name="description" content="${esc(descripcion)}">
 <link rel="canonical" href="https://partazy.com/${ruta}">
@@ -45,9 +45,9 @@ function pagina({ ruta, titulo, descripcion, cuerpo, scripts = '', clase = '' })
 <meta property="og:title" content="${esc(titulo)} · PARTAZY">
 <meta property="og:description" content="${esc(descripcion)}">
 <meta property="og:url" content="https://partazy.com/${ruta}">
-<meta property="og:image" content="https://partazy.com/og-partazy.png?v=3">
-<link rel="icon" href="/favicon.svg?v=3" type="image/svg+xml">
-<link rel="apple-touch-icon" href="/icono-180.png?v=3">
+<meta property="og:image" content="https://partazy.com/og-partazy.png?v=4">
+<link rel="icon" href="/favicon.svg?v=4" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/icono-180.png?v=4">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Unbounded:wght@800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -218,8 +218,8 @@ ${faq}
   // Página de prelanzamiento: "Próximamente", sin ninguna fecha (como certifix.com.ar).
   const letras = [...'artazy'].map((c, i) => `<i style="--i:${i}">${c}</i>`).join('');
   const logoAnimado = LOGO.replace('class="lv"', 'class="lv lv-grande lv-anim"').replace('<span class="lv-txt">artazy</span>', `<span class="lv-txt">${letras}</span>`)
-    .replace('<circle cx="24" cy="14" r="11" fill="#4CB944"/><circle cx="24" cy="48" r="11" fill="#E8B411"/><circle cx="44" cy="26" r="9" fill="#F26A1B"/>',
-             '<circle class="b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="b3" cx="44" cy="26" r="9" fill="#F26A1B"/>')
+    .replace('<circle cx="24" cy="14" r="11" fill="#0297DE"/><circle cx="24" cy="48" r="11" fill="#FFA98C"/><circle cx="44" cy="26" r="9" fill="#FC734D"/>',
+             '<circle class="b1" cx="24" cy="14" r="11" fill="#0297DE"/><circle class="b2" cx="24" cy="48" r="11" fill="#FFA98C"/><circle class="b3" cx="44" cy="26" r="9" fill="#FC734D"/>')
     .replace(/id="(p[pgbc]2?)"/g, 'id="g$1"').replace(/url\(#(p[pgbc]2?)\)/g, 'url(#g$1)');
   P['lanzamiento.html'] = pagina({
     ruta: 'lanzamiento', titulo: 'Próximamente', clase: 'p-lanz',

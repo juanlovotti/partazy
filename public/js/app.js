@@ -44,6 +44,7 @@ if(FIREBASE_OK){
   // Usa Google Fraud Defense (ex reCAPTCHA Enterprise). Vacía = desactivado. Ver docs/ARQUITECTURA.md.
   try{ if(APP_CHECK_CLAVE && firebase.appCheck) firebase.appCheck().activate(new firebase.appCheck.ReCaptchaEnterpriseProvider(APP_CHECK_CLAVE), true); } catch(e){ console.warn('App Check', e); }
   auth = firebase.auth();
+  auth.languageCode = 'es';   // mails de verificación y de nueva contraseña en castellano
   // La sesión queda guardada en el dispositivo: se inicia sesión una sola vez (hasta "Cerrar sesión")
   try{ if(auth.setPersistence && firebase.auth.Auth?.Persistence) auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(() => {}); } catch(e){}
   db   = firebase.firestore();
@@ -988,7 +989,7 @@ async function ubicarLugar(lugar){
 
 // Imágenes
 const FALLBACK_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect fill="#272325" width="400" height="300"/><text x="200" y="150" fill="#F26A1B" font-family="sans-serif" font-size="28" font-weight="700" text-anchor="middle">PARTAZY</text></svg>`
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect fill="#121B22" width="400" height="300"/><text x="200" y="150" fill="#FC734D" font-family="sans-serif" font-size="28" font-weight="700" text-anchor="middle">PARTAZY</text></svg>`
 );
 // Devuelve la imagen solo si es una URL/dato de imagen válido (si no, una genérica).
 function imgSafe(url){
@@ -1061,12 +1062,30 @@ const ERRORES_AUTH = {
   'auth/account-exists-with-different-credential': 'Ese email ya está registrado con otro método. Ingresá con email y contraseña.',
   'auth/network-request-failed': 'Sin conexión. Revisá tu internet.',
   'auth/operation-not-allowed': 'Este método de ingreso todavía no está activado en Firebase.',
-  'auth/unauthorized-domain': 'Este dominio no está autorizado en Firebase Authentication.'
+  'auth/unauthorized-domain': 'Este dominio no está autorizado en Firebase Authentication.',
+  'auth/missing-email': 'Escribí tu email.',
+  'auth/admin-restricted-operation': 'Por ahora no se pueden crear cuentas con email. Entrá con Google o escribinos a partazycontacto@gmail.com.',
+  'auth/quota-exceeded': 'Se mandaron demasiados mails en poco tiempo. Probá de nuevo en un rato.',
+  'auth/internal-error': 'Hubo un problema con el servidor de ingreso. Probá de nuevo en unos minutos.',
+  'auth/web-storage-unsupported': 'Tu navegador está bloqueando el ingreso (modo privado o cookies bloqueadas). Probá en otra ventana.'
 };
 // Traduce un error de Firebase Auth a un mensaje en castellano.
-function mensajeAuth(e){ return ERRORES_AUTH[e?.code] ?? 'No pudimos completar el ingreso. Probá de nuevo.'; }
+function mensajeAuth(e){
+  if(e?.code && ERRORES_AUTH[e.code] !== undefined) return ERRORES_AUTH[e.code];
+  console.warn('auth', e);
+  // El código ayuda a saber qué pasó si alguien nos manda una captura
+  return `No pudimos completar el ingreso${e?.code ? ' (' + String(e.code).replace('auth/', '') + ')' : ''}. Probá de nuevo.`;
+}
+const EMAIL_OK = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+// Después de verificar el mail o cambiar la contraseña, el botón "Continuar" vuelve a partazy.com
+const LINK_VUELTA = { url: 'https://partazy.com/' };
+// Manda un mail de Firebase con el link de vuelta; si el dominio no está autorizado, lo manda sin link de vuelta.
+async function conVuelta(fn){
+  try{ return await fn(LINK_VUELTA); }
+  catch(e){ if(/continue-uri|unauthorized-domain/.test(e?.code || '')) return fn(undefined); throw e; }
+}
 // Muestra un error en la pantalla de ingreso.
-function errorAuth(msg){ document.getElementById('auth-error').textContent = msg || ''; }
+function errorAuth(msg){ const el = document.getElementById('auth-error'); el.textContent = msg || ''; el.classList.remove('ok'); }
 
 // Cambia el formulario de email entre "Ingresar" y "Crear cuenta".
 function setModoAuth(modo){
@@ -1126,15 +1145,16 @@ async function ingresarConGoogle(){
 
 // Login o registro con email y contraseña.
 async function ingresarConEmail(){
-  const email = document.getElementById('auth-email').value.trim();
+  const email = document.getElementById('auth-email').value.trim().toLowerCase();
   const pass = document.getElementById('auth-pass').value;
   if(!email){ errorAuth('Escribí tu email.'); return; }
+  if(!EMAIL_OK.test(email)){ errorAuth('Revisá el email: parece que le falta algo (ej: nombre@gmail.com).'); return; }
   if(pass.length < 6){ errorAuth('La contraseña tiene que tener al menos 6 caracteres.'); return; }
   errorAuth('');
   try{
     if(modoAuth === 'crear'){
       const cred = await auth.createUserWithEmailAndPassword(email, pass);
-      cred.user.sendEmailVerification().catch(() => {});
+      conVuelta(o => cred.user.sendEmailVerification(o)).catch(e => console.warn('verificación', e));
     } else {
       await auth.signInWithEmailAndPassword(email, pass);
     }
@@ -1143,13 +1163,19 @@ async function ingresarConEmail(){
 
 // Manda el mail para restablecer la contraseña.
 async function olvideContrasena(){
-  const email = document.getElementById('auth-email').value.trim();
-  if(!email){ errorAuth('Escribí tu email arriba y volvé a tocar "Olvidé mi contraseña".'); return; }
+  const email = document.getElementById('auth-email').value.trim().toLowerCase();
+  if(!email){ errorAuth('Escribí tu email arriba y volvé a tocar "Olvidé mi contraseña".'); document.getElementById('auth-email').focus(); return; }
+  if(!EMAIL_OK.test(email)){ errorAuth('Revisá el email: parece que le falta algo (ej: nombre@gmail.com).'); return; }
+  const btn = document.getElementById('btn-auth-olvide');
+  if(btn.disabled) return;
+  btn.disabled = true;
   try{
-    await auth.sendPasswordResetEmail(email);
-    errorAuth('');
-    toast('Si hay una cuenta con ese email, te llegó un link para cambiar la contraseña');
+    await conVuelta(o => auth.sendPasswordResetEmail(email, o));
+    const el = document.getElementById('auth-error');
+    el.textContent = `Listo: si ${email} tiene cuenta, te mandamos un link para elegir una contraseña nueva. Revisá también Spam o Promociones.`;
+    el.classList.add('ok');
   } catch(e){ errorAuth(mensajeAuth(e)); }
+  finally { btn.disabled = false; }
 }
 
 // Edad exacta a partir de 'AAAA-MM-DD'
@@ -4394,18 +4420,18 @@ const ESTILO_PORTADA = {
   techno:      { c1:'#120A24', c2:'#2B0F4C', ac:'#8B5CF6', pat:'grid',     mot:'onda',   w:'TECHNO' },
   electronica: { c1:'#071A2B', c2:'#0F3B5C', ac:'#22D3EE', pat:'circulos', mot:'onda',   w:'ELECTRO' },
   house:       { c1:'#2A0B2E', c2:'#C2410C', ac:'#F59E0B', pat:'sol',      mot:'sol',    w:'HOUSE' },
-  cachengue:   { c1:'#2B0A05', c2:'#C2410C', ac:'#F26A1B', pat:'rayas',    mot:'llama',  w:'CACHENGUE' },
+  cachengue:   { c1:'#2B0A05', c2:'#C2410C', ac:'#FC734D', pat:'rayas',    mot:'llama',  w:'CACHENGUE' },
   cuarteto:    { c1:'#2A0A0A', c2:'#B91C1C', ac:'#FACC15', pat:'zigzag',   mot:'notas',  w:'CUARTETO' },
   reggaeton:   { c1:'#1A0A1E', c2:'#9D174D', ac:'#F472B6', pat:'rayas',    mot:'llama',  w:'REGGAETÓN' },
-  cumbia:      { c1:'#052421', c2:'#0F766E', ac:'#4CB944', pat:'ondas',    mot:'notas',  w:'CUMBIA' },
+  cumbia:      { c1:'#052421', c2:'#0F766E', ac:'#0297DE', pat:'ondas',    mot:'notas',  w:'CUMBIA' },
   trap:        { c1:'#0B0B0F', c2:'#27272A', ac:'#A3E635', pat:'grid',     mot:'rayo',   w:'TRAP' },
   rnb:         { c1:'#140A1F', c2:'#5B21B6', ac:'#C4B5FD', pat:'ondas',    mot:'microfono', w:'R&amp;B' },
   folklore:    { c1:'#2A1406', c2:'#92400E', ac:'#FCD34D', pat:'guarda',   mot:'guitarra', w:'FOLKLORE' },
   tango:       { c1:'#160406', c2:'#7F1D1D', ac:'#FCA5A5', pat:'circulos', mot:'notas',  w:'TANGO' },
-  otro:        { c1:'#141214', c2:'#3B1C0A', ac:'#F26A1B', pat:'ondas',    mot:'notas',  w:'MÚSICA' },
+  otro:        { c1:'#02070A', c2:'#3A1A12', ac:'#FC734D', pat:'ondas',    mot:'notas',  w:'MÚSICA' },
   rock:        { c1:'#0A0A0A', c2:'#450A0A', ac:'#EF4444', pat:'rayas',    mot:'rayo',   w:'ROCK' },
   pop:         { c1:'#2E1065', c2:'#DB2777', ac:'#FDE68A', pat:'puntos',   mot:'brillo', w:'POP' },
-  variado:     { c1:'#141214', c2:'#3B1C0A', ac:'#F26A1B', pat:'rayas',    mot:'copas',  w:'PARTY' },
+  variado:     { c1:'#02070A', c2:'#3A1A12', ac:'#FC734D', pat:'rayas',    mot:'copas',  w:'PARTY' },
   universitaria:{ c1:'#0B1E3F', c2:'#1D4ED8', ac:'#FACC15', pat:'puntos',  mot:'birrete', w:'UNI' }
 };
 const OCASION_PORTADA = {
@@ -4447,7 +4473,7 @@ function patronSVG(tipo, ac, seed){
     return `<g fill="none" stroke="${ac}" stroke-opacity=".22" stroke-width="3">${g}</g>`; }
   if(tipo === 'sol'){ for(let k = 0; k < 9; k++) g += `<rect x="0" y="${300 + k * 22}" width="800" height="${4 + k}" />`;
     return `<circle cx="600" cy="260" r="170" fill="${ac}" fill-opacity=".28"/><g fill="#000" fill-opacity=".35">${g}</g>`; }
-  if(tipo === 'confeti'){ const cs = [ac, '#F26A1B', '#4CB944', '#F4EFEC', '#F472B6'];
+  if(tipo === 'confeti'){ const cs = [ac, '#FC734D', '#0297DE', '#EDF1F4', '#F472B6'];
     for(let k = 0; k < 70; k++) g += `<rect x="${r(800)}" y="${r(500)}" width="${6 + r(10)}" height="${3 + r(4)}" fill="${cs[k % cs.length]}" transform="rotate(${r(180)} ${r(800)} ${r(500)})"/>`;
     return `<g fill-opacity=".55" opacity=".55">${g}</g>`; }
   return '';
@@ -4502,7 +4528,7 @@ function portadaEvento(ev){
     <radialGradient id="l" cx=".78" cy=".25" r=".7"><stop offset="0" stop-color="${est.ac}" stop-opacity=".45"/><stop offset="1" stop-color="${est.ac}" stop-opacity="0"/></radialGradient></defs>
     <rect width="800" height="500" fill="url(#g)"/><rect width="800" height="500" fill="url(#l)"/>
     ${patronSVG(est.pat, est.ac, seed)}
-    <text x="-30" y="340" transform="rotate(${giro} 400 250)" font-family="Arial Black, Impact, Helvetica, sans-serif" font-weight="900" font-size="${palabra.length > 7 ? 150 : 200}" fill="none" stroke="#F4EFEC" stroke-opacity=".2" stroke-width="2.5" letter-spacing="4">${palabra}</text>
+    <text x="-30" y="340" transform="rotate(${giro} 400 250)" font-family="Arial Black, Impact, Helvetica, sans-serif" font-weight="900" font-size="${palabra.length > 7 ? 150 : 200}" fill="none" stroke="#EDF1F4" stroke-opacity=".2" stroke-width="2.5" letter-spacing="4">${palabra}</text>
     ${motivoSVG(est.mot, est.ac)}
   </svg>`.replace(/\s+/g, ' ');
   const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg).replace(/\(/g, '%28').replace(/\)/g, '%29').replace(/'/g, '%27');
@@ -4659,7 +4685,7 @@ function cerrarReferencias(){ document.getElementById('modal-referencias').class
 
 // ---------- Tutorial de bienvenida ----------
 const LOGO_TUTO = `<div class="tuto-logo-wrap" aria-hidden="true">
-  <svg class="tuto-logo" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#0E0C0D"/><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#4CB944"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#E8B411"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#F26A1B"/></g></g></svg>
+  <svg class="tuto-logo" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="#02070A"/><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#0297DE"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#FFA98C"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#FC734D"/></g></g></svg>
   <span class="tuto-chispa c1">✦</span><span class="tuto-chispa c2">✦</span><span class="tuto-chispa c3">✦</span>
 </div>`;
 // ¿Se está viendo en compu (menú a la izquierda) o en celu (barra abajo)?
@@ -5018,7 +5044,7 @@ function abrirDestinoAviso(dest){
 function avisoSistema(titulo, cuerpo, destino, forzar){
   if(!avisosSoportados() || Notification.permission !== 'granted') return;
   if(!forzar && document.visibilityState === 'visible') return;
-  const opts = { body: cuerpo, icon: 'icono-180.png?v=3', badge: 'favicon-32.png?v=3', tag: destino || 'partazy', renotify: true, data: { destino } };
+  const opts = { body: cuerpo, icon: 'icono-180.png?v=4', badge: 'favicon-32.png?v=4', tag: destino || 'partazy', renotify: true, data: { destino } };
   const reg = AVISOS.reg;
   if(reg && reg.showNotification){ reg.showNotification(titulo, opts).catch(() => {}); return; }
   try{ const n = new Notification(titulo, opts); n.onclick = () => { window.focus(); abrirDestinoAviso(destino); n.close(); }; } catch(e){}
@@ -6158,7 +6184,7 @@ async function renderTicket(id){
       new QRCode(el, {
         text: `PARTAZY|${ev.id}|${asistencia.ticket}`,
         width: 160, height: 160,
-        colorDark: '#0A0809', colorLight: '#FFFFFF',
+        colorDark: '#010305', colorLight: '#FFFFFF',
         correctLevel: QRCode.CorrectLevel.M
       });
     }).catch(e => console.warn('QR error', e));
@@ -7341,13 +7367,13 @@ async function pintarMapaEventos(encuadrar){
   const puntos = [];
   if(state.userCoords){
     L.marker([centro.lat, centro.lng], { icon: L.divIcon({ className: '', html: '<div class="pin-yo"></div>', iconSize: [16, 16], iconAnchor: [8, 8] }), interactive: false }).addTo(capa);
-    if(state.radioKm) L.circle([centro.lat, centro.lng], { radius: state.radioKm * 1000, color: '#F26A1B', weight: 1.5, fillColor: '#F26A1B', fillOpacity: .06, dashArray: '6 6' }).addTo(capa);
+    if(state.radioKm) L.circle([centro.lat, centro.lng], { radius: state.radioKm * 1000, color: '#FC734D', weight: 1.5, fillColor: '#FC734D', fillOpacity: .06, dashArray: '6 6' }).addTo(capa);
   }
   eventos.forEach(e => {
     const a = ambienteAuto(e);
     const privada = e.privacidad === 'privada' && e.creador !== state.uid;
     const m = privada
-      ? L.circle([e.lat, e.lng], { radius: 650, color: '#E8B411', weight: 1.5, dashArray: '4 6', fillColor: '#E8B411', fillOpacity: .12 }).addTo(capa)
+      ? L.circle([e.lat, e.lng], { radius: 650, color: '#FFA98C', weight: 1.5, dashArray: '4 6', fillColor: '#FFA98C', fillOpacity: .12 }).addTo(capa)
       : L.marker([e.lat, e.lng], { icon: L.divIcon({ className: '', html: `<div class="pin-evento ${a.clase}"></div>`, iconSize: [26, 26], iconAnchor: [13, 26], popupAnchor: [0, -24] }) }).addTo(capa);
     const dist = state.userCoords ? ` · ${textoDistancia(e, distanciaKm(centro.lat, centro.lng, e.lat, e.lng))}` : '';
     m.bindPopup(`<div class="popup-ev" data-abrir="${esc(e.id)}"><div class="f" style="background-image:${cssFoto(e)}"></div>
