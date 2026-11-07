@@ -61,7 +61,7 @@
       ],
       "redirects": [
         {
-          "source": "**",
+          "regex": "^/(|[^_].*|_|_[^_].*|__|__[^/].*)$",
           "destination": "https://partazy.com/",
           "type": 301
         }

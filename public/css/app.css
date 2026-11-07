@@ -256,7 +256,8 @@
   .empty-cta{display:flex; flex-direction:column; align-items:center; gap:12px; padding:26px 14px; text-align:center; color:var(--gris); font-size:13px; width:100%; line-height:1.5;}
 
   /* Bienvenida animada: luces de boliche, letras que caen, punto que late, ecualizador */
-  #pantalla-bienvenida{position:relative; overflow:hidden;}
+  /* overflow-x y no overflow: si el contenido no entra (navegador de Instagram, celus chicos) tiene que poder scrollear */
+  #pantalla-bienvenida{position:relative; overflow-x:hidden; overflow-y:auto; -webkit-overflow-scrolling:touch;}
   #pantalla-bienvenida::before, #pantalla-bienvenida::after{
     content:""; position:absolute; top:-35%; width:65%; height:120%; pointer-events:none; z-index:0;
     background:linear-gradient(180deg, rgba(252,115,77,.40) 0%, rgba(252,115,77,.08) 55%, transparent 80%);
@@ -1625,3 +1626,21 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 #btn-faq-mas{background:rgba(2,151,222,.12); color:#8FD3F5; border:1px solid rgba(2,151,222,.42);}
 #btn-faq-mas:hover{background:rgba(2,151,222,.2); border-color:rgba(2,151,222,.6);}
 .auth-error.ok{color:var(--verde);}
+
+/* Aviso: navegador interno de Instagram, TikTok, etc. (Google no deja iniciar sesión ahí) */
+.aviso-app{display:flex; flex-direction:column; gap:6px; padding:14px 16px; border-radius:16px; background:rgba(2,151,222,.10); border:1px solid rgba(2,151,222,.4); font-size:13px; line-height:1.45; color:var(--hueso); text-align:left;}
+.aviso-app[hidden]{display:none;}
+.aviso-app b{font-size:14px;}
+.aviso-app > span{color:var(--gris);}
+.aviso-app .aviso-app-acc{display:flex; gap:14px; flex-wrap:wrap;}
+.aviso-app .link-btn{padding:4px 0; text-decoration:none;}
+/* Links de los mails: contraseña nueva y verificar email, con el diseño de la app */
+.accion-correo{position:fixed; inset:0; z-index:900; display:flex; align-items:center; justify-content:center; padding:24px 20px; overflow-y:auto; -webkit-overflow-scrolling:touch;
+  background:radial-gradient(70% 50% at 50% 0%, rgba(252,115,77,.14), transparent 70%), radial-gradient(60% 50% at 50% 100%, rgba(2,151,222,.12), transparent 70%), var(--negro);}
+.accion-correo[hidden]{display:none;}
+.ac-tarjeta{width:100%; max-width:380px; text-align:center; margin:auto;}
+.ac-logo{display:flex; justify-content:center; margin-bottom:10px;}
+.ac-logo .lv{font-size:38px;}
+.ac-tarjeta h2{font-family:var(--font-body); font-weight:700; font-size:24px; letter-spacing:-.03em; color:var(--blanco); text-transform:none;}
+.ac-tarjeta p{color:var(--gris); font-size:14.5px; line-height:1.5; margin:0 0 4px; overflow-wrap:anywhere;}
+.ac-tarjeta p b{color:var(--blanco);}

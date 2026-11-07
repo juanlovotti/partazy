@@ -25,7 +25,7 @@ function makeFirebase(store, getUser, onAuthReady){
       path, id: path.split('/').pop(),
       collection: n => colRef(path + '/' + n),
       get: async () => { chk(path); return snapDoc(path); },
-      set: async (v, opt) => { chk(path, true); store.docs.set(path, opt?.merge ? deepMerge(store.docs.get(path), v) : JSON.parse(JSON.stringify(v))); notify(); },
+      set: async (v, opt) => { chk(path, true); if(store.reglas) store.reglas(path, v, store.docs.get(path), opt); store.docs.set(path, opt?.merge ? deepMerge(store.docs.get(path), v) : JSON.parse(JSON.stringify(v))); notify(); },
       update: async v => { chk(path, true); if(!store.docs.has(path)) throw new Error('no existe ' + path); store.docs.set(path, deepMerge(store.docs.get(path), v)); notify(); },
       delete: async () => { chk(path, true); store.docs.delete(path); notify(); }
     };
@@ -72,7 +72,7 @@ function makeFirebase(store, getUser, onAuthReady){
     settings(){},
     collection: n => colRef(n),
     collectionGroup: n => query(n, true, []),
-    batch(){ const ops = []; return { set: (r, v, o) => ops.push(() => r.set(v, o)), update: (r, v) => ops.push(() => r.update(v)), delete: r => ops.push(() => r.delete()), commit: async () => { for(const op of ops) await op(); } }; },
+    batch(){ const ops = []; return { set: (r, v, o) => ops.push(() => r.set(v, o)), update: (r, v) => ops.push(() => r.update(v)), delete: r => ops.push(() => r.delete()), commit: async () => { const copia = new Map(store.docs); try{ for(const op of ops) await op(); } catch(e){ store.docs = copia; throw e; } } }; },
     runTransaction: async fn => fn({ get: r => r.get(), set: (r, v, o) => r.set(v, o), update: (r, v) => r.update(v), delete: r => r.delete() })
   };
   let cb;

@@ -25,9 +25,12 @@
 
 // Config del proyecto Firebase "partazy-5555d" (Configuración del proyecto → Tus apps → Web)
 // No es secreta: la seguridad la dan las reglas de firestore.rules.
+// En partazy.com el ingreso con Google pasa por nuestro propio dominio: así funciona en iPhone y en los navegadores
+// que bloquean datos de otros sitios. Necesita https://partazy.com/__/auth/handler en el cliente OAuth de Google Cloud.
+const AUTH_EN_PARTAZY = typeof location !== 'undefined' && location.hostname === 'partazy.com';
 const firebaseConfig = {
   apiKey:            "AIzaSyBPp2zWegA2Zb7zk69Y0s49WDkjhkUAheY",
-  authDomain:        "partazy-5555d.firebaseapp.com",
+  authDomain:        AUTH_EN_PARTAZY ? "partazy.com" : "partazy-5555d.firebaseapp.com",
   projectId:         "partazy-5555d",
   storageBucket:     "partazy-5555d.firebasestorage.app",
   messagingSenderId: "368869218217",
@@ -343,6 +346,12 @@ const DataService = {
     const snap = await db.collection('users').doc(uid).get();
     return snap.exists ? snap.data() : null;
   },
+  // Igual, pero preguntándole al servidor (no a la copia guardada en el celu)
+  async getPerfilServidor(uid){
+    const ref = db.collection('users').doc(uid);
+    const snap = await ref.get({ source: 'server' }).catch(() => ref.get());
+    return snap.exists ? snap.data() : null;
+  },
   // Guarda cambios del perfil público (solo los campos que se pasan).
   async savePerfil(uid, data){
     await db.collection('users').doc(uid).set(data, { merge: true });
@@ -350,10 +359,19 @@ const DataService = {
   // Primer registro: perfil público + datos privados + reserva del @usuario, en una sola escritura.
   async crearPerfil(uid, publico, privado){
     const ref = db.collection('users').doc(uid);
+    const refPriv = ref.collection('privado').doc('datos');
+    const refUsuario = publico.usuario ? db.collection('usernames').doc(publico.usuario) : null;
+    // Si quedaron restos de un intento anterior (la parte privada o el @usuario ya reservado a su nombre),
+    // no se vuelven a crear: las reglas no dejan pisar el @usuario ni cambiar la fecha de nacimiento.
+    const [snapPriv, snapUsuario] = await Promise.all([
+      refPriv.get().catch(() => null),
+      refUsuario ? refUsuario.get().catch(() => null) : null
+    ]);
     const batch = db.batch();
-    batch.set(ref.collection('privado').doc('datos'), privado);
+    if(snapPriv && snapPriv.exists) batch.set(refPriv, { ...privado, nacimiento: snapPriv.data().nacimiento || privado.nacimiento }, { merge: true });
+    else batch.set(refPriv, privado);
     batch.set(ref, publico);
-    if(publico.usuario) batch.set(db.collection('usernames').doc(publico.usuario), { uid, ts: Date.now() });
+    if(refUsuario && !(snapUsuario && snapUsuario.exists && snapUsuario.data().uid === uid)) batch.set(refUsuario, { uid, ts: Date.now() });
     await batch.commit();
   },
   // Actualiza el perfil; si cambió el @usuario, reserva el nuevo y libera el viejo
@@ -1051,10 +1069,14 @@ const ERRORES_AUTH = {
   'auth/missing-password': 'Escribí tu contraseña.',
   'auth/weak-password': 'La contraseña tiene que tener al menos 6 caracteres.',
   'auth/email-already-in-use': 'Ya hay una cuenta con ese email. Probá ingresar.',
-  'auth/invalid-credential': 'Email o contraseña incorrectos.',
-  'auth/invalid-login-credentials': 'Email o contraseña incorrectos.',
-  'auth/wrong-password': 'Email o contraseña incorrectos.',
-  'auth/user-not-found': 'No hay ninguna cuenta con ese email.',
+  'auth/invalid-credential': 'Email o contraseña incorrectos. Si tu cuenta es de Google, entrá con "Continuar con Google".',
+  'auth/invalid-login-credentials': 'Email o contraseña incorrectos. Si tu cuenta es de Google, entrá con "Continuar con Google".',
+  'auth/wrong-password': 'Email o contraseña incorrectos. Si tu cuenta es de Google, entrá con "Continuar con Google".',
+  'auth/user-not-found': 'No hay ninguna cuenta con ese email. Si te registraste con Google, entrá con "Continuar con Google".',
+  'auth/expired-action-code': 'Este link venció. Pedí uno nuevo desde "Olvidé mi contraseña".',
+  'auth/invalid-action-code': 'Este link ya se usó o no es válido. Pedí uno nuevo desde "Olvidé mi contraseña".',
+  'auth/redirect-cancelled-by-user': '',
+  'auth/popup-blocked': 'El navegador bloqueó la ventana de Google. Probá de nuevo.',
   'auth/user-disabled': 'Esta cuenta está suspendida.',
   'auth/too-many-requests': 'Demasiados intentos. Esperá unos minutos y probá de nuevo.',
   'auth/popup-closed-by-user': '',
@@ -1126,9 +1148,40 @@ async function ingresarConFacebook(){
   }
 }
 
+// Navegadores internos de Instagram, Facebook, TikTok y otras apps: Google no deja iniciar sesión ahí adentro.
+function navegadorDeApp(){
+  const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+  if(/Instagram/i.test(ua)) return 'Instagram';
+  if(/FBAN|FBAV|FB_IAB|FBIOS|FBSS/i.test(ua)) return 'Facebook';
+  if(/musical_ly|TikTok|BytedanceWebview|Bytedance/i.test(ua)) return 'TikTok';
+  if(/Snapchat/i.test(ua)) return 'Snapchat';
+  if(/\bLine\//i.test(ua)) return 'LINE';
+  if(/Twitter/i.test(ua)) return 'X';
+  return '';
+}
+const MSJ_ABRIR_AFUERA = app => `Google no deja entrar desde el navegador de ${app}. Abrí partazy.com en ${/Android/i.test(navigator.userAgent || '') ? 'Chrome' : 'Safari'}: tocá los tres puntitos de arriba y elegí "Abrir en el navegador". También podés entrar con tu email.`;
+// Muestra el aviso de "abrilo en el navegador" en la pantalla de ingreso.
+function prepararAvisoApp(){
+  const app = navegadorDeApp(), caja = document.getElementById('aviso-app');
+  if(!caja) return;
+  caja.hidden = !app;
+  if(!app) return;
+  document.getElementById('aviso-app-nombre').textContent = app;
+  const chrome = document.getElementById('aviso-app-chrome');
+  if(chrome) chrome.hidden = !/Android/i.test(navigator.userAgent || '');
+}
+// Copia el link de la app para pegarlo en Safari o Chrome.
+async function copiarLinkApp(){
+  const url = 'https://partazy.com/';
+  try{ await navigator.clipboard.writeText(url); toast('Link copiado. Pegalo en Safari o Chrome.'); }
+  catch(e){ toast(url); }
+}
+
 // Login con Google (ventana emergente; si se bloquea, redirección).
 async function ingresarConGoogle(){
   errorAuth('');
+  const app = navegadorDeApp();
+  if(app){ errorAuth(MSJ_ABRIR_AFUERA(app)); prepararAvisoApp(); return; }
   const provider = new firebase.auth.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
   try{
@@ -1159,6 +1212,72 @@ async function ingresarConEmail(){
       await auth.signInWithEmailAndPassword(email, pass);
     }
   } catch(e){ errorAuth(mensajeAuth(e)); }
+}
+
+// ===== Links de los mails (contraseña nueva, verificar email) =====
+// Los mails de Firebase traen https://partazy.com/?mode=...&oobCode=... (Authentication → Plantillas →
+// URL de acción personalizada). Se resuelven acá, con el diseño de la app, en vez de la página genérica de Firebase.
+function accionDeCorreo(){
+  let qs; try{ qs = new URLSearchParams(location.search); } catch(e){ return null; }
+  const modo = qs.get('mode'), codigo = qs.get('oobCode');
+  return modo && codigo ? { modo, codigo } : null;
+}
+function limpiarUrlAccion(){ try{ history.replaceState(null, '', location.pathname + location.hash); } catch(e){} }
+async function manejarAccionDeCorreo(){
+  const a = accionDeCorreo();
+  const caja = document.getElementById('accion-correo');
+  if(!a || !auth || !caja) return false;
+  const logo = document.querySelector('#pantalla-bienvenida .lv')?.outerHTML || 'PARTAZY';
+  const pintar = html => { caja.innerHTML = `<div class="ac-tarjeta auth-form"><div class="ac-logo">${logo}</div>${html}</div>`; caja.hidden = false; };
+  const cerrar = () => { caja.hidden = true; caja.innerHTML = ''; limpiarUrlAccion(); };
+  const conCerrar = (txt = 'Volver a Partazy') => `<button class="btn btn-primario" id="cc-cerrar">${txt}</button>`;
+  const enlazarCerrar = () => { const b = document.getElementById('cc-cerrar'); if(b) b.onclick = cerrar; };
+  const fallo = e => { pintar(`<h2>Este link ya no sirve</h2><p>${esc(mensajeAuth(e))}</p>${conCerrar()}`); enlazarCerrar(); };
+  pintar('<h2>Un segundo</h2><p>Estamos revisando el link.</p>');
+  if(a.modo === 'resetPassword'){
+    let email;
+    try{ email = await auth.verifyPasswordResetCode(a.codigo); } catch(e){ fallo(e); return true; }
+    pintar(`<h2>Elegí tu contraseña nueva</h2><p>Para <b>${esc(email)}</b></p>
+      <input type="email" value="${esc(email)}" autocomplete="username" hidden>
+      <input type="password" id="cc-pass" placeholder="Contraseña nueva (mínimo 6 caracteres)" autocomplete="new-password" aria-label="Contraseña nueva">
+      <input type="password" id="cc-pass2" placeholder="Repetila" autocomplete="new-password" aria-label="Repetí la contraseña">
+      <div class="auth-error" id="cc-error" role="alert"></div>
+      <button class="btn btn-primario" id="cc-guardar">Guardar y entrar</button>
+      <button class="link-btn" id="cc-cerrar">Cancelar</button>`);
+    enlazarCerrar();
+    const err = m => { document.getElementById('cc-error').textContent = m; };
+    const btn = document.getElementById('cc-guardar');
+    const guardar = async () => {
+      const p1 = document.getElementById('cc-pass').value, p2 = document.getElementById('cc-pass2').value;
+      if(p1.length < 6){ err('La contraseña tiene que tener al menos 6 caracteres.'); return; }
+      if(p1 !== p2){ err('Las dos contraseñas no coinciden.'); return; }
+      err('');
+      try{ await auth.confirmPasswordReset(a.codigo, p1); }
+      catch(e){ err(mensajeAuth(e)); return; }
+      try{ await auth.signInWithEmailAndPassword(email, p1); } catch(e){ console.warn('ingreso tras cambio', e); }
+      pintar(`<h2>¡Listo!</h2><p>Tu contraseña nueva ya está guardada.</p>${conCerrar('Entrar a Partazy')}`); enlazarCerrar();
+    };
+    btn.onclick = () => conBoton(btn, guardar);
+    document.getElementById('cc-pass2').addEventListener('keydown', e => { if(e.key === 'Enter') btn.click(); });
+    return true;
+  }
+  if(a.modo === 'verifyEmail' || a.modo === 'verifyAndChangeEmail'){
+    try{ await auth.applyActionCode(a.codigo); } catch(e){ fallo(e); return true; }
+    try{ if(auth.currentUser) await auth.currentUser.reload(); } catch(e){}
+    pintar(`<h2>¡Email confirmado!</h2><p>${a.modo === 'verifyEmail' ? 'Gracias, tu cuenta ya está verificada.' : 'Tu email nuevo ya quedó en la cuenta.'}</p>${conCerrar('Seguir')}`); enlazarCerrar();
+    return true;
+  }
+  if(a.modo === 'recoverEmail'){
+    let email;
+    try{ const info = await auth.checkActionCode(a.codigo); email = info?.data?.email; await auth.applyActionCode(a.codigo); } catch(e){ fallo(e); return true; }
+    pintar(`<h2>Recuperamos tu email</h2><p>Tu cuenta volvió a ${esc(email || 'tu email anterior')}. Si no fuiste vos quien lo cambió, te conviene elegir una contraseña nueva.</p>
+      <button class="btn btn-primario" id="cc-nueva">Mandarme el link para cambiarla</button><button class="link-btn" id="cc-cerrar">Ahora no</button>`);
+    enlazarCerrar();
+    document.getElementById('cc-nueva').onclick = async () => { try{ await conVuelta(o => auth.sendPasswordResetEmail(email, o)); toast('Te mandamos el link. Revisá también Spam.'); } catch(e){ toast(mensajeAuth(e)); } cerrar(); };
+    return true;
+  }
+  cerrar();
+  return false;
 }
 
 // Manda el mail para restablecer la contraseña.
@@ -1304,15 +1423,30 @@ async function completarRegistro(){
     foto: state.fotoPerfilNueva || (tipoCuenta === 'organizacion' ? '' : (user.photoURL || '')),
     createdAt: Date.now()
   };
-  try{
-    await DataService.crearPerfil(user.uid, perfil, { nacimiento, email: user.email || '', aceptoNormasTs: Date.now() });
-    state.perfil = perfil;
-    state.cuentaNueva = true;
-    await entrarALaApp();
-  } catch(e){
-    console.error(e);
-    err('No pudimos guardar tu perfil. Probá de nuevo.');
+  // Si el perfil ya existe (se guardó en un intento anterior, o el celu no lo encontró sin conexión), entra directo
+  const ya = await DataService.getPerfilServidor(user.uid).catch(() => null);
+  if(ya){ state.perfil = ya; }
+  else {
+    try{
+      await DataService.crearPerfil(user.uid, perfil, { nacimiento, email: user.email || '', aceptoNormasTs: Date.now() });
+      state.perfil = perfil;
+      state.cuentaNueva = true;
+    } catch(e){
+      console.error(e);
+      const guardado = await DataService.getPerfilServidor(user.uid).catch(() => null);
+      if(!guardado) return err(mensajeGuardarPerfil(e));
+      state.perfil = guardado; state.cuentaNueva = true;
+    }
   }
+  // El perfil ya está guardado: si algo falla al cargar la app, se recarga (no es un error del perfil)
+  try{ await entrarALaApp(); } catch(e){ console.error(e); location.reload(); }
+}
+// Mensaje cuando no se pudo crear el perfil. El código entre paréntesis nos ayuda a saber qué pasó si la persona nos escribe.
+function mensajeGuardarPerfil(e){
+  const c = String(e?.code || '').replace(/^firestore\//, '');
+  if(c === 'unavailable' || c === 'deadline-exceeded' || (typeof navigator !== 'undefined' && navigator.onLine === false))
+    return 'No hay conexión. Revisá tu internet y tocá Empezar de nuevo.';
+  return 'No pudimos guardar tu perfil. Probá de nuevo.' + (c ? ` (${c})` : '');
 }
 
 // Ubica a la persona en la ciudad o barrio de su perfil (si existe). true si funcionó.
@@ -1510,7 +1644,7 @@ function seguirMirando(){
 }
 // Mientras mira sin cuenta, todo lo que sea interactuar pide registrarse
 (function(){
-  const LIBRES_CONT = '#pantalla-bienvenida, #pantalla-registro, #pantalla-ayuda, #pantalla-privacidad, #pantalla-terminos, .tuto-bg, .modal-bg, .mapa-bg, .hoja-bg, .pie-legal, .nav-pie, .leaflet-container, #toast, .barra-invitado';
+  const LIBRES_CONT = '#pantalla-bienvenida, #pantalla-registro, #pantalla-ayuda, #pantalla-privacidad, #pantalla-terminos, .tuto-bg, .modal-bg, .mapa-bg, .hoja-bg, .pie-legal, .nav-pie, .leaflet-container, #toast, .barra-invitado, #accion-correo';
   const LIBRES = [
     '[data-nav="home"]', '[data-nav="explorar"]', '.nav-logo', '.logo',
     '#chips-home .chip', '#chips-explorar .chip', '.buscador', '.buscador-mini', '.btn-buscar-mini', '#nav-toggle', '.nav-marca', '#input-buscar', '#seg-eventos', '#vista-lista', '#vista-mapa', '.ubic-btn',
@@ -7179,7 +7313,6 @@ function elegirRango(km){
   pintarUbicacion(); renderHome(); renderExplorar(); pintarMapaEventos(true);
 }
 // ¿Estamos adentro del navegador de Instagram / Facebook / TikTok? (ahí no se puede compartir la ubicación)
-function navegadorDeApp(){ return /Instagram|FBAN|FBAV|FB_IAB|TikTok|musical_ly|Line\//i.test(navigator.userAgent || ''); }
 function esIphone(){ return /iPhone|iPad|iPod/i.test(navigator.userAgent || ''); }
 // Explica, en simple, por qué no se pudo obtener la ubicación y cómo arreglarlo.
 function mensajeErrorUbicacion(err){
@@ -7929,6 +8062,11 @@ async function init(){
 
   // Botones de ingreso y registro
   setModoAuth('ingresar');
+  prepararAvisoApp();
+  const btnCopiar = document.getElementById('btn-copiar-link');
+  if(btnCopiar) btnCopiar.addEventListener('click', copiarLinkApp);
+  // Si se llegó desde el link de un mail (contraseña nueva, verificar email), se resuelve primero
+  manejarAccionDeCorreo().catch(e => console.warn('link del mail', e));
   const btnGoogle = document.getElementById('btn-google');
   btnGoogle.addEventListener('click', () => conBoton(btnGoogle, ingresarConGoogle));
   const btnFb = document.getElementById('btn-facebook');
