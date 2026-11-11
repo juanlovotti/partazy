@@ -20,7 +20,7 @@ const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(
 // ---------- Logo (la P tornasol + "artazy" + el punto verde), fijo, sin animación ----------
 const PF = 'M20 13a2 2 0 0 1 2-2h12a14 14 0 0 1 0 28h-4v12a2 2 0 0 1-2 2h-6a2 2 0 0 1-2-2z';
 const OJO = 'M34 19.5a5.5 5.5 0 1 1 0 11h-4v-11z';
-const LOGO = `<span class="lv" role="img" aria-label="PARTAZY">
+const LOGO = `<span class="lv" role="img" aria-label="Partazy">
   <svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><defs><clipPath id="pp"><path d="${PF} ${OJO}" clip-rule="evenodd"/></clipPath>
   <linearGradient id="pg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FFA98C"/><stop offset=".55" stop-color="#FC734D"/><stop offset="1" stop-color="#0297DE"/></linearGradient>
   <filter id="pb" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="4.5"/></filter></defs>
@@ -37,12 +37,12 @@ function pagina({ ruta, titulo, descripcion, cuerpo, scripts = '', clase = '', i
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark only">
 <meta name="theme-color" content="#02070A">
-<title>${esc(titulo)} | PARTAZY</title>
+<title>${esc(titulo)} | Partazy</title>
 <meta name="description" content="${esc(descripcion)}">
 <link rel="canonical" href="https://partazy.com/${ruta}">
 <meta property="og:type" content="website">
-<meta property="og:site_name" content="PARTAZY">
-<meta property="og:title" content="${esc(titulo)} | PARTAZY">
+<meta property="og:site_name" content="Partazy">
+<meta property="og:title" content="${esc(titulo)} | Partazy">
 <meta property="og:description" content="${esc(descripcion)}">
 <meta property="og:url" content="https://partazy.com/${ruta}">
 <meta property="og:image" content="${imagen}">
@@ -67,7 +67,7 @@ ${cuerpo}
     <a href="/organizadores">Para organizadores</a><a href="/soporte">Soporte</a><a href="/privacidad">Privacidad</a><a href="/terminos">Términos</a><a href="/eliminar-cuenta">Eliminar cuenta</a>
   </nav>
   <div class="pie-redes"><a href="https://www.instagram.com/partazy/" target="_blank" rel="noopener noreferrer">Instagram</a><a href="https://www.facebook.com/share/1EkgZmHUXT/" target="_blank" rel="noopener noreferrer">Facebook</a><a href="mailto:${MAIL}">${MAIL}</a></div>
-  <div>© ${ANIO} PARTAZY. Hecho en Córdoba, Argentina. Solo para mayores de 18 años.</div>
+  <div>© ${ANIO} Partazy. Hecho en Córdoba, Argentina. Solo para mayores de 18 años.</div>
 </footer>
 ${scripts}
 </body>
@@ -216,7 +216,8 @@ ${faq}
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.0/firebase-app-check-compat.js"></script>
 <script src="/js/organizadores.js"></script>`
   });
-  // Página de prelanzamiento: "Próximamente", sin ninguna fecha (como certifix.com.ar).
+  // Página de prelanzamiento: "Lanzamiento oficial muy pronto", sin ninguna fecha (como certifix.com.ar).
+  // El titular y "Crear mi cuenta" se ven de entrada; lo único que se anima al cargar es la ciudad.
   const letras = [...'artazy'].map((c, i) => `<i style="--i:${i}">${c}</i>`).join('');
   const logoAnimado = LOGO.replace('class="lv"', 'class="lv lv-grande lv-anim"').replace('<span class="lv-txt">artazy</span>', `<span class="lv-txt">${letras}</span>`)
     .replace('<circle cx="24" cy="14" r="11" fill="#0297DE"/><circle cx="24" cy="48" r="11" fill="#FFA98C"/><circle cx="44" cy="26" r="9" fill="#FC734D"/>',
@@ -280,19 +281,19 @@ ${faq}
     </li>`;
   const chip = (plan, txt) => `<button type="button" class="lz-chip" data-plan="${plan}" aria-pressed="false">${txt}</button>`;
   P['lanzamiento.html'] = pagina({
-    ruta: 'lanzamiento', titulo: 'Próximamente', clase: 'p-lanz', imagen: 'https://partazy.com/img/og-lanzamiento.jpg?v=1',
+    ruta: 'lanzamiento', titulo: 'Lanzamiento oficial muy pronto', clase: 'p-lanz', imagen: 'https://partazy.com/img/og-lanzamiento.jpg?v=1',
     descripcion: 'Todo lo que pasa cerca tuyo, en un solo lugar. Sumate antes del lanzamiento y quedás como Fundador.',
     cuerpo: `<script>document.documentElement.classList.add('js');</script>
 <div class="lz-fondo" aria-hidden="true"><i class="f1"></i><i class="f2"></i><i class="f3"></i></div>
 <section class="lz-hero">
   <div class="lz-hero-txt">
-    <span class="lz-pill lz-in" style="--d:0"><span class="lz-punto" aria-hidden="true"></span>Próximamente</span>
-    <div class="lz-logo lz-in" style="--d:1">${logoAnimado}</div>
-    <h1 data-palabras>Todo lo que pasa cerca tuyo, <span class="lz-gris">en un solo lugar.</span></h1>
-    <p class="lz-sub lz-in" style="--d:5">Fiestas, peñas, recitales, torneos, talleres y ferias. Mirá a dónde van tus amigos y sumate en un toque.</p>
-    <div class="lz-acciones lz-in" style="--d:6"><a class="lz-btn lz-btn-pri" href="/">Crear mi cuenta</a><button type="button" class="lz-btn lz-btn-sec" id="lz-compartir">Pasáselo a un amigo</button></div>
+    <span class="lz-pill"><span class="lz-punto" aria-hidden="true"></span>Lanzamiento oficial muy pronto</span>
+    <div class="lz-logo">${logoAnimado}</div>
+    <h1>Todo lo que pasa cerca tuyo, <span class="lz-gris">en un solo lugar.</span></h1>
+    <p class="lz-sub">Fiestas, peñas, recitales, torneos, talleres y ferias. Mirá a dónde van tus amigos y sumate en un toque.</p>
+    <div class="lz-acciones"><a class="lz-btn lz-btn-pri" href="/">Crear mi cuenta</a><button type="button" class="lz-btn lz-btn-sec" id="lz-compartir">Pasáselo a un amigo</button></div>
   </div>
-  <figure class="lz-ciudad lz-in" style="--d:3">
+  <figure class="lz-ciudad lz-in" style="--d:0">
     <video autoplay muted loop playsinline preload="metadata" poster="/media/ciudad.jpg" width="720" height="900" aria-label="Una ciudad de noche con carteles de fiestas, peñas, recitales, torneos, talleres y ferias">
       <source src="/media/ciudad.mp4?v=1" type="video/mp4">
     </video>
@@ -344,7 +345,7 @@ ${faq}
     </div>
     <h2 class="lz-h">Quedá&nbsp;como <span>Fundador.</span></h2>
     <p>Quienes se registran antes del lanzamiento oficial llevan la insignia <b>✦ Fundador</b> en su perfil. Para siempre.</p>
-    <a class="lz-btn lz-btn-pri" href="/">Sumarme ahora</a>
+    <a class="lz-btn lz-btn-pri" href="/">Crear mi cuenta</a>
   </div>
 </section>
 <section class="lz-bloque lz-rev">

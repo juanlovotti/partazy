@@ -62,12 +62,13 @@ const llenar=(n)=>{ $('f-nombre').value=n; $('f-lugar').value='Belgrano 800, Gü
   await w.publicarEvento(); await sleep(200);
   const ev3=evs().find(([k,v])=>v.nombre==='Juntada');
   ok(ev3 && ev3[1].ocasion==='previa' && !ev3[1].categoria && !ev3[1].listaVip, 'previa: se guarda sin estilo ni VIP');
-  // Vista rápida en tarjetas
+  // Tarjetas: sin la etiqueta "Vista previa"; toda la tarjeta abre el evento
   w.ir('home'); w.renderHome(); await sleep(80);
-  const b=w.document.querySelector(`.btn-vista[data-vista="${id2}"]`);
-  ok(!!b, 'las tarjetas tienen el botón "Vista previa"');
-  if(b){ b.click(); await sleep(60); const h=txt($('hoja-contenido')); ok(/Fiesta con VIP/.test(h) && /Techno/i.test(h), 'la vista previa muestra el tipo de música y los datos: '+h.slice(0,120)); }
-  w.cerrarHoja(); await sleep(30);
+  ok(!w.document.querySelector('#pantalla-home .btn-vista') && !/Vista previa/.test(txt($('pantalla-home'))), 'las tarjetas ya no tienen la etiqueta "Vista previa"');
+  const card=w.document.querySelector(`#pantalla-home .tarjeta[data-abrir="${id2}"]`);
+  if(card){ card.click(); await sleep(200); }
+  ok(card && /Fiesta con VIP/.test(txt($('detalle-contenido'))), 'tocar la tarjeta abre el evento');
+  w.ir('home'); await sleep(30);
   // Footer
   const pie=w.document.querySelector('.pie-ig');
   ok(pie && /instagram\.com\/partazy/.test(pie.getAttribute('href')), 'footer con el logo de Instagram que lleva a @partazy');

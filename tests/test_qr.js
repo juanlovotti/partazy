@@ -21,7 +21,7 @@ const crearEvento = async (w, nombre, conPago) => {
   w.ir('crear');
   $('f-nombre').value = nombre; $('f-lugar').value = 'Güemes'; $('f-fecha').value = new Date(Date.now() + 3 * 864e5).toISOString().slice(0, 10);
   $('f-hora').value = '23:00'; $('f-capacidad').value = '100'; $('f-estilo').value = 'techno';
-  if(conPago){ w.toggleSwitchPago($('switch-pago')); $('f-precio').value = '5000'; $('f-pago-info').value = 'Transferencia al alias vortex.cba'; }
+  if(conPago){ w.toggleSwitchPago($('switch-pago')); if($('switch-comprobante')?.classList.contains('on')) w.toggleSwitch($('switch-comprobante')); /* acá se prueba el cobro directo, sin comprobante */ $('f-precio').value = '5000'; $('f-pago-info').value = 'Transferencia al alias vortex.cba'; }
   const c0 = w.confirmar; w.confirmar = async () => true; w.mostrarVistaPrevia=async()=>true; try{ await w.publicarEvento(); } finally { w.confirmar = c0; } await sleep(100);
   return [...store.docs.entries()].find(([k, v]) => /^events\/[^/]+$/.test(k) && v.nombre === nombre);
 };

@@ -173,6 +173,7 @@ service cloud.firestore {
         && texto(d.get('estiloOtro', ''), 30)
         && (!('faq' in d) || (d.faq is list && d.faq.size() <= 5))
         && d.get('porEquipos', false) is bool
+        && d.get('cobroComprobante', false) is bool
         && (!('jugadoresPorEquipo' in d) || (d.jugadoresPorEquipo is int && d.jugadoresPorEquipo >= 1 && d.jugadoresPorEquipo <= 50))
         && (!('maxEquipos' in d) || (d.maxEquipos is int && d.maxEquipos >= 2 && d.maxEquipos <= 64))
         && (d.get('linkEntradas', '') == '' || d.get('linkEntradas', '').matches('^https://.*'))
@@ -294,14 +295,14 @@ service cloud.firestore {
         && request.resource.data.confirmadosCount == resource.data.confirmadosCount + 1
         && request.resource.data.confirmadosCount <= resource.data.capacidad
         && !exists(atPath(eventId, request.auth.uid))
-        && getAfter(atPath(eventId, request.auth.uid)).data.estado == 'confirmado';
+        && getAfter(atPath(eventId, request.auth.uid)).data.estado in ['confirmado', 'reservado'];
 
       // Un asistente libera su lugar ("Ya no voy"): solo -1, junto con el borrado de su asistencia
       allow update: if logueado() && resource.data.creador != request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['confirmadosCount'])
         && request.resource.data.confirmadosCount == resource.data.confirmadosCount - 1
         && exists(atPath(eventId, request.auth.uid))
-        && get(atPath(eventId, request.auth.uid)).data.estado in ['confirmado', 'aprobado']
+        && get(atPath(eventId, request.auth.uid)).data.estado in ['confirmado', 'aprobado', 'reservado']
         && !existsAfter(atPath(eventId, request.auth.uid));
 
       // Quien organiza lo puede eliminar al instante (la app avisa a los anotados)
@@ -417,7 +418,9 @@ service cloud.firestore {
 
       // Asistencias
       match /attendees/{uid} {
-        allow read: if soy(uid) || esCreador(eventId);
+        // También la lee el amigo al que le ofrecieron la entrada
+        allow read: if soy(uid) || esCreador(eventId)
+          || (logueado() && resource.data.get('transferirA', '') == request.auth.uid);
 
         allow create: if soy(uid)
           && request.resource.data.uid == uid
@@ -434,12 +437,35 @@ service cloud.firestore {
               && get(evPath(eventId)).data.privacidad == 'publica'
               && get(evPath(eventId)).data.get('estado', 'publicado') != 'cancelado'
               && get(evPath(eventId)).data.confirmadosCount >= get(evPath(eventId)).data.capacidad)
-            // 3) Confirmar un evento público (con el +1 en la misma transacción)
+            // 3) Confirmar un evento público (con el +1 en la misma transacción).
+            //    Si se cobra con comprobante, nadie se confirma solo: reserva y confirma quien organiza.
             || (request.resource.data.estado == 'confirmado'
               && exists(evPath(eventId))
               && inscripcionAbierta(eventId)
               && get(evPath(eventId)).data.privacidad == 'publica'
+              && get(evPath(eventId)).data.get('cobroComprobante', false) != true
               && getAfter(evPath(eventId)).data.confirmadosCount == get(evPath(eventId)).data.confirmadosCount + 1)
+            // 5) Reservar una entrada paga con comprobante: guarda el lugar (+1) hasta 30 minutos
+            || (request.resource.data.estado == 'reservado'
+              && exists(evPath(eventId))
+              && inscripcionAbierta(eventId)
+              && get(evPath(eventId)).data.privacidad == 'publica'
+              && get(evPath(eventId)).data.get('cobroComprobante', false) == true
+              && get(evPath(eventId)).data.get('estado', 'publicado') != 'cancelado'
+              && !('ticket' in request.resource.data)
+              && request.resource.data.venceTs is int
+              && request.resource.data.venceTs <= request.time.toMillis() + 31 * 60000
+              && getAfter(evPath(eventId)).data.confirmadosCount == get(evPath(eventId)).data.confirmadosCount + 1)
+            // 6) Recibir la entrada que te pasó un amigo: la suya queda "transferida" en la misma escritura (el cupo no cambia)
+            || (request.resource.data.estado == 'confirmado'
+              && request.resource.data.get('deTransferencia', '') is string
+              && request.resource.data.get('deTransferencia', '') != ''
+              && request.resource.data.deTransferencia != uid
+              && exists(evPath(eventId))
+              && get(evPath(eventId)).data.get('estado', 'publicado') != 'cancelado'
+              && get(atPath(eventId, request.resource.data.deTransferencia)).data.get('transferirA', '') == uid
+              && get(atPath(eventId, request.resource.data.deTransferencia)).data.estado in ['confirmado', 'aprobado']
+              && getAfter(atPath(eventId, request.resource.data.deTransferencia)).data.estado == 'transferida')
             // 4) El creador se anota en su propio evento al crearlo
             || (request.resource.data.estado == 'confirmado'
               && !exists(evPath(eventId))
@@ -454,6 +480,54 @@ service cloud.firestore {
           && (request.resource.data.estado == 'rechazado'
               || getAfter(evPath(eventId)).data.confirmadosCount == get(evPath(eventId)).data.confirmadosCount + 1);
 
+        // Pago con comprobante: la persona manda la captura (o avisa que pagó sin captura)
+        allow update: if soy(uid)
+          && resource.data.estado == 'reservado'
+          && request.resource.data.estado == 'pago-enviado'
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'enviadoTs', 'sinComprobante'])
+          && request.resource.data.enviadoTs is int
+          && request.resource.data.get('sinComprobante', false) is bool;
+
+        // Quien organiza confirma el pago (entrada con código, el cupo no cambia)
+        // o lo rechaza (se libera el lugar con el -1 en la misma escritura)
+        allow update: if esCreador(eventId)
+          && resource.data.estado in ['reservado', 'pago-enviado']
+          && ((request.resource.data.estado == 'confirmado'
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'ticket', 'respondidoTs'])
+                && request.resource.data.ticket is string && request.resource.data.ticket.size() <= 40)
+            || (request.resource.data.estado == 'pago-rechazado'
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'motivoRechazo', 'respondidoTs'])
+                && texto(request.resource.data.get('motivoRechazo', ''), 120)
+                && getAfter(evPath(eventId)).data.confirmadosCount == get(evPath(eventId)).data.confirmadosCount - 1));
+
+        // Pasar la entrada: quien la tiene se la ofrece a un amigo (o cancela la oferta). Solo eventos públicos,
+        // antes de entrar, y no quien organiza.
+        allow update: if soy(uid)
+          && resource.data.estado in ['confirmado', 'aprobado']
+          && !('checkinTs' in resource.data)
+          && get(evPath(eventId)).data.privacidad == 'publica'
+          && get(evPath(eventId)).data.creador != uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['transferirA', 'transferirNombre', 'transferirTs'])
+          && (request.resource.data.get('transferirA', '') == ''
+            || (request.resource.data.transferirA is string
+                && request.resource.data.transferirA != uid
+                && texto(request.resource.data.get('transferirNombre', ''), 60)
+                && request.resource.data.get('transferirTs', 0) is int
+                && sonAmigos(uid < request.resource.data.transferirA
+                     ? uid + '_' + request.resource.data.transferirA
+                     : request.resource.data.transferirA + '_' + uid)));
+
+        // El amigo acepta (la entrada de quien se la pasó queda anulada, junto con la suya nueva) o la rechaza
+        allow update: if logueado()
+          && resource.data.get('transferirA', '') == request.auth.uid
+          && resource.data.estado in ['confirmado', 'aprobado']
+          && !('checkinTs' in resource.data)
+          && ((request.resource.data.estado == 'transferida'
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['estado', 'transferidaTs'])
+                && getAfter(atPath(eventId, request.auth.uid)).data.get('deTransferencia', '') == uid)
+            || (request.resource.data.get('transferirA', '') == ''
+                && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['transferirA', 'transferirNombre', 'transferirTs'])));
+
         // Control de puerta: quien organiza marca el ingreso una sola vez
         allow update: if esCreador(eventId)
           && resource.data.estado in ['confirmado', 'aprobado']
@@ -465,11 +539,29 @@ service cloud.firestore {
         // (con el -1 en la misma escritura). Quien organiza no se baja de su propio evento.
         allow delete: if soy(uid) && (
           !existsAfter(evPath(eventId))
-          || resource.data.estado in ['solicitado', 'en-espera']
-          || (resource.data.estado in ['confirmado', 'aprobado']
+          || resource.data.estado in ['solicitado', 'en-espera', 'pago-rechazado', 'transferida']
+          || (resource.data.estado in ['confirmado', 'aprobado', 'reservado']
               && !('checkinTs' in resource.data)
               && get(evPath(eventId)).data.creador != uid
               && getAfter(evPath(eventId)).data.confirmadosCount == get(evPath(eventId)).data.confirmadosCount - 1));
+        // Quien organiza libera una reserva que venció sin comprobante (con el -1 en la misma escritura)
+        allow delete: if esCreador(eventId)
+          && resource.data.estado == 'reservado'
+          && resource.data.get('venceTs', 0) < request.time.toMillis()
+          && getAfter(evPath(eventId)).data.confirmadosCount == get(evPath(eventId)).data.confirmadosCount - 1;
+      }
+
+      // Captura del comprobante de pago: la ven solo la persona y quien organiza; se borra al responder
+      match /comprobantes/{uid} {
+        allow read: if soy(uid) || esCreador(eventId);
+        allow create, update: if soy(uid)
+          && exists(atPath(eventId, uid))
+          && get(atPath(eventId, uid)).data.estado in ['reservado', 'pago-enviado']
+          && request.resource.data.keys().hasOnly(['img', 'ts'])
+          && texto(request.resource.data.img, 600000)
+          && request.resource.data.img.matches('^data:image/jpeg;base64,.*')
+          && request.resource.data.ts is int;
+        allow delete: if soy(uid) || esCreador(eventId);
       }
 
       // Acreditaciones de prensa: eventos de organizaciones, hasta 24 h antes
@@ -645,7 +737,8 @@ service cloud.firestore {
         && request.resource.data.tipo in ['amistad_solicitud', 'amistad_aceptada', 'evento_solicitud', 'evento_aprobada',
              'evento_rechazada', 'evento_cancelado', 'evento_confirmacion', 'verificacion_aprobada', 'verificacion_rechazada',
              'nuevo_evento', 'acreditacion_solicitud', 'acreditacion_aprobada', 'acreditacion_rechazada',
-             'amigo_evento', 'evento_compartido', 'mencion', 'mensaje_solicitud', 'mensaje_aceptado']
+             'amigo_evento', 'evento_compartido', 'mencion', 'mensaje_solicitud', 'mensaje_aceptado',
+             'pago_enviado', 'pago_confirmado', 'pago_rechazado', 'entrada_transferencia', 'entrada_aceptada']
         && (!request.resource.data.tipo.matches('verificacion_.*') || esAdmin())
         && request.resource.data.leida == false
         && request.resource.data.ts is int

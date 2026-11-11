@@ -17,7 +17,7 @@ let fallos=0; const check=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) fallo
   A.ir('crear'); const f=new Date(Date.now()+3*864e5);
   $A('f-nombre').value='Fiesta Paga'; $A('f-lugar').value='Güemes'; $A('f-fecha').value=f.toISOString().slice(0,10); $A('f-hora').value='23:00';
   $A('f-capacidad').value='40'; $A('f-estilo').value='techno';
-  A.toggleSwitchPago($A('switch-pago')); $A('f-precio').value='5000';
+  A.toggleSwitchPago($A('switch-pago')); if($A('switch-comprobante')?.classList.contains('on')) A.toggleSwitch($A('switch-comprobante')); $A('f-precio').value='5000';  // cobro directo, sin comprobante
   if($A('f-pago-info')) $A('f-pago-info').value='alias fiesta.paga';
   check(txt($A('campo-precio')).includes('Estamos trabajando en un sistema seguro'), 'el formulario avisa al organizador del sistema seguro de devoluciones');
   await (async()=>{const c=A.confirmar; A.confirmar=async()=>true; A.mostrarVistaPrevia=async()=>true; try{await A.publicarEvento();}finally{A.confirmar=c;}})(); await sleep(80);

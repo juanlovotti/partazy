@@ -34,7 +34,7 @@ ok(todas.every(d => d.querySelector('.pie a[href="/privacidad"]') && d.querySele
 ok(!nombres.some(n => esperado[n].includes('juanvalentinlovotti')), 'ninguna página muestra el mail personal');
 
 const lz = doc('lanzamiento.html');
-ok(/Próximamente/.test(lz.body.textContent) && !/\d{1,2}\/1[0-2]|octubre|noviembre/i.test(lz.querySelector('main').textContent), 'lanzamiento: dice "Próximamente" sin mostrar la fecha');
+ok(/Lanzamiento oficial muy pronto/.test(lz.body.textContent) && !/Próximamente/.test(lz.body.textContent) && !/\d{1,2}\/1[0-2]|octubre|noviembre/i.test(lz.querySelector('main').textContent), 'lanzamiento: dice "Lanzamiento oficial muy pronto" sin mostrar la fecha');
 ok(lz.querySelector('.fundador a[href="/"]') && lz.querySelector('.lv-anim .lv-ico') && lz.querySelector('a[href="/organizadores"]'), 'lanzamiento: logo animado, invitación a ser Fundador y link para organizadores');
 ok(!/solo-post|Date\.parse|¡Ya llegó!/.test(esperado['lanzamiento.html']), 'lanzamiento: no depende de ninguna fecha');
 const fb = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'firebase.json'), 'utf8'));

@@ -43,6 +43,7 @@ function makeFirebase(store, getUser, onAuthReady){
             if(o.op === '==') return v === o.v;
             if(o.op === '>=') return v >= o.v;
             if(o.op === 'array-contains') return Array.isArray(v) && v.includes(o.v);
+            if(o.op === 'in') return Array.isArray(o.v) && o.v.includes(v);
             return true; });
         }
         if(o.t === 'orderBy') rows = rows.filter(r => r.data()[o.f] !== undefined).sort((a, b) => (a.data()[o.f] > b.data()[o.f] ? 1 : -1) * (o.dir === 'desc' ? -1 : 1));

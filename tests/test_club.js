@@ -84,10 +84,12 @@ let fallos = 0; const check = (c, m) => { console.log((c ? '✔ ' : '✘ ') + m)
 
   // ---------- Cupo y agenda en Inicio ----------
   B.ir('home'); B.renderHome(); await sleep(30);
-  const semana = txt($B('lista-semana')), viene = txt($B('lista-viene'));
-  check(semana.includes('Casi Lleno') && !semana.includes('Últimas entradas'), '"Esta semana" muestra el evento (tarjeta limpia, sin carteles)');
-  check(viene.includes('Agotadisimo'), '"Lo que viene" muestra los de más adelante');
-  check(!semana.includes('Muy Pronto'), 'lo de esta noche no se repite en "Esta semana"');
+  // Cada evento aparece una sola vez en Inicio (en la fila que le toca: Hoy, En tendencia, Esta semana, Próximos o Lo que viene)
+  const home = $B('pantalla-home');
+  const veces = n => [...home.querySelectorAll('.tarjeta h3, .tarjeta-h h4')].filter(h => txt(h) === n).length;
+  check(veces('Casi Lleno') === 1 && !txt(home).includes('Últimas entradas'), 'el evento de esta semana aparece una sola vez en Inicio (tarjeta limpia, sin carteles)');
+  check(veces('Agotadisimo') === 1, 'el de más adelante también aparece una sola vez');
+  check(veces('Muy Pronto') === 1 && txt($B('lista-esta-noche')).includes('Muy Pronto'), 'lo de esta noche va en la primera fila y no se repite');
 
   // ---------- Control de puerta ----------
   B.abrirDetalle('casiLleno'); await sleep(150);

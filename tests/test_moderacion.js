@@ -29,7 +29,7 @@ let fallos = 0; const check = (c, m) => { console.log((c ? '✔ ' : '✘ ') + m)
   // ---------- Bienvenida animada ----------
   const N = abrir(null); await sleep(300); N.irALogin('ingresar'); await sleep(150);
   const logo = N.document.querySelector('#pantalla-bienvenida .lv-login');
-  check(act(N) === 'bienvenida' && N.document.body.classList.contains('modo-invitado') && logo && logo.querySelector('.lv-ico') && logo.querySelector('.lv-txt').textContent === 'artazy' && logo.getAttribute('aria-label') === 'PARTAZY', 'sin cuenta mira la app; al ir a ingresar: el logo nuevo animado');
+  check(act(N) === 'bienvenida' && N.document.body.classList.contains('modo-invitado') && logo && logo.querySelector('.lv-ico') && logo.querySelector('.lv-txt').textContent === 'artazy' && logo.getAttribute('aria-label') === 'Partazy', 'sin cuenta mira la app; al ir a ingresar: el logo nuevo animado');
   check(N.document.querySelectorAll('.eq i').length === 9, 'bienvenida: ecualizador de 9 barras');
 
   // ---------- Registro con @usuario, apodo y normas ----------
@@ -85,7 +85,7 @@ let fallos = 0; const check = (c, m) => { console.log((c ? '✔ ' : '✘ ') + m)
   }
   store.docs.get('events/ev1').denuncias = 3;
   const B2 = abrir('B'); await sleep(200);
-  check(!txt(B2.document.getElementById('lista-cerca')).includes('Fiesta de Juan'), 'con 3 denuncias, el evento desaparece de las listas');
+  check(!txt(B2.document.getElementById('pantalla-home')).includes('Fiesta de Juan'), 'con 3 denuncias, el evento desaparece de las listas');
   B2.abrirDetalle('ev1'); await sleep(100);
   check(txt(B2.document.getElementById('detalle-contenido')).includes('en revisión'), 'y su detalle dice "en revisión"');
 
@@ -94,7 +94,7 @@ let fallos = 0; const check = (c, m) => { console.log((c ? '✔ ' : '✘ ') + m)
   const A = abrir('A'); await sleep(250);
   const $A = id => A.document.getElementById(id);
   check($A('btn-moderacion').style.display !== 'none', 'el admin ve el botón "Moderación"');
-  check(txt(A.document.getElementById('lista-cerca')).includes('Fiesta de Juan'), 'el creador/admin sigue viendo su evento');
+  check(txt(A.document.getElementById('pantalla-home')).includes('Fiesta de Juan'), 'el creador/admin sigue viendo su evento');
   A.abrirModeracion(); await sleep(100);
   check(txt($A('lista-reportes')).includes('Fiesta de Juan') && txt($A('lista-reportes')).includes('3 denuncias'), 'el panel agrupa las 3 denuncias del evento');
   check(txt($A('lista-reportes')).includes('Desnudez o contenido sexual ×2') && txt($A('lista-reportes')).includes('la foto es explícita'), 'muestra motivos con cantidad y los comentarios');
@@ -125,7 +125,7 @@ let fallos = 0; const check = (c, m) => { console.log((c ? '✔ ' : '✘ ') + m)
   check(store.docs.get('bloqueos/B_A')?.a === 'A' && !store.docs.has('friendships/A_B'), 'bloquear: se guarda el bloqueo y se elimina la amistad');
   check(txt($B('usuario-contenido')).includes('Bloqueaste a esta persona') && !!B.document.querySelector('[data-desbloquear="A"]'), 'el perfil muestra "Bloqueaste a esta persona" y "Desbloquear"');
   B.ir('home'); B.renderHome(); await sleep(20);
-  check(!txt($B('lista-cerca')).includes('Fiesta de Juan'), 'B deja de ver los eventos de quien bloqueó');
+  check(!txt($B('pantalla-home')).includes('Fiesta de Juan'), 'B deja de ver los eventos de quien bloqueó');
   B.abrirAmigos(); await sleep(80);
   check(txt($B('bloque-bloqueados')).includes('Juan Lovotti'), 'Amigos → "Personas bloqueadas" lo lista');
   B.document.querySelector('#bloque-bloqueados [data-desbloquear="A"]').click(); await sleep(120);

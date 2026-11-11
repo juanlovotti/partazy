@@ -21,8 +21,8 @@ let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
   const A=mk('A'); await sleep(1300); A.cerrarTutorial(); await A.cargarRed(); await sleep(300);
   const $=id=>A.document.getElementById(id);
   // Tipos generales
-  A.elegirChipHome([...A.document.querySelectorAll('#chips-home .chip')].find(c=>c.textContent==='Charlas y talleres'),'charlas'); await sleep(50);
-  ok(/Charla de Ciberseguridad/.test(txt($('lista-esta-noche'))) && !/Feria del Libro/.test(txt($('lista-esta-noche'))), 'filtro "Charlas y talleres" en el inicio');
+  A.elegirChipHome([...A.document.querySelectorAll('#chips-home .chip')].find(c=>c.textContent==='Talleres y ferias'),'charlas'); await sleep(50);
+  ok(/Charla de Ciberseguridad/.test(txt($('lista-esta-noche'))) && /Feria del Libro/.test(txt($('lista-esta-noche'))) && /Talleres y ferias/.test(txt($('titulo-fila-1'))), 'filtro "Talleres y ferias" en el inicio (talleres, charlas y ferias)');
   ok(/Charla \/ Seminario/.test(txt(A.document.querySelector('#lista-esta-noche .cat'))), 'la tarjeta dice "Charla / Seminario"');
   // Fila de amigos
   const fila=$('home-amigos-fila');

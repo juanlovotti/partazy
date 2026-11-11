@@ -19,9 +19,16 @@ let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
   await sleep(600);
   ok(act()==='pantalla-home' && !$('app').classList.contains('sin-nav'), 'sin cuenta: entra directo a la app (inicio con la barra de abajo)');
   ok(w.document.body.classList.contains('modo-invitado') && /Noche Vortex/.test(txt($('pantalla-home'))), 'se ven los eventos');
-  ok(!cuenta(), 'la ventana de registro todavía no salta');
+  ok(!cuenta(), 'la ventana de registro no salta al abrir');
   await sleep(1300);
-  ok(cuenta() && /Sumate/.test(txt($('hoja-cuenta'))), 'a los segundos salta "Registrate o iniciá sesión"');
+  ok(!cuenta(), 'tampoco a los segundos: primero se ven los eventos');
+  // Arriba: "Entrar" en lugar de avisos, entradas y amigos (sin cuenta no sirven)
+  const top=w.document.querySelector('#pantalla-home .topbar');
+  const visto=el=>!!el && w.getComputedStyle(el).display!=='none';
+  ok(visto(top.querySelector('.btn-entrar')) && !visto(top.querySelector('[aria-label="Notificaciones"]')) && !visto(top.querySelector('[aria-label="Mis entradas"]')) && !visto(top.querySelector('[aria-label="Amigos"]')), 'arriba aparece "Entrar" y no los íconos de avisos, entradas y amigos');
+  ok(!w.document.querySelector('.barra-invitado'), 'ya no está la barra "Estás mirando sin cuenta"');
+  top.querySelector('.btn-entrar').click(); await sleep(50);
+  ok(cuenta() && /Sumate/.test(txt($('hoja-cuenta'))) && /Crear mi cuenta/.test(txt($('hoja-cuenta'))) && /Ya tengo cuenta/.test(txt($('hoja-cuenta'))), '"Entrar" abre "Sumate" con "Crear mi cuenta" y "Ya tengo cuenta"');
   w.cerrarPedirCuenta(); await sleep(50);
   ok(!cuenta() && act()==='pantalla-home', 'se puede cerrar y seguir mirando');
   // chips: libres
@@ -35,8 +42,6 @@ let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
   ok(cuenta() && act()==='pantalla-home', 'Perfil pide cuenta'); w.cerrarPedirCuenta(); await sleep(30);
   w.document.querySelector('[data-nav="chats"]').click(); await sleep(30);
   ok(cuenta(), 'Chats pide cuenta'); w.cerrarPedirCuenta(); await sleep(30);
-  w.document.querySelector('#pantalla-home .topbar [aria-label="Notificaciones"]').click(); await sleep(30);
-  ok(cuenta(), 'Notificaciones pide cuenta'); w.cerrarPedirCuenta(); await sleep(30);
   // explorar libre
   w.document.querySelector('[data-nav="explorar"]').click(); await sleep(80);
   ok(act()==='pantalla-explorar' && !cuenta(), 'Explorar se puede usar');
@@ -56,7 +61,7 @@ let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
   ok(!/Calle Secreta/.test(txt($('detalle-contenido'))) && /Nueva Córdoba/.test(txt($('detalle-contenido'))), 'previa privada: sin cuenta no se ve la dirección');
   // ir a iniciar sesión y volver a mirar
   w.abrirDetalle('e1'); await sleep(300);
-  w.pedirCuenta(); await sleep(20); [...$('hoja-cuenta').querySelectorAll('button')].find(b=>/Crear cuenta/.test(b.textContent)).click(); await sleep(150);
+  w.pedirCuenta(); await sleep(20); [...$('hoja-cuenta').querySelectorAll('button')].find(b=>/Crear mi cuenta/.test(b.textContent)).click(); await sleep(150);
   ok(act()==='pantalla-bienvenida' && /Creá|Crear/.test(txt($('btn-auth-principal'))), '"Crear cuenta" lleva al registro');
   ok(w.sessionStorage.getItem('partazy_ruta')==='#/evento/e1', 'recuerda el evento que estaba mirando');
   const seguir=w.document.querySelector('.btn-seguir-mirando'); ok(seguir && w.getComputedStyle(seguir).display!=='none', 'en la pantalla de ingreso aparece "Seguir mirando sin cuenta"');
@@ -72,7 +77,9 @@ let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
   const w2=mk('https://partazy.web.app/#/evento/e1'); await sleep(900);
   ok(w2.document.querySelector('.screen.activa')?.id==='pantalla-detalle' && /Noche Vortex/.test(txt(w2.document.getElementById('detalle-contenido'))), 'link compartido sin cuenta: abre la fiesta directo');
   await sleep(3000);
-  ok(w2.document.getElementById('hoja-cuenta').classList.contains('show'), 'y después ofrece registrarse');
+  ok(!w2.document.getElementById('hoja-cuenta').classList.contains('show'), 'y no salta el cartel solo');
+  w2.document.getElementById('btn-accion-detalle').click(); await sleep(50);
+  ok(w2.document.getElementById('hoja-cuenta').classList.contains('show'), 'la cuenta se pide recién al querer sumarse');
   const den=[...new Set((store.denegados||[]))];
   console.log('lecturas denegadas (invitado):', JSON.stringify(den));
   console.log(f?'\nFALLAS: '+f:'\nTODO OK'); process.exit(f?1:0);

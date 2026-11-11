@@ -17,7 +17,7 @@ let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
   const home=txt($('pantalla-home'));
   ok(/Elegí tu ciudad/.test(txt(w.document.querySelector('.ubic-btn'))), 'sin permiso de ubicación no asume Córdoba: "'+txt(w.document.querySelector('.ubic-btn'))+'"');
   ok(/Fiesta en Córdoba/.test(home) && /Fiesta en Rosario/.test(home), 'muestra todos los eventos del país');
-  ok(/No sabemos en qué ciudad estás/.test(home) && /Elegir mi ciudad/.test(home), 'y ofrece elegir la ciudad');
+  ok(/Mostrando todos los eventos\. Elegir zona/.test(txt($('home-ubic-linea'))) && !$('home-ubic-linea').hidden, 'y una línea chica debajo del buscador ofrece elegir la zona (hay eventos de varias ciudades: "todos los eventos")');
   ok(!/\d km/.test(txt($('lista-cerca'))), 'sin ubicación no inventa distancias');
   // en Rosario
   w.aplicarUbicacion({lat:-32.95,lng:-60.66}, true, 'Rosario'); w.elegirRango(50); await sleep(80);

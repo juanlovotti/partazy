@@ -24,7 +24,7 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const $=id=>w.document.getElem
 let fallas=0; const ok=(c,m)=>{ console.log((c?'✔ ':'✘ ')+m); if(!c) fallas++; };
 (async()=>{
   await sleep(700); w.cerrarTutorial(); await sleep(2600);
-  const sem = txt($('lista-semana'));
+  const sem = txt($('pantalla-home'));   // la fila donde cae depende del día (cada evento va una sola vez)
   ok(/Sofia y Ivo van/.test(sem), 'las tarjetas dicen "Sofia y Ivo van"');
   const sug = txt($('lista-sugeridos'));
   ok($('lista-sugeridos').style.display !== 'none' && /Noche Uno/.test(sug), 'aparece "Tal vez te interese" con lo que van tus amigos');

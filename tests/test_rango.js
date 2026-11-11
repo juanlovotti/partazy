@@ -18,17 +18,19 @@ const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const $=id=>w.document.getElem
 let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
 (async()=>{
   await sleep(900); w.cerrarTutorial(); w.eval('localStorage.clear()'); w.elegirRango(50); await sleep(300);
-  ok(/Río Tercero/.test(txt(w.document.querySelector('#pantalla-home .ubic-btn'))) && /50 km/.test(txt(w.document.querySelector('#pantalla-home .ubic-btn'))), 'arriba dice "Río Tercero · 50 km"');
+  const ub=()=>txt(w.document.querySelector('#pantalla-home .ubic-btn'));
+  ok(/^Río Tercero ▾$/.test(ub()), 'arriba dice solo "Río Tercero ▾" (la distancia se elige adentro): "'+ub()+'"');
+  w.abrirRango(); ok(txt(w.document.querySelector('#rango-ops .chip.activo'))==='50 km', 'adentro está marcada la distancia: 50 km'); w.cerrarRango();
   const home=txt($('pantalla-home'));
   ok(/Boliche Río Tercero/.test(home) && !/Fiesta Güemes/.test(home), 'con 50 km muestra lo de Río Tercero y no lo de Córdoba capital (≈85 km)');
-  ok(/0\.\d km|[1-9]\.\d km/.test(txt($('lista-cerca'))), 'los km se calculan desde Río Tercero');
+  ok(/0\.\d km|[1-9]\.\d km/.test(home), 'los km se calculan desde Río Tercero');
   w.elegirRango(100); await sleep(100);
-  ok(/Fiesta Güemes/.test(txt($('pantalla-home'))) && /100 km/.test(txt(w.document.querySelector('.ubic-btn'))), 'con 100 km aparecen también los de Córdoba');
+  ok(/Fiesta Güemes/.test(txt($('pantalla-home'))) && w.eval('state.radioKm')===100, 'con 100 km aparecen también los de Córdoba');
   w.elegirRango(5); await sleep(50);
   w.eval("state.userCoords={lat:-31.0,lng:-64.5}"); w.renderHome(); await sleep(50);
   ok(/No hay eventos a menos de 5 km/.test(txt($('home-aviso-rango'))) && /Ver todos/.test(txt($('home-aviso-rango'))), 'si no hay nada en el rango, avisa y ofrece "Ver todos"');
   w.document.querySelector('#home-aviso-rango .btn-primario').click(); await sleep(50);
-  ok(/Fiesta Güemes/.test(txt($('pantalla-home'))) && /Todos/.test(txt(w.document.querySelector('.ubic-btn'))), '"Ver todos" muestra todo');
+  ok(/Fiesta Güemes/.test(txt($('pantalla-home'))) && w.eval('state.radioKm')===0, '"Ver todos" muestra todo');
   // ciudad a mano
   w.abrirRango(); $('rango-ciudad').value='Córdoba'; await w.buscarCiudadRango(); await sleep(50);
   ok(/Córdoba/.test(txt(w.document.querySelector('.ubic-btn'))) && /Mostrando eventos cerca de Córdoba/.test($('rango-estado').textContent), 'se puede elegir otra ciudad a mano');

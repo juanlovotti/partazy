@@ -1644,3 +1644,84 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 .ac-tarjeta h2{font-family:var(--font-body); font-weight:700; font-size:24px; letter-spacing:-.03em; color:var(--blanco); text-transform:none;}
 .ac-tarjeta p{color:var(--gris); font-size:14.5px; line-height:1.5; margin:0 0 4px; overflow-wrap:anywhere;}
 .ac-tarjeta p b{color:var(--blanco);}
+
+/* =========================================================
+   Pago con comprobante (P2P) y pasar la entrada a un amigo (11/2026)
+   ========================================================= */
+.pago-p2p-pantalla{display:flex; flex-direction:column; gap:12px; padding:14px 20px 8px;}
+.pago-cab{text-align:center; padding:6px 4px 4px;}
+.pago-cab h2{font-family:var(--font-display); text-transform:uppercase; font-weight:700; font-size:26px; line-height:1.05;}
+.pago-cab p{color:var(--gris); font-size:14px; line-height:1.5; margin-top:8px;}
+.pago-cab p b{color:var(--hueso);}
+.pago-cab.vencida h2, .pago-cab.rechazado h2{color:var(--amarillo);}
+.pago-cab.revision h2{color:#8FD3F5;}
+.paso-p2p{display:flex; align-items:center; gap:10px; font-size:14px; font-weight:700; margin-top:6px;}
+.paso-p2p i{width:26px; height:26px; flex:none; border-radius:50%; background:var(--rojo); color:var(--negro); font-style:normal; font-weight:800; font-size:13px; display:flex; align-items:center; justify-content:center;}
+.pago-p2p .pago-dato{font-size:18px; letter-spacing:.2px;}
+.subir-comprobante{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; min-height:120px; padding:16px; border:1.5px dashed rgba(2,151,222,.6); border-radius:16px; background:rgba(2,151,222,.06); color:#8FD3F5; font-size:13.5px; font-weight:600; text-align:center; cursor:pointer;}
+.subir-comprobante img{max-width:100%; max-height:260px; border-radius:10px; object-fit:contain;}
+.subir-comprobante span{color:#8FD3F5;}
+.link-sin-comp{align-self:center; color:var(--gris); font-weight:600; text-decoration:underline;}
+.comp-mio{display:flex; flex-direction:column; align-items:center; gap:6px; font-size:12.5px; color:var(--gris);}
+.comp-mio:empty{display:none;}
+.comp-mio img{max-width:180px; max-height:220px; border-radius:10px; border:1px solid var(--gris-linea); object-fit:contain;}
+.como-p2p{display:flex; flex-direction:column; gap:4px; margin-top:12px; padding:13px 14px; border-radius:14px; background:rgba(2,151,222,.08); border:1px solid rgba(2,151,222,.35); font-size:13px; color:var(--hueso); line-height:1.45;}
+.como-p2p b{font-size:14px; margin-bottom:2px;}
+.pagos-cuenta{font-size:12px; color:var(--gris); margin:10px 0 4px;}
+.pago-fila{flex-wrap:wrap;}
+.pago-fila.enviado{border-color:rgba(2,151,222,.45);}
+.pago-acc{display:flex; gap:8px; flex:1 1 100%; justify-content:flex-end;}
+.pago-acc .btn{width:auto;}
+.hoja-comp{display:flex; flex-direction:column; gap:12px;}
+.hoja-comp img{width:100%; max-height:62vh; object-fit:contain; border-radius:12px; background:var(--negro);}
+.pasar-entrada{display:flex; flex-direction:column; align-items:flex-start; gap:6px; padding:14px 16px; border-radius:16px; background:var(--negro-2); border:1px solid var(--gris-linea); font-size:13px; color:var(--gris); line-height:1.45;}
+.pasar-entrada b{color:var(--hueso); font-size:14.5px;}
+.pasar-entrada .btn{width:auto; margin-top:6px;}
+.pasar-entrada.esperando{border-color:rgba(2,151,222,.45); background:rgba(2,151,222,.06);}
+.fila-comprobante{margin-top:14px;}
+.fila-comprobante .txt small{line-height:1.4;}
+.hoja .cuerpo.hoja-comp{margin-top:0; padding-top:24px;}
+
+/* ===== Revisión de diseño (10/11): Inicio más limpio, más legible y más fácil de tocar ===== */
+/* Sin cuenta: arriba va "Entrar" en vez de avisos, entradas y amigos (que sin cuenta no sirven) */
+.btn-entrar{display:none;}
+.modo-invitado #pantalla-home .topbar .btn-entrar{display:inline-flex; width:auto; min-height:44px; padding:0 20px; font-size:14px;}
+.modo-invitado #pantalla-home .topbar .solo-con-cuenta{display:none;}
+/* Ubicación: una línea chica debajo del buscador */
+.linea-ubic{margin:-8px 20px 12px; font-size:13px; color:var(--gris); line-height:1.4;}
+.linea-ubic[hidden]{display:none;}
+.link-ciudad{display:inline-block; background:none; border:0; padding:13px 2px; margin:-13px 0; font:inherit; font-weight:700; color:var(--rojo); text-decoration:underline; text-underline-offset:3px; cursor:pointer;}
+/* "Hoy no hay nada cargado..." */
+.nota-fila{margin:-6px 20px 14px; font-size:13px; color:var(--gris); line-height:1.4;}
+.nota-fila[hidden]{display:none;}
+/* Selector de ciudad: "Córdoba ▾" (la distancia se elige adentro) */
+.ubic-btn{min-height:44px; font-size:13px; padding:0 15px 0 12px;}
+.ubic-btn .flecha{color:var(--gris); font-size:11px;}
+/* Encabezado: al bajar toma fondo (así el logo no queda encima del texto) */
+#pantalla-home .topbar.con-fondo:not(.compacta){background:rgba(2,7,10,.85); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
+  box-shadow:0 0 0 100vmax rgba(2,7,10,.85), 0 1px 0 100vmax rgba(31,44,53,.6);}
+/* Letra mínima de 12 px */
+.nav-item{font-size:12px;}
+.saludo .eyebrow{font-size:12px;}
+.pie-legal{font-size:12px;}
+.pie-legal .links button, .pie-legal .links a{font-size:12px;}
+/* Botones y chips de 44 px de alto */
+.btn{min-height:44px;}
+.chip{min-height:44px; display:inline-flex; align-items:center;}
+.chips{padding-top:2px;}
+.aviso-rango .btn{min-height:44px;}
+:where(.icon-btn){position:relative;}
+.icon-btn::before{content:''; position:absolute; inset:-4px; border-radius:inherit;}
+/* "Ver todas", "Ver en el mapa" y los links del pie: más área para tocar, mismo aspecto */
+.seccion-titulo span{display:inline-block; padding:14px 0 14px 18px; margin:-14px 0;}
+.pie-legal .links{gap:0 18px;}
+.pie-legal .links button, .pie-legal .links a{display:inline-flex; align-items:center; min-height:44px; padding:0 2px;}
+.pie-redes .pie-ig{position:relative;}
+.pie-redes .pie-ig::before{content:''; position:absolute; inset:-7px -2px;}
+.ubic-btn .flecha{font-size:12px;}
+.tarjeta .info .cat{font-size:12px; letter-spacing:1.2px;}
+.tarjeta-h .cat{font-size:12px; letter-spacing:1px;}
+.idiomas button{font-size:12px; position:relative;}
+.idiomas button::before{content:''; position:absolute; inset:-9px -3px;}
+.seccion-titulo span{padding:15px 0 15px 18px; margin:-15px 0;}
+.pie-legal .mail-contacto a, .pie-legal a.mail-contacto{display:inline-block; padding:14px 0; margin:-14px 0;}

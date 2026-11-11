@@ -277,6 +277,93 @@ const DataService = {
     });
   },
 
+  // ---------- PAGO CON COMPROBANTE (P2P: la plata va directo a la cuenta de quien organiza) ----------
+  _comp(eventId, uid){ return this._ev(eventId).collection('comprobantes').doc(uid); },
+  // Reserva: guarda el lugar unos minutos (con el +1 al cupo en la misma transacción, igual que confirmar)
+  async reservarEntrada(eventId, datos){
+    const evRef = this._ev(eventId), atRef = this._at(eventId, datos.uid);
+    return db.runTransaction(async tx => {
+      const evS = await tx.get(evRef);
+      const atS = await tx.get(atRef);
+      if(!evS.exists) throw new Error('INEXISTENTE');
+      if(atS.exists) return atS.data();
+      const ev = evS.data(), n = ev.confirmadosCount || 0;
+      if(n >= ev.capacidad) throw new Error('LLENO');
+      tx.set(atRef, datos);
+      tx.update(evRef, { confirmadosCount: n + 1 });
+      return datos;
+    });
+  },
+  // Manda la captura del comprobante (o avisa que pagó sin captura): queda "pago enviado"
+  async enviarComprobante(eventId, uid, img){
+    const batch = db.batch();
+    if(img) batch.set(this._comp(eventId, uid), { img, ts: Date.now() });
+    batch.update(this._at(eventId, uid), { estado: 'pago-enviado', enviadoTs: Date.now(), ...(img ? {} : { sinComprobante: true }) });
+    await batch.commit();
+  },
+  async getComprobante(eventId, uid){
+    const snap = await this._comp(eventId, uid).get();
+    return snap.exists ? snap.data() : null;
+  },
+  // Para quien organiza: reservas y comprobantes pendientes, del más viejo al más nuevo
+  async listPagos(eventId){
+    const snap = await this._ev(eventId).collection('attendees').where('estado', 'in', ['reservado', 'pago-enviado']).get();
+    return snap.docs.map(d => d.data()).filter(a => a.estado === 'reservado' || a.estado === 'pago-enviado')
+      .sort((a, b) => (a.enviadoTs || a.ts || 0) - (b.enviadoTs || b.ts || 0));
+  },
+  // Quien organiza confirma (entrada con código) o rechaza (se libera el lugar). Después se borra la captura.
+  async responderPago(eventId, attUid, ok, extra = {}){
+    const evRef = this._ev(eventId), atRef = this._at(eventId, attUid);
+    await db.runTransaction(async tx => {
+      const evS = await tx.get(evRef);
+      const atS = await tx.get(atRef);
+      if(!atS.exists || !['reservado', 'pago-enviado'].includes(atS.data().estado)) throw new Error('YA_RESPONDIDA');
+      if(ok){ tx.update(atRef, { estado: 'confirmado', ticket: extra.ticket, respondidoTs: Date.now() }); return; }
+      tx.update(atRef, { estado: 'pago-rechazado', motivoRechazo: String(extra.motivo || '').slice(0, 120), respondidoTs: Date.now() });
+      tx.update(evRef, { confirmadosCount: Math.max(0, (evS.data().confirmadosCount || 1) - 1) });
+    });
+    await this._comp(eventId, attUid).delete().catch(() => {});
+  },
+  // Libera una reserva sin pagar (la persona con la suya, o quien organiza cuando venció): -1 al cupo
+  async liberarReserva(eventId, uid){
+    const evRef = this._ev(eventId), atRef = this._at(eventId, uid);
+    await db.runTransaction(async tx => {
+      const evS = await tx.get(evRef);
+      const atS = await tx.get(atRef);
+      if(!evS.exists || !atS.exists || atS.data().estado !== 'reservado') return;
+      tx.delete(atRef);
+      tx.update(evRef, { confirmadosCount: Math.max(0, (evS.data().confirmadosCount || 1) - 1) });
+    });
+  },
+
+  // ---------- PASAR LA ENTRADA A UN AMIGO ----------
+  // Quien tiene la entrada se la ofrece a un amigo (o cancela la oferta con amigo = null)
+  async ofrecerEntrada(eventId, uid, amigo, nombreAmigo){
+    const borrar = firebase.firestore.FieldValue.delete();
+    await this._at(eventId, uid).update(amigo
+      ? { transferirA: amigo, transferirNombre: String(nombreAmigo || '').slice(0, 60), transferirTs: Date.now() }
+      : { transferirA: borrar, transferirNombre: borrar, transferirTs: borrar });
+  },
+  // El amigo lee la oferta (las reglas solo se lo dejan a él)
+  async getOfertaEntrada(eventId, deUid){
+    const snap = await this._at(eventId, deUid).get();
+    return snap.exists ? snap.data() : null;
+  },
+  // El amigo acepta: se crea su entrada (código nuevo) y la de quien se la pasó queda anulada, en la misma escritura.
+  // El cupo no cambia: es el mismo lugar.
+  async aceptarEntrada(eventId, deUid, datos){
+    const batch = db.batch();
+    batch.set(this._at(eventId, datos.uid), { ...datos, deTransferencia: deUid });
+    batch.update(this._at(eventId, deUid), { estado: 'transferida', transferidaTs: Date.now() });
+    await batch.commit();
+  },
+  async rechazarEntrada(eventId, deUid){
+    const borrar = firebase.firestore.FieldValue.delete();
+    await this._at(eventId, deUid).update({ transferirA: borrar, transferirNombre: borrar, transferirTs: borrar });
+  },
+  // Borra una asistencia que ya no sirve (pago rechazado, entrada que pasaste) para poder anotarse de nuevo
+  async borrarAsistencia(eventId, uid){ await this._at(eventId, uid).delete(); },
+
   // ---------- RED DE AMIGOS (planes visibles solo para amigos) ----------
   async getPlanes(uid){
     const snap = await db.collection('planes').doc(uid).get();
@@ -1007,7 +1094,7 @@ async function ubicarLugar(lugar){
 
 // Imágenes
 const FALLBACK_IMG = 'data:image/svg+xml;utf8,' + encodeURIComponent(
-  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect fill="#121B22" width="400" height="300"/><text x="200" y="150" fill="#FC734D" font-family="sans-serif" font-size="28" font-weight="700" text-anchor="middle">PARTAZY</text></svg>`
+  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect fill="#121B22" width="400" height="300"/><text x="200" y="150" fill="#FC734D" font-family="sans-serif" font-size="28" font-weight="700" text-anchor="middle">Partazy</text></svg>`
 );
 // Devuelve la imagen solo si es una URL/dato de imagen válido (si no, una genérica).
 function imgSafe(url){
@@ -1227,7 +1314,7 @@ async function manejarAccionDeCorreo(){
   const a = accionDeCorreo();
   const caja = document.getElementById('accion-correo');
   if(!a || !auth || !caja) return false;
-  const logo = document.querySelector('#pantalla-bienvenida .lv')?.outerHTML || 'PARTAZY';
+  const logo = document.querySelector('#pantalla-bienvenida .lv')?.outerHTML || 'Partazy';
   const pintar = html => { caja.innerHTML = `<div class="ac-tarjeta auth-form"><div class="ac-logo">${logo}</div>${html}</div>`; caja.hidden = false; };
   const cerrar = () => { caja.hidden = true; caja.innerHTML = ''; limpiarUrlAccion(); };
   const conCerrar = (txt = 'Volver a Partazy') => `<button class="btn btn-primario" id="cc-cerrar">${txt}</button>`;
@@ -1599,9 +1686,10 @@ async function entrarComoInvitado(){
   document.querySelectorAll('.anio-actual').forEach(el => el.textContent = new Date().getFullYear());
   if(m) abrirRuta(ruta);
   else if(ruta){ try{ sessionStorage.setItem('partazy_ruta', ruta); } catch(e){} }
-  // A los pocos segundos, la invitación a registrarse (se puede cerrar)
+  // Primero se ven los eventos: la cuenta se pide recién al tocar algo que la necesita.
+  // Solo si llegó por el link de un perfil le avisamos que para verlo hace falta una cuenta.
   clearTimeout(state._tCuenta);
-  state._tCuenta = setTimeout(() => { if(state.invitado && !document.querySelector('.hoja-bg.show, .modal-bg.show, .tuto-bg.show')) pedirCuenta(ruta && !m ? 'Para ver este perfil necesitás una cuenta.' : null); }, m ? 3500 : 1500);
+  if(ruta && !m) state._tCuenta = setTimeout(() => { if(state.invitado && !document.querySelector('.hoja-bg.show, .modal-bg.show, .tuto-bg.show')) pedirCuenta('Para ver este perfil necesitás una cuenta.'); }, 1500);
 }
 // Deja el modo invitado al iniciar sesión.
 function salirDeInvitado(){
@@ -1615,7 +1703,7 @@ function salirDeInvitado(){
 function pedirCuenta(motivo){
   const t = document.getElementById('cuenta-titulo'), x = document.getElementById('cuenta-texto');
   t.textContent = motivo ? 'Necesitás una cuenta' : 'Sumate';
-  x.textContent = motivo ? motivo + ' Es gratis y tarda un minuto.' : 'Creá tu cuenta gratis para anotarte a fiestas, recitales, charlas y todo lo que pasa cerca tuyo, armar tus propios eventos y ver qué hacen tus amigos.';
+  x.textContent = motivo ? motivo + ' Es gratis y tarda un minuto.' : 'Creá tu cuenta gratis para anotarte a fiestas, recitales, talleres y todo lo que pasa cerca tuyo, armar tus propios eventos y ver qué hacen tus amigos.';
   const h = document.getElementById('hoja-cuenta');
   if(h.classList.contains('show')) return;
   h.classList.add('show');
@@ -1649,7 +1737,7 @@ function seguirMirando(){
     '[data-nav="home"]', '[data-nav="explorar"]', '.nav-logo', '.logo',
     '#chips-home .chip', '#chips-explorar .chip', '.buscador', '.buscador-mini', '.btn-buscar-mini', '#nav-toggle', '.nav-marca', '#input-buscar', '#seg-eventos', '#vista-lista', '#vista-mapa', '.ubic-btn',
     '.seccion-titulo span', '[aria-label="Actualizar eventos"]', '.tarjeta', '.tarjeta-h', '.btn-vista',
-    '[aria-label="Volver"]', '#btn-compartir-evento', '[onclick*="abrirReferencias"]', '[onclick*="abrirTutorial"]', '[onclick*="abrirAyuda"]', 'a[target="_blank"]', '.hero-img', '[data-vista]', '[data-idioma]'
+    '[aria-label="Volver"]', '#btn-compartir-evento', '[onclick*="abrirReferencias"]', '[onclick*="abrirTutorial"]', '[onclick*="abrirAyuda"]', 'a[target="_blank"]', '.hero-img', '[data-vista]', '[data-idioma]', '.link-ciudad'
   ].join(',');
   const INTERACTIVO = 'a, button, input, select, textarea, label, summary, [onclick], [role="button"], [tabindex], [data-usuario], [data-ticket], [data-id], [data-ev], [data-votar], .chip, .tarjeta, .tarjeta-h, .switch';
   const MOTIVOS_EL = [
@@ -1870,7 +1958,7 @@ async function exportarLista(id, fmt, btn){
         doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(110);
         doc.text(limpio(`${fmtFecha(ev.fechaTs)} hs · ${ev.lugar || ''}`), m, y); y += 14;
         const ok = filas.filter(f => f[3] === 'Confirmado' || f[3] === 'Aprobado').length;
-        doc.text(limpio(`${ok} confirmados · lista generada por PARTAZY el ${new Date().toLocaleString('es-AR')}`), m, y); y += 22;
+        doc.text(limpio(`${ok} confirmados · lista generada por Partazy el ${new Date().toLocaleString('es-AR')}`), m, y); y += 22;
         doc.setTextColor(20); doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
         let x = m; cab.slice(0, 6).forEach((c, i) => { doc.text(c, x, y); x += cols[i]; });
         y += 6; doc.setDrawColor(200); doc.line(m, y, W - m, y); y += 14; doc.setFont('helvetica', 'normal');
@@ -1956,7 +2044,10 @@ function irABuscar(){
   const top = pant && pant.querySelector('.topbar');
   const grande = pant && pant.querySelector('.buscador');
   if(!top || !grande) return;
-  const revisar = () => { top.classList.toggle('compacta', grande.getBoundingClientRect().bottom < top.getBoundingClientRect().bottom + 4); };
+  const revisar = () => {
+    top.classList.toggle('compacta', grande.getBoundingClientRect().bottom < top.getBoundingClientRect().bottom + 4);
+    top.classList.toggle('con-fondo', pant.scrollTop > 4);   // fondo con desenfoque apenas se baja
+  };
   pant.addEventListener('scroll', revisar, { passive: true });
   window.addEventListener('resize', revisar);
 })();
@@ -2519,13 +2610,19 @@ const TIPOS_NOTIF = {
   acreditacion_solicitud: { icono: '📰', texto: n => `${n.deNombre}${n.texto ? ' (' + n.texto + ')' : ''} pidió acreditación de prensa para ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
   acreditacion_aprobada:  { icono: '✅', texto: n => `Aprobaron tu acreditación de prensa para ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
   acreditacion_rechazada: { icono: '📰', texto: n => `Tu acreditación de prensa para ${n.objetoNombre} no fue aprobada`, ir: n => abrirDetalle(n.objetoId) },
-  verificacion_rechazada: { icono: 'ℹ️', texto: n => `No pudimos verificar tu organización${n.texto ? ': ' + n.texto : ''}. Podés volver a pedirlo.`, ir: () => abrirVerificacion() }
+  verificacion_rechazada: { icono: 'ℹ️', texto: n => `No pudimos verificar tu organización${n.texto ? ': ' + n.texto : ''}. Podés volver a pedirlo.`, ir: () => abrirVerificacion() },
+  pago_enviado:           { icono: '🧾', texto: n => `${n.deNombre} ${n.texto === 'sin captura' ? 'avisó que pagó' : 'mandó el comprobante'} de su entrada para ${n.objetoNombre}. Fijate en tu cuenta y confirmalo.`, ir: n => abrirDetalle(n.objetoId) },
+  pago_confirmado:        { icono: '✅', texto: n => `${n.deNombre} confirmó tu pago para ${n.objetoNombre}. Ya tenés tu entrada.`, ir: n => abrirTicket(n.objetoId) },
+  pago_rechazado:         { icono: '⚠️', texto: n => `${n.deNombre} no encontró tu pago para ${n.objetoNombre}${n.texto ? ': ' + n.texto : ''}`, ir: n => abrirTicket(n.objetoId) },
+  entrada_transferencia:  { icono: '🎟️', texto: n => `${n.deNombre} te quiere pasar su entrada para ${n.objetoNombre}`, ir: n => abrirOfertaEntrada(n.objetoId, n.de) },
+  entrada_aceptada:       { icono: '🤝', texto: n => `${n.deNombre} aceptó tu entrada para ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) }
 };
 
 // Cómo se agrupan en la pantalla de notificaciones (en este orden)
 const GRUPOS_NOTIF = [['solicitudes', 'Solicitudes'], ['amigos', 'Amigos'], ['seguidos', 'Seguidos'], ['eventos', 'Tus eventos']];
 const GRUPO_NOTIF = {
   amistad_solicitud: 'solicitudes', evento_solicitud: 'solicitudes', mensaje_solicitud: 'solicitudes', acreditacion_solicitud: 'solicitudes',
+  pago_enviado: 'solicitudes', entrada_transferencia: 'solicitudes', pago_confirmado: 'eventos', pago_rechazado: 'eventos', entrada_aceptada: 'eventos',
   amigo_evento: 'amigos', evento_compartido: 'amigos', mencion: 'amigos', amistad_aceptada: 'amigos', mensaje_aceptado: 'amigos',
   nuevo_evento: 'seguidos',
   evento_aprobada: 'eventos', evento_rechazada: 'eventos', evento_cancelado: 'eventos', evento_confirmacion: 'eventos',
@@ -3674,9 +3771,9 @@ function abrirAmigos(enfocar, texto){
 // Invitar a alguien que todavía no usa Partazy (WhatsApp, Instagram, etc.)
 async function invitarAmigos(){
   const link = location.origin + (state.uid ? '/#/u/' + state.uid : '');
-  const texto = `Sumate a PARTAZY 🎉 la app de fiestas, previas y boliches. Agregame: ${link}`;
+  const texto = `Sumate a Partazy 🎉 la app de fiestas, previas y boliches. Agregame: ${link}`;
   if(navigator.share){
-    try{ await navigator.share({ title: 'PARTAZY', text: texto }); return; } catch(e){ if(e && e.name === 'AbortError') return; }
+    try{ await navigator.share({ title: 'Partazy', text: texto }); return; } catch(e){ if(e && e.name === 'AbortError') return; }
   }
   window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank', 'noopener');
 }
@@ -4428,6 +4525,13 @@ async function proximasEntradas(){
   return evs.filter(e => e.fechaTs >= desde).sort((a,b) => a.fechaTs - b.fechaTs);
 }
 
+// Reservas y pagos con comprobante que todavía no terminaron (para "Mis entradas").
+async function pagosPendientes(){
+  const asis = (await DataService.listAsistenciasDe(state.uid)).filter(a => ESTADOS_PAGO.includes(a.estado));
+  const evs = await Promise.all(asis.map(a => eventoPorId(a.eventId).then(e => e && { e, a })));
+  const desde = Date.now() - 6 * HORA;
+  return evs.filter(x => x && x.e.fechaTs >= desde).sort((x, y) => x.e.fechaTs - y.e.fechaTs);
+}
 // Mis entradas: abre la única o muestra la lista.
 async function irAMisEntradas(){
   ir('ticket', { clave: 'ticket', abrir: irAMisEntradas });
@@ -4435,12 +4539,21 @@ async function irAMisEntradas(){
   const cont = document.getElementById('ticket-contenido');
   cont.innerHTML = '<div class="empty-state" style="padding-top:60px;">Cargando...</div>';
   try{
-    const prox = await proximasEntradas();
+    const [prox, pend] = await Promise.all([proximasEntradas(), pagosPendientes().catch(() => [])]);
     if(tok !== state.tok) return;
-    if(prox.length === 1) return abrirTicket(prox[0].id);
-    if(prox.length > 1){
+    if(prox.length === 1 && !pend.length) return abrirTicket(prox[0].id);
+    const ESTADO_TXT = { reservado: 'Lugar guardado: falta el comprobante', 'pago-enviado': 'Pago en revisión', 'pago-rechazado': 'No encontraron tu pago' };
+    const pendHTML = pend.length ? `<div style="padding:0 20px 8px;"><h3 class="titulo-bloque">Pagos pendientes</h3></div>
+        <div class="lista-entradas" style="margin-bottom:18px;">${pend.map(({ e, a }) => `
+          <div class="entrada-mini" role="button" tabindex="0" data-ticket="${esc(e.id)}">
+            ${fotoMiniHTML(e)}
+            <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs</span><span style="color:var(--amarillo); font-weight:700;">${esc(ESTADO_TXT[a.estado] || '')}</span></div>
+            <div class="ir">Ver</div>
+          </div>`).join('')}</div>` : '';
+    if(prox.length > 1 || pend.length){
       cont.innerHTML = `<div style="padding:10px 20px 14px;"><h2 style="font-family:var(--font-display); text-transform:uppercase; font-size:26px;">Mis entradas</h2>
-        <p style="color:var(--gris); font-size:13px; margin-top:2px;">Tenés ${prox.length} eventos. Tocá uno para ver tu entrada y el grupo.</p></div>
+        <p style="color:var(--gris); font-size:13px; margin-top:2px;">${prox.length ? `Tenés ${prox.length} ${prox.length === 1 ? 'evento' : 'eventos'}. Tocá uno para ver tu entrada y el grupo.` : 'Todavía no tenés entradas confirmadas.'}</p></div>
+        ${pendHTML}
         <div class="lista-entradas">${prox.map(e => `
           <div class="entrada-mini" role="button" tabindex="0" data-ticket="${esc(e.id)}">
             ${fotoMiniHTML(e)}
@@ -4502,6 +4615,18 @@ document.addEventListener('click', e => {
   if(abrir){ abrirDetalle(abrir.dataset.abrir); return; }
   const ticket = e.target.closest('[data-ticket]');
   if(ticket){ abrirTicket(ticket.dataset.ticket); return; }
+  const pago = e.target.closest('[data-pago]');
+  if(pago){ responderPago(pago.dataset.evento, pago.dataset.pago, pago.dataset.accion === 'ok', pago); return; }
+  const vc = e.target.closest('[data-ver-comp]');
+  if(vc){ verComprobante(vc.dataset.evento, vc.dataset.verComp); return; }
+  const cr = e.target.closest('[data-cancelar-reserva]');
+  if(cr){ cancelarReserva(cr.dataset.cancelarReserva); return; }
+  const rp = e.target.closest('[data-reintentar-pago]');
+  if(rp){ reintentarPago(rp.dataset.reintentarPago); return; }
+  const pe = e.target.closest('[data-pasar-entrada]');
+  if(pe){ pasarEntrada(pe.dataset.pasarEntrada); return; }
+  const cp = e.target.closest('[data-cancelar-pase]');
+  if(cp){ cancelarPase(cp.dataset.cancelarPase); return; }
   const sol = e.target.closest('[data-solicitud]');
   if(sol){ responderSolicitud(sol.dataset.evento, sol.dataset.solicitud, sol.dataset.accion === 'aprobar', sol); return; }
   const seg = e.target.closest('[data-seguir]');
@@ -4835,11 +4960,11 @@ function pasosTutorial(){
     { logo: true, t: nombre ? `¡Hola, ${esc(nombre)}!` : '¡Bienvenido/a!',
       p: 'Partazy es para encontrar <b>planes cerca tuyo</b>: fiestas, previas, recitales, charlas, talleres, ferias, partidos... Ver a dónde van tus amigos y anotarte. Son 5 pasos cortitos.' },
     { t: 'Encontrá un plan',
-      p: esOrganizacion(state.perfil) ? `En <b>Inicio</b> tenés lo de hoy y lo que se viene cerca. Filtrá por tipo (fiestas, charlas, deportes...) o buscá algo puntual.`
-        : `En <b>Inicio</b> tenés lo de hoy y <b>Para vos</b>, armado con tus gustos. Filtrá por tipo (fiestas, charlas, deportes...) o buscá algo puntual.`,
+      p: esOrganizacion(state.perfil) ? `En <b>Inicio</b> tenés lo de hoy y lo que se viene cerca. Filtrá por tipo (fiestas, talleres, deportes...) o buscá algo puntual.`
+        : `En <b>Inicio</b> tenés lo de hoy y <b>Para vos</b>, armado con tus gustos. Filtrá por tipo (fiestas, talleres, deportes...) o buscá algo puntual.`,
       dibujo: `<div class="tm tm-buscar">
         <div class="tm-barra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="tm-tipeo"></span></div>
-        <div class="tm-chips"><i>Hoy</i><i class="on">${esOrganizacion(state.perfil) ? 'Esta semana' : 'Para vos 🎧'}</i><i>Charlas</i><i>Deportes</i></div></div>` },
+        <div class="tm-chips"><i>Hoy</i><i class="on">${esOrganizacion(state.perfil) ? 'Esta semana' : 'Para vos 🎧'}</i><i>Talleres</i><i>Deportes</i></div></div>` },
     { t: 'Anotate en un toque',
       p: `Abrí un evento y tocá <b>Confirmar asistencia</b> (o <b>Reservar</b> si es pago: ahí ves a quién pagarle y copiás el alias). Algunos tienen <b>fecha límite</b> para anotarse. Tu entrada queda en <b>Mis entradas</b> 🎟️, ${compu ? 'en el menú de la izquierda' : 'el ícono del ticket arriba'}.`,
       dibujo: `<div class="tm tm-evento">
@@ -4947,7 +5072,7 @@ function tarjetaHTML(ev, _dist, razon){
      ${candado}
      <div class="foto"><div class="foto-img" style="background-image:${cssFoto(ev)}"></div></div>
      <div class="info">
-       <div class="cat">${iconoTipo(ev)}${esc(etiquetaTipo(ev))}<button class="btn-vista" data-vista="${esc(ev.id)}" aria-label="Vista previa de ${esc(ev.nombre)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>Vista previa</button></div>
+       <div class="cat">${iconoTipo(ev)}${esc(etiquetaTipo(ev))}</div>
        <h3>${esc(ev.nombre)}</h3>
        ${lineaMetaHTML(ev)}
        ${amigos || (razon && /^[🎧👥📈]/u.test(razon) ? `<div class="razon-tarjeta">${esc(razon)}</div>` : '')}
@@ -4964,7 +5089,7 @@ function tarjetaHorizontalHTML(ev, razon){
    <div class="tarjeta-h" role="button" tabindex="0" data-abrir="${esc(ev.id)}" aria-label="${esc(ev.nombre)}">
      <div class="foto-h"><div class="foto-img" style="background-image:${cssFoto(ev)}"></div></div>
      <div class="info-h">
-       <div class="cat">${iconoTipo(ev)}${esc(etiquetaTipo(ev))}${candado}<button class="btn-vista" data-vista="${esc(ev.id)}" aria-label="Vista previa de ${esc(ev.nombre)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>Vista previa</button></div>
+       <div class="cat">${iconoTipo(ev)}${esc(etiquetaTipo(ev))}${candado}</div>
        <h4>${esc(ev.nombre)}</h4>
        ${lineaMetaHTML(ev)}
        ${amigos || (razon && /^[🎧👥📈]/u.test(razon) ? `<div class="razon-tarjeta">${esc(razon)}</div>` : '')}
@@ -5153,7 +5278,7 @@ async function activarAvisos(){
   if(!avisosSoportados()){ toast('Tu navegador no permite notificaciones'); return; }
   try{
     const p = await Notification.requestPermission();
-    if(p === 'granted'){ toast('¡Listo! Te avisamos de mensajes y fiestas nuevas'); avisoSistema('PARTAZY', 'Las notificaciones quedaron activadas 🎉', null, true); }
+    if(p === 'granted'){ toast('¡Listo! Te avisamos de mensajes y fiestas nuevas'); avisoSistema('Partazy', 'Las notificaciones quedaron activadas 🎉', null, true); }
     else toast('No se activaron las notificaciones');
   } catch(e){ toast('No se pudieron activar'); }
   pintarBotonAvisos();
@@ -5191,7 +5316,7 @@ function avisarNotifNuevas(lista){
       const t = TIPOS_NOTIF[n.tipo];
       if(!t) return;
       const destino = n.objetoId && /evento|nuevo_evento|amigo_evento|compartido|acreditacion/.test(n.tipo) ? 'evento:' + n.objetoId : 'notificaciones';
-      avisoSistema('PARTAZY', t.texto(n), destino);
+      avisoSistema('Partazy', t.texto(n), destino);
       if(document.visibilityState === 'visible' && pantallaActual() !== 'notificaciones') toast(t.icono + ' ' + t.texto(n));
     });
   }
@@ -5583,7 +5708,7 @@ function filtrarPorChip(eventos, filtro){
     case 'previas':        return eventos.filter(e => e.tipo === 'previa' || e.ocasion === 'previa');
     case 'musica':         return eventos.filter(e => e.ocasion === 'musical' || e.ocasion === 'pena');
     case 'gastro':         return eventos.filter(e => e.ocasion === 'gastronomico' || e.ocasion === 'feria');
-    case 'charlas':        return eventos.filter(e => e.ocasion === 'charla' || e.ocasion === 'taller');
+    case 'charlas':        return eventos.filter(e => e.ocasion === 'charla' || e.ocasion === 'taller' || e.ocasion === 'feria');
     case 'cultura':        return eventos.filter(e => e.ocasion === 'cultural');
     case 'deportes':       return eventos.filter(e => e.ocasion === 'deportivo');
     case 'paravos':        return eventos.filter(e => afinidad(e).puntos > 0).sort((a, b) => afinidad(b).puntos - afinidad(a).puntos || a.fechaTs - b.fechaTs);
@@ -5616,6 +5741,11 @@ function renderHome(){
   const todosVis = eventosVisibles().filter(e => !esCancelado(e));
   const base = eventosParaVer();
   document.getElementById('home-aviso-rango').innerHTML = avisoRangoHTML(todosVis.length, base.filter(e => !esCancelado(e)).length);
+  pintarLineaUbic();
+  const notaFila = document.getElementById('nota-fila-1');
+  if(notaFila){ notaFila.textContent = ''; notaFila.hidden = true; }
+  document.getElementById('titulo-cerca').parentElement.style.display = '';
+  document.getElementById('lista-cerca').style.display = '';
 
   document.getElementById('home-eyebrow').textContent = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
   pintarUbicacion();
@@ -5655,7 +5785,8 @@ function renderHome(){
   if(tituloComp) tituloComp.textContent = comp.every(x => x.mio) ? 'Lo que compartiste' : comp.some(x => x.mio || (state.misCompartidos || []).includes(x.e.id)) ? 'Compartidos por vos y tus amigos' : 'Compartidos por tus amigos';
   document.getElementById('lista-compartidos').innerHTML = comp.map(x => tarjetaHTML(x.e, null, x.razon)).join('');
   mostrar('titulo-tendencia', ten.length >= 2); mostrar('lista-tendencia', ten.length >= 2);
-  document.getElementById('lista-tendencia').innerHTML = ten.map(e => tarjetaHTML(e, null, e.repostsCount ? `${e.repostsCount} ${e.repostsCount === 1 ? 'compartido' : 'compartidos'}` : `${e.confirmadosCount} van`)).join('');
+  const tarjetaTen = e => tarjetaHTML(e, null, e.repostsCount ? `${e.repostsCount} ${e.repostsCount === 1 ? 'compartido' : 'compartidos'}` : `${e.confirmadosCount} van`);
+  document.getElementById('lista-tendencia').innerHTML = ten.map(tarjetaTen).join('');
   document.getElementById('titulo-viene').style.display = queViene.length ? '' : 'none';
   document.getElementById('lista-viene').innerHTML = queViene.map(e => tarjetaHorizontalHTML(e)).join('');
 
@@ -5671,13 +5802,18 @@ function renderHome(){
     titulo1.textContent = 'Más cerca tuyo 📍';
   } else {
     filtrados = filtrarPorChip(base, state.filtroActivoHome);
-    const TIT = { hoy: 'Hoy 🔥', paravos: 'Para vos 🎧', fiestas: 'Fiestas 🪩', previas: 'Previas 🍾', musica: 'Música en vivo 🎤', gastro: 'Gastronomía y ferias 🍽️', charlas: 'Charlas y talleres 💬', cultura: 'Arte y cultura 🎭', deportes: 'Deporte y aire libre ⚽', privadas: 'Con invitación 🔒' };
+    const TIT = { hoy: 'Hoy 🔥', paravos: 'Para vos 🎧', fiestas: 'Fiestas 🪩', previas: 'Previas 🍾', musica: 'Música en vivo 🎤', gastro: 'Gastronomía y ferias 🍽️', charlas: 'Talleres y ferias 🛠️', cultura: 'Arte y cultura 🎭', deportes: 'Deporte y aire libre ⚽', privadas: 'Con invitación 🔒' };
     titulo1.textContent = TIT[state.filtroActivoHome] || 'Recomendados ✨';
     // Nada esta noche: arriba va lo próximo (así lo recién publicado se ve primero)
     if(state.filtroActivoHome === 'hoy' && !filtrados.length && futuros.length){
       const ocultar = (...ids) => ids.forEach(id => { document.getElementById(id).style.display = 'none'; });
-      if(deSemana.length){ filtrados = deSemana; titulo1.textContent = 'Esta semana 🔥'; ocultar('titulo-semana', 'lista-semana'); }
+      if(deSemana.length){ filtrados = deSemana; titulo1.textContent = 'Esta semana 🔥'; ocultar('titulo-semana', 'lista-semana'); document.getElementById('lista-semana').innerHTML = ''; }
       else { filtrados = queViene; titulo1.textContent = 'Lo que viene 🔥'; ocultar('titulo-viene'); document.getElementById('lista-viene').innerHTML = ''; }
+      // Que "Hoy" no prometa de más: avisamos que hoy no hay nada y que abajo va lo próximo
+      if(notaFila){
+        notaFila.textContent = `Hoy no hay nada cargado${state.userCoords && state.radioKm ? ' cerca' : ''}. Mirá lo que viene${deSemana.length ? ' esta semana' : ''} 👇`;
+        notaFila.hidden = false;
+      }
     }
   }
   if(state.filtroActivoHome === 'hoy' && misGustos().length) filtrados = [...filtrados].sort((a, b) => (afinidad(b).puntos > 0) - (afinidad(a).puntos > 0) || a.fechaTs - b.fechaTs);
@@ -5685,8 +5821,39 @@ function renderHome(){
     ? filtrados.map(e=>tarjetaHTML(e, e.dist!==undefined ? textoDistancia(e, e.dist) : null, afinidad(e).puntos === 2 ? `🎧 ${afinidad(e).motivo}` : '')).join('')
     : emptyState('No hay eventos para este filtro todavía. ¡Creá el primero!');
 
-  const cercanos = conDistancia(base).sort(porDistancia).slice(0,6);
-  document.getElementById('titulo-cerca').textContent = !state.userCoords ? 'Próximos eventos' : state.radioKm ? `Cerca tuyo · ${state.radioKm} km` : 'Más cerca tuyo';
+  // Sin repetir: un evento aparece una sola vez en el inicio. Lo que ya está en la primera fila no vuelve
+  // a salir en "En tendencia", "Esta semana", "Próximos eventos" ni "Lo que viene"; la fila que queda vacía se oculta.
+  // Sin ubicación, "Próximos eventos" queda con lo que viene después de esta semana.
+  // (Las filas personales, "Para vos", "Tal vez te interese" y "Compartidos", no se tocan: tienen su motivo.)
+  const visible = id => document.getElementById(id).style.display !== 'none';
+  const yaVistos = new Set(filtrados.map(e => e.id));
+  if(visible('lista-tendencia')){
+    const tenF = ten.filter(e => !yaVistos.has(e.id)), on = tenF.length >= 2;
+    mostrar('titulo-tendencia', on); mostrar('lista-tendencia', on);
+    document.getElementById('lista-tendencia').innerHTML = on ? tenF.map(tarjetaTen).join('') : '';
+    if(on) tenF.forEach(e => yaVistos.add(e.id));
+  }
+  if(visible('lista-semana')){
+    const semF = deSemana.filter(e => !yaVistos.has(e.id));
+    mostrar('titulo-semana', semF.length); mostrar('lista-semana', semF.length);
+    document.getElementById('lista-semana').innerHTML = semF.map(e => tarjetaHTML(e, null, afinidad(e).puntos === 2 ? `🎧 ${afinidad(e).motivo}` : '')).join('');
+    semF.forEach(e => yaVistos.add(e.id));
+  }
+  const todosCerca = conDistancia(base).sort(porDistancia);
+  const cercanos = todosCerca.filter(e => !yaVistos.has(e.id)).slice(0,6);
+  document.getElementById('titulo-cerca').textContent = !state.userCoords ? 'Próximos eventos' : state.radioKm ? `A menos de ${state.radioKm} km` : 'Más cerca tuyo';
+  // "Lo que viene" tampoco repite lo que ya se mostró
+  if(visible('titulo-viene')){
+    const enFilas = new Set([...yaVistos, ...cercanos.map(e => e.id)]);
+    const resto = futuros.filter(e => e.fechaTs >= semana && !enFilas.has(e.id)).slice(0, 12);
+    document.getElementById('titulo-viene').style.display = resto.length ? '' : 'none';
+    document.getElementById('lista-viene').innerHTML = resto.map(e => tarjetaHorizontalHTML(e)).join('');
+  }
+  if(!cercanos.length && todosCerca.length){
+    document.getElementById('titulo-cerca').parentElement.style.display = 'none';
+    cont2.style.display = 'none'; cont2.innerHTML = '';
+    return;
+  }
   cont2.innerHTML = cercanos.length ? cercanos.map(e=>tarjetaHTML(e, textoDistancia(e, e.dist))).join('') : emptyState(`No hay eventos a menos de ${state.radioKm} km.`);
 }
 
@@ -5800,6 +5967,9 @@ async function renderDetalle(id){
     const cancelado = esCancelado(ev);
     const ventaExterna = (!esPrivada && ev.linkEntradas) ? linkWeb(ev.linkEntradas, true) : null;
     if(adentro)                        accionTxt = 'Ver mi entrada';
+    else if(estado === 'reservado')    accionTxt = 'Terminar el pago';
+    else if(estado === 'pago-enviado') accionTxt = 'Pago en revisión ⏳';
+    else if(estado === 'pago-rechazado') accionTxt = 'Ver qué pasó con tu pago';
     else if(cancelado)                { accionTxt = 'Evento cancelado'; deshabilitado = true; }
     else if(estado === 'solicitado')  { accionTxt = 'Solicitud enviada ⏳'; deshabilitado = true; }
     else if(estado === 'rechazado')   { accionTxt = 'Solicitud rechazada'; deshabilitado = true; }
@@ -5843,6 +6013,7 @@ async function renderDetalle(id){
             : `El pago se hace directamente a ${esc(nombreOrg)}. Partazy no cobra comisiones ni hace devoluciones: cualquier reintegro lo coordinás con el organizador.`}</span>
           <span>${esc(AVISO_DEVOLUCIONES)}</span>
         </div>
+        ${ev.cobroComprobante && !ventaExterna ? '<div class="como-p2p"><b>Cómo funciona</b><span>1. Reservás y te guardamos el lugar 30 minutos.</span><span>2. Transferís y mandás la captura del comprobante.</span><span>3. Cuando quien organiza confirma que le llegó, recibís tu entrada.</span></div>' : ''}
       </div>` : '';
 
     const bloqueAdmin = esCreador ? `
@@ -5858,6 +6029,12 @@ async function renderDetalle(id){
           : 'Cancelar: el evento queda visible como cancelado y se avisa en el grupo. Eliminar: se borra para siempre (solo si todavía nadie más confirmó).'}</div>
       </div>` : '';
 
+    const panelPagos = (esCreador && ev.cobroComprobante && ev.precio > 0 && !cancelado) ? `
+      <div class="bloque">
+        <h3 class="titulo-bloque">Pagos para revisar</h3>
+        <div class="aviso aviso-pago"><span>Un comprobante se puede falsificar: antes de tocar "Me llegó", fijate en tu cuenta que la plata haya entrado.</span></div>
+        <div class="lista-solicitudes" id="lista-pagos"><div class="empty-state">Cargando...</div></div>
+      </div>` : '';
     const panelSolicitudes = (esCreador && esPrivada && !cancelado) ? `
       <div class="bloque">
         <h3 class="titulo-bloque">Solicitudes pendientes</h3>
@@ -5893,6 +6070,7 @@ async function renderDetalle(id){
 
       ${amigosVanHTML(ev, true) ? `<div class="bloque"><div class="bloque-amigos-van">${amigosVanHTML(ev, true)}</div></div>` : ''}
 
+      ${panelPagos}
       ${panelSolicitudes}
       ${esCreador ? `<div class="bloque">
         <h3 class="titulo-bloque">Lista de confirmados</h3>
@@ -5995,6 +6173,7 @@ async function renderDetalle(id){
     const bDen = document.getElementById('btn-denunciar-evento');
     if(bDen) bDen.onclick = () => denunciarEvento(ev);
     if(esCreador && esPrivada && !cancelado) cargarSolicitudes(ev.id, tok);
+    if(document.getElementById('lista-pagos')) cargarPagos(ev, tok);
     if(esCreador) cargarConfirmados(ev, tok);
     if(ev.porEquipos) pintarEquipos(ev, estado, tok);
     if(esCreador && ev.listaVip) DataService.getVip(ev.id).then(l => {
@@ -6022,6 +6201,7 @@ async function renderDetalle(id){
 // Botón principal del evento: confirmar, pedir unirse, lista de espera, comprar o ver entrada.
 async function accionDetalle(ev, estado, lleno, adentro, yaCompro){
   if(adentro){ abrirTicket(ev.id); return; }
+  if(['reservado', 'pago-enviado', 'pago-rechazado'].includes(estado)){ abrirTicket(ev.id); return; }
   if(esCancelado(ev)) return;
   // En lista de espera y se liberó un lugar: sale de la lista y confirma
   const desdeEspera = estado === 'en-espera' && !lleno;
@@ -6062,6 +6242,20 @@ async function accionDetalle(ev, estado, lleno, adentro, yaCompro){
       return renderDetalle(ev.id);
     }
 
+    // Entrada paga con comprobante: se guarda el lugar y se va a la pantalla de pago
+    if(ev.precio > 0 && !yaCompro && ev.cobroComprobante){
+      const quien = ev.pagoTitular || ev.creadorNombre || ev.organizador || 'quien organiza';
+      const ok = await confirmar('Reservar entrada', `Te guardamos el lugar ${RESERVA_MIN} minutos. En ese rato transferís ${money(ev.precio)} a la cuenta de ${quien} y mandás la captura del comprobante. Cuando confirme que le llegó, recibís tu entrada. Partazy no toca la plata: va directo a esa cuenta. ${AVISO_DEVOLUCIONES}`, 'Reservar mi lugar');
+      if(!ok) return;
+      if(btn) btn.disabled = true;
+      if(desdeEspera) await DataService.salirDeEvento(ev.id, state.uid, 'en-espera');
+      await DataService.reservarEntrada(ev.id, { ...base, estado: 'reservado', venceTs: Date.now() + RESERVA_MIN * 60e3 });
+      sumarConfirmadoEnCache(ev.id);
+      await aplicarEquipo(ev, eleccion);
+      toast(`Te guardamos el lugar ${RESERVA_MIN} minutos`);
+      abrirTicket(ev.id);
+      return;
+    }
     if(ev.precio > 0 && !yaCompro){
       const como = (ev.pagoInfo ? ` Cómo pagar: ${ev.pagoInfo}.` : '') + (ev.pagoTitular ? ` Le pagás a ${ev.pagoTitular}.` : '');
       const ok = await confirmar('Reservar entrada', `Entrada: ${money(ev.precio)}.${como} El pago es directo${ev.pagoTitular ? ' a esa cuenta' : ' al organizador'}: Partazy no cobra ni hace devoluciones, el reintegro lo coordinás con el organizador. ${AVISO_DEVOLUCIONES}`, 'Reservar mi lugar');
@@ -6219,6 +6413,292 @@ async function responderSolicitud(eventId, attUid, aprobar, btn){
 }
 
 // =========================================================
+//  PAGO CON COMPROBANTE (P2P)
+//  La plata va directo de la persona a la cuenta de quien organiza (como en el P2P de Binance,
+//  pero lo que Partazy "retiene" es la entrada, no el dinero): reserva → transferencia y captura →
+//  quien organiza confirma que le llegó → entrada. Partazy nunca toca la plata.
+// =========================================================
+const RESERVA_MIN = 30;
+const ESTADOS_PAGO = ['reservado', 'pago-enviado', 'pago-rechazado'];
+function minutosReserva(a){ return Math.max(0, Math.ceil(((a.venceTs || 0) - Date.now()) / 60e3)); }
+// Datos para transferir: monto, alias o CBU (con botón para copiar), titular y cómo se paga.
+function datosTransferenciaHTML(ev){
+  const quien = ev.pagoTitular || ev.creadorNombre || ev.organizador || 'quien organiza';
+  const dato = datoPago(ev.pagoInfo), esCbu = /^\d+$/.test(dato);
+  return `<div class="pago-destacado con-titular pago-p2p">
+      <div class="pago-monto"><small>Monto exacto</small><b>${esc(money(ev.precio))}</b></div>
+      ${dato ? `<div class="pago-como"><small>${esCbu ? 'CBU / CVU' : 'Alias'}</small><b class="pago-dato">${esc(dato)}</b></div>
+      <button class="btn btn-primario btn-copiar-pago" onclick="copiarDatoPago(this, ${esc(JSON.stringify(dato))})">📋 Copiar ${esCbu ? 'CBU / CVU' : 'alias'}</button>` : ''}
+      <div class="pago-como"><small>Titular de la cuenta</small><b>${esc(quien)}</b></div>
+      ${ev.pagoInfo ? `<div class="pago-como"><small>Cómo se paga</small><b>${esc(ev.pagoInfo)}</b></div>` : ''}
+    </div>`;
+}
+// Pantalla de "tu entrada" mientras el pago está pendiente, en revisión o rechazado.
+function pagoHTML(ev, a){
+  const org = ev.creadorNombre || ev.organizador || 'Quien organiza';
+  const quien = ev.pagoTitular || org;
+  const cab = (titulo, texto, clase) => `<div class="pago-cab ${clase || ''}"><h2>${titulo}</h2><p>${texto}</p></div>`;
+  const pie = `<div class="aviso aviso-pago"><span>Partazy no toca la plata: va directo a la cuenta de ${esc(quien)}. ${esc(AVISO_DEVOLUCIONES)}</span></div>
+      <div class="acciones-ticket"><button class="btn btn-secundario btn-mini" data-abrir="${esc(ev.id)}">Ver evento</button></div>`;
+  if(a.estado === 'reservado'){
+    const min = minutosReserva(a);
+    return `<div class="pago-p2p-pantalla">
+      ${cab('Tu lugar está guardado', min ? `Tenés <b id="pago-min">${min} min</b> para transferir y mandar el comprobante.` : 'Se terminó el tiempo de la reserva. Si ya transferiste, mandá el comprobante ahora mismo.', min ? '' : 'vencida')}
+      <div class="paso-p2p"><i>1</i><span>Transferí el monto exacto a esta cuenta</span></div>
+      ${datosTransferenciaHTML(ev)}
+      <div class="paso-p2p"><i>2</i><span>Subí la captura del comprobante</span></div>
+      <label class="subir-comprobante" for="input-comprobante" id="caja-comprobante"><span>Tocá para elegir la captura de la transferencia</span></label>
+      <input type="file" id="input-comprobante" accept="image/*" hidden>
+      <button class="btn btn-primario" id="btn-enviar-comprobante" disabled>Mandar comprobante</button>
+      <button class="link-btn link-sin-comp" id="btn-sin-comprobante">Pagué, pero no tengo la captura</button>
+      ${pie}
+      <button class="link-denuncia link-salir" data-cancelar-reserva="${esc(ev.id)}">↩ Cancelar la reserva y liberar el lugar</button>
+    </div>`;
+  }
+  if(a.estado === 'pago-enviado'){
+    return `<div class="pago-p2p-pantalla">
+      ${cab('Comprobante enviado', `${esc(org)} se fija en su cuenta que le haya llegado. Cuando lo confirme, te avisamos y tu entrada aparece acá.`, 'revision')}
+      <div class="comp-mio" id="comp-mio">${a.sinComprobante ? '<span>Avisaste que pagaste sin captura.</span>' : ''}</div>
+      ${datosTransferenciaHTML(ev)}
+      ${pie}
+    </div>`;
+  }
+  return `<div class="pago-p2p-pantalla">
+      ${cab('No encontraron tu pago', `${esc(org)} se fijó y no le figura la transferencia${a.motivoRechazo ? `: “${esc(a.motivoRechazo)}”` : '.'} Si pagaste, escribile con el comprobante para resolverlo.`, 'rechazado')}
+      <button class="btn btn-primario" data-reintentar-pago="${esc(ev.id)}">Volver a reservar</button>
+      <button class="btn btn-secundario" data-dm="${esc(ev.creador)}" style="margin-top:10px;">Escribirle a ${esc(org)}</button>
+      ${pie}
+    </div>`;
+}
+// Comprime la captura del comprobante (sin pasar por el filtro de fotos: es una captura de pantalla).
+async function prepararComprobante(file){
+  const img = await leerImagen(file);
+  const k = Math.min(1, 1280 / Math.max(img.width, img.height));
+  const c = dibujarImagen(img, Math.round(img.width * k), Math.round(img.height * k), false);
+  for(const q of [0.7, 0.55, 0.4, 0.3]){
+    const data = c.toDataURL('image/jpeg', q);
+    if(data.length <= 600000) return data;
+  }
+  throw new Error('La captura es demasiado pesada');
+}
+// Botones de la pantalla de pago (subir, mandar, avisar sin captura, cuenta regresiva).
+function prepararPago(ev, a, tok){
+  if(a.estado === 'pago-enviado' && !a.sinComprobante){
+    DataService.getComprobante(ev.id, state.uid).then(c => {
+      const el = document.getElementById('comp-mio');
+      if(c && el && tok === state.tok) el.innerHTML = `<img src="${esc(c.img)}" alt="Tu comprobante"><span>Tu comprobante</span>`;
+    }).catch(() => {});
+  }
+  if(a.estado !== 'reservado') return;
+  const input = document.getElementById('input-comprobante'), btn = document.getElementById('btn-enviar-comprobante');
+  let captura = null;
+  input.onchange = async () => {
+    const f = input.files && input.files[0];
+    if(!f) return;
+    try{
+      captura = await prepararComprobante(f);
+      document.getElementById('caja-comprobante').innerHTML = `<img src="${esc(captura)}" alt="Captura elegida"><span>Tocá para cambiarla</span>`;
+      btn.disabled = false;
+    } catch(e){ console.warn(e); toast('No pudimos leer esa imagen. Probá con otra captura.'); }
+  };
+  const enviar = async img => {
+    btn.disabled = true;
+    try{
+      await DataService.enviarComprobante(ev.id, state.uid, img);
+      notificar(ev.creador, 'pago_enviado', { objetoId: ev.id, objetoNombre: ev.nombre, texto: img ? '' : 'sin captura' });
+      toast('Listo. Te avisamos cuando lo confirmen');
+      renderTicket(ev.id);
+    } catch(e){ console.error(e); toast('No se pudo mandar. Probá de nuevo'); btn.disabled = !captura; }
+  };
+  btn.onclick = () => captura && enviar(captura);
+  document.getElementById('btn-sin-comprobante').onclick = async () => {
+    const ok = await confirmar('Avisar que pagaste', `Le avisamos a ${ev.creadorNombre || ev.organizador || 'quien organiza'} que transferiste, sin captura. Va a tener que encontrar tu transferencia en su cuenta para confirmarla.`, 'Avisar');
+    if(ok) enviar(null);
+  };
+  // Cuenta regresiva de la reserva
+  clearInterval(prepararPago._t);
+  prepararPago._t = setInterval(() => {
+    const el = document.getElementById('pago-min');
+    if(!el || tok !== state.tok){ clearInterval(prepararPago._t); return; }
+    const m = minutosReserva(a);
+    if(m) el.textContent = m + ' min'; else { clearInterval(prepararPago._t); renderTicket(ev.id); }
+  }, 30e3);
+}
+// Cancelar una reserva sin pagar (libera el lugar).
+async function cancelarReserva(id){
+  const ok = await confirmar('Cancelar la reserva', 'Se libera tu lugar para que lo pueda usar otra persona. Si ya transferiste, no canceles: mandá el comprobante.', 'Cancelar reserva');
+  if(!ok) return;
+  try{ await DataService.liberarReserva(id, state.uid); const e = eventoEnCache(id); if(e) e.confirmadosCount = Math.max(0, (e.confirmadosCount || 1) - 1); toast('Liberaste el lugar'); abrirDetalle(id); }
+  catch(e){ console.error(e); toast('No se pudo cancelar'); }
+}
+// Después de un pago rechazado: se borra el intento y se vuelve a reservar.
+async function reintentarPago(id){
+  try{
+    await DataService.borrarAsistencia(id, state.uid);
+    const ev = await eventoActual(id);
+    if(!ev) return;
+    abrirDetalle(id);
+    accionDetalle(ev, null, (ev.confirmadosCount || 0) >= ev.capacidad, false);
+  } catch(e){ console.error(e); toast('No se pudo volver a reservar'); }
+}
+// Panel de quien organiza: comprobantes para revisar y reservas esperando. Primero libera las reservas vencidas.
+async function cargarPagos(ev, tok){
+  const cont = document.getElementById('lista-pagos');
+  try{
+    let pagos = await DataService.listPagos(ev.id);
+    const vencidas = pagos.filter(a => a.estado === 'reservado' && (a.venceTs || 0) < Date.now());
+    if(vencidas.length){
+      await Promise.allSettled(vencidas.map(a => DataService.liberarReserva(ev.id, a.uid)));
+      const e = eventoEnCache(ev.id); if(e) e.confirmadosCount = Math.max(0, (e.confirmadosCount || 0) - vencidas.length);
+      pagos = pagos.filter(a => !vencidas.includes(a));
+    }
+    if(!cont || tok !== state.tok) return;
+    const fila = a => {
+      const enviado = a.estado === 'pago-enviado';
+      const sub = enviado ? (a.sinComprobante ? `Avisó que pagó, sin captura, ${esc(hace(a.enviadoTs))}` : `Mandó el comprobante ${esc(hace(a.enviadoTs))}`)
+        : `Reservó, esperando el comprobante (vence en ${minutosReserva(a)} min)`;
+      return `<div class="solicitud pago-fila${enviado ? ' enviado' : ''}">
+        <div class="avatar" data-usuario="${esc(a.uid)}">${esc(inicialesDe(a.nombre))}</div>
+        <div class="nom" data-usuario="${esc(a.uid)}">${esc(a.nombre)}<small>${sub}</small></div>
+        ${enviado && !a.sinComprobante ? `<button class="btn btn-secundario btn-mini" data-ver-comp="${esc(a.uid)}" data-evento="${esc(ev.id)}">Ver captura</button>` : ''}
+        ${enviado ? `<div class="pago-acc"><button class="btn btn-secundario btn-mini" data-pago="${esc(a.uid)}" data-evento="${esc(ev.id)}" data-accion="no">No me llegó</button>
+        <button class="btn btn-primario btn-mini" data-pago="${esc(a.uid)}" data-evento="${esc(ev.id)}" data-accion="ok">Me llegó</button></div>` : ''}
+      </div>`;
+    };
+    const n = pagos.filter(a => a.estado === 'pago-enviado').length;
+    cont.innerHTML = pagos.length ? `<div class="pagos-cuenta">${n ? `${n} ${n === 1 ? 'pago' : 'pagos'} para revisar` : 'Nada para revisar por ahora'}</div>${pagos.map(fila).join('')}`
+      : emptyState('No hay pagos pendientes.');
+  } catch(e){
+    console.warn('pagos', e);
+    if(cont) cont.innerHTML = emptyState('No se pudieron cargar los pagos.');
+  }
+}
+// Muestra la captura del comprobante en grande.
+async function verComprobante(eventId, uid){
+  try{
+    const c = await DataService.getComprobante(eventId, uid);
+    if(!c){ toast('Ya no está la captura'); return; }
+    abrirHoja(`<div class="cuerpo hoja-comp"><h3>Comprobante</h3><p class="hoja-sub">Fijate en tu cuenta que la plata haya entrado: una captura se puede falsificar.</p><img src="${esc(c.img)}" alt="Comprobante de transferencia"><button class="btn btn-secundario" onclick="cerrarHoja()">Cerrar</button></div>`);
+  } catch(e){ console.error(e); toast('No se pudo abrir la captura'); }
+}
+// "Me llegó" (entrada con código) o "No me llegó" (se libera el lugar y se le avisa).
+async function responderPago(eventId, uid, ok, btn){
+  const fila = btn.closest('.pago-fila');
+  let motivo = '';
+  if(!ok){
+    motivo = await pedirTexto('No me llegó', 'Le avisamos que no encontraste su transferencia y se libera el lugar. Podés sumar un comentario (opcional).', 'Ej: no me figura ninguna transferencia de ese nombre', 'Avisar', { maxCaracteres: 120 });
+    if(motivo === null) return;
+  } else if(!(await confirmar('¿Te llegó la plata?', 'Confirmalo solo si ya viste la transferencia en tu cuenta. La persona recibe su entrada al instante.', 'Sí, me llegó'))) return;
+  fila?.querySelectorAll('button').forEach(b => b.disabled = true);
+  try{
+    await DataService.responderPago(eventId, uid, ok, ok ? { ticket: ticketCode() } : { motivo });
+    const nombre = eventoEnCache(eventId)?.nombre || 'el evento';
+    notificar(uid, ok ? 'pago_confirmado' : 'pago_rechazado', { objetoId: eventId, objetoNombre: nombre, texto: ok ? '' : motivo });
+    if(!ok){ const e = eventoEnCache(eventId); if(e) e.confirmadosCount = Math.max(0, (e.confirmadosCount || 1) - 1); }
+    toast(ok ? 'Listo: ya tiene su entrada' : 'Le avisamos y se liberó el lugar');
+    renderDetalle(eventId);
+  } catch(e){
+    console.error(e);
+    toast(e.message === 'YA_RESPONDIDA' ? 'Ese pago ya fue respondido' : 'No se pudo responder');
+    fila?.querySelectorAll('button').forEach(b => b.disabled = false);
+  }
+}
+
+// =========================================================
+//  PASAR LA ENTRADA A UN AMIGO
+//  Sin plata de por medio: el amigo acepta, recibe su entrada con un código nuevo y la tuya deja de valer.
+// =========================================================
+function puedePasarEntrada(ev, a){
+  return ev.privacidad === 'publica' && ev.creador !== state.uid && !esCancelado(ev) && !a.checkinTs
+    && ['confirmado', 'aprobado'].includes(a.estado) && ev.fechaTs > Date.now() - HORA;
+}
+function bloquePasarEntradaHTML(ev, a){
+  if(a.transferirA) return `<div style="padding:18px 20px 0;"><div class="pasar-entrada esperando">
+      <b>Le ofreciste tu entrada a ${esc(a.transferirNombre || 'un amigo')}</b>
+      <span>Cuando acepte, la entrada pasa a ser suya y tu código deja de valer. Hasta entonces sigue siendo tuya.</span>
+      <button class="btn btn-secundario btn-mini" data-cancelar-pase="${esc(ev.id)}">Cancelar</button></div></div>`;
+  return `<div style="padding:18px 20px 0;"><div class="pasar-entrada">
+      <b>¿No podés ir?</b>
+      <span>Pasale tu entrada a un amigo de Partazy. Recibe una entrada nueva a su nombre y la tuya deja de valer.</span>
+      <button class="btn btn-secundario btn-mini" data-pasar-entrada="${esc(ev.id)}">Pasarle mi entrada a un amigo</button></div></div>`;
+}
+// Elegís a qué amigo se la pasás.
+async function pasarEntrada(id){
+  if(!amigosUids().length){ toast('Primero agregá a tu amigo en Partazy'); return; }
+  const ev = await eventoActual(id);
+  if(!ev) return;
+  const [amigo] = await elegirAmigos('Pasar mi entrada', `${ev.nombre}. Elegí a quién se la pasás.`, false);
+  if(!amigo) return;
+  const nombre = nombreVisible(state.usuarios[amigo]) || 'tu amigo';
+  const ok = await confirmar('Pasar mi entrada', `Le ofrecés tu entrada a ${nombre}. Cuando acepte, pasa a estar a su nombre y la tuya deja de valer. ${ev.precio > 0 ? 'La plata la arreglan entre ustedes: Partazy no cobra nada.' : ''}`, 'Ofrecer');
+  if(!ok) return;
+  try{
+    await DataService.ofrecerEntrada(id, state.uid, amigo, nombre);
+    notificar(amigo, 'entrada_transferencia', { objetoId: id, objetoNombre: ev.nombre });
+    toast(`Listo. ${nombre} tiene que aceptarla`);
+    renderTicket(id);
+  } catch(e){ console.error(e); toast('No se pudo ofrecer la entrada'); }
+}
+async function cancelarPase(id){
+  try{ await DataService.ofrecerEntrada(id, state.uid, null); toast('Cancelaste el pase. La entrada sigue siendo tuya'); renderTicket(id); }
+  catch(e){ console.error(e); toast('No se pudo cancelar'); }
+}
+// Pantalla para el amigo: aceptar o no la entrada que le pasaron.
+function abrirOfertaEntrada(eventId, deUid){
+  ir('ticket', { clave: 'oferta:' + eventId, abrir: () => abrirOfertaEntrada(eventId, deUid) });
+  renderOfertaEntrada(eventId, deUid);
+}
+async function renderOfertaEntrada(eventId, deUid){
+  const tok = ++state.tok;
+  const cont = document.getElementById('ticket-contenido');
+  cont.innerHTML = '<div class="empty-state" style="padding-top:60px;">Cargando...</div>';
+  try{
+    const [ev, oferta, mia] = await Promise.all([eventoActual(eventId), DataService.getOfertaEntrada(eventId, deUid).catch(() => null), DataService.getAsistencia(eventId, state.uid)]);
+    if(tok !== state.tok) return;
+    if(!ev){ cont.innerHTML = emptyState('No encontramos ese evento.'); return; }
+    if(mia && ['confirmado', 'aprobado'].includes(mia.estado)){ cont.innerHTML = emptyState('Ya tenés tu entrada para este evento.'); return; }
+    if(!oferta || oferta.transferirA !== state.uid || !['confirmado', 'aprobado'].includes(oferta.estado) || esCancelado(ev)){
+      cont.innerHTML = emptyState('Esta entrada ya no está disponible.'); return;
+    }
+    const de = oferta.nombre || 'Tu amigo';
+    cont.innerHTML = `<div class="pago-p2p-pantalla">
+      <div class="pago-cab"><h2>${esc(de)} te pasa su entrada</h2><p>Para <b>${esc(ev.nombre)}</b>, ${esc(fmtFecha(ev.fechaTs))} hs, en ${esc(lugarPublico(ev))}.</p></div>
+      ${ev.precio > 0 ? `<div class="aviso"><span>La entrada sale ${esc(money(ev.precio))}. Si hay que pagarle algo a ${esc(de)}, lo arreglan entre ustedes: Partazy no cobra nada.</span></div>` : ''}
+      <button class="btn btn-primario" id="btn-aceptar-entrada">Aceptar la entrada</button>
+      <button class="btn btn-secundario" id="btn-rechazar-entrada" style="margin-top:10px;">No, gracias</button>
+      <div class="acciones-ticket"><button class="btn btn-secundario btn-mini" data-abrir="${esc(ev.id)}">Ver evento</button></div>
+    </div>`;
+    document.getElementById('btn-aceptar-entrada').onclick = () => aceptarEntrada(ev, deUid, mia);
+    document.getElementById('btn-rechazar-entrada').onclick = async () => {
+      try{ await DataService.rechazarEntrada(eventId, deUid); toast('Listo. La entrada sigue siendo de ' + de); ir('home'); }
+      catch(e){ console.error(e); toast('No se pudo responder'); }
+    };
+  } catch(e){
+    console.error(e);
+    if(tok === state.tok) cont.innerHTML = emptyState('No pudimos cargar la entrada.');
+  }
+}
+async function aceptarEntrada(ev, deUid, mia){
+  const edad = edadUsuario();
+  if(!isNaN(edad) && ev.edadMinima && edad < ev.edadMinima){ toast(`Este evento es +${ev.edadMinima}.`); return; }
+  const btn = document.getElementById('btn-aceptar-entrada');
+  if(btn) btn.disabled = true;
+  try{
+    // Si estabas en la lista de espera (o quedó un intento viejo), se borra primero
+    if(mia && ['en-espera', 'solicitado', 'pago-rechazado', 'transferida'].includes(mia.estado)) await DataService.borrarAsistencia(ev.id, state.uid);
+    else if(mia && ['reservado', 'pago-enviado'].includes(mia.estado)){ toast('Ya tenés una reserva para este evento. Cancelala primero.'); if(btn) btn.disabled = false; return; }
+    await DataService.aceptarEntrada(ev.id, deUid, { uid: state.uid, nombre: state.perfil.nombre, estado: 'confirmado', ticket: ticketCode(), ts: Date.now() });
+    notificar(deUid, 'entrada_aceptada', { objetoId: ev.id, objetoNombre: ev.nombre });
+    state.misPlanes.add(ev.id); sincronizarPlanes();
+    toast('¡Listo! La entrada es tuya');
+    abrirTicket(ev.id);
+  } catch(e){
+    console.error(e); toast('No se pudo aceptar. Puede que ya no esté disponible');
+    if(btn) btn.disabled = false;
+  }
+}
+
+// =========================================================
 //  TICKET + CHAT
 // =========================================================
 function abrirTicket(id){
@@ -6237,6 +6717,15 @@ async function renderTicket(id){
     const asistencia = ev ? await DataService.getAsistencia(id, state.uid) : null;
     if(tok !== state.tok) return;
     if(!ev){ cont.innerHTML = emptyState('No encontramos ese evento.'); return; }
+    if(asistencia && ['reservado', 'pago-enviado', 'pago-rechazado'].includes(asistencia.estado)){
+      cont.innerHTML = pagoHTML(ev, asistencia);
+      prepararPago(ev, asistencia, tok);
+      return;
+    }
+    if(asistencia?.estado === 'transferida'){
+      cont.innerHTML = emptyState(`Le pasaste tu entrada a ${asistencia.transferirNombre || 'un amigo'}. Ahora es suya: tu código ya no vale.`);
+      return;
+    }
     if(!asistencia || (asistencia.estado !== 'confirmado' && asistencia.estado !== 'aprobado') || !asistencia.ticket){
       cont.innerHTML = emptyState('Tu asistencia a este evento todavía no está confirmada.');
       return;
@@ -6305,6 +6794,8 @@ async function renderTicket(id){
           </button>
         </div>
       </div>
+
+      ${puedePasarEntrada(ev, asistencia) ? bloquePasarEntradaHTML(ev, asistencia) : ''}
 
       <div style="padding:22px 20px 0;">
         <button class="btn btn-outline" onclick="ir('home')">Volver al inicio</button>
@@ -6971,6 +7462,9 @@ async function publicarEventoUnaVez(){
   const linkTexto = pago ? val('f-link-entradas') : '';
   const linkVenta = linkTexto ? linkWeb(linkTexto, true) : null;
   if(linkTexto && !linkVenta){ toast('El link de venta tiene que ser una dirección https://'); return; }
+  // Cobrar con comprobante (P2P): hace falta el alias o CBU para que la gente sepa a dónde transferir
+  const cobroComprobante = pago && !linkVenta && document.getElementById('switch-comprobante').classList.contains('on');
+  if(cobroComprobante && !datoPago(pagoInfo)){ toast('Para cobrar con comprobante, poné tu alias o CBU en "Cómo se paga"'); irAPasoCrear(3); document.getElementById('f-pago-info').focus(); return; }
 
   // El estilo de música es opcional (y en una previa no se pide)
   const sinMusica = ['charla', 'taller'].includes(val('f-ocasion'));
@@ -7000,7 +7494,7 @@ async function publicarEventoUnaVez(){
   const exacta = !!state.ubicacionMapa && !privada;  // en previas privadas el pin público siempre es aproximado
   if(evEdit) return guardarEdicion(evEdit, {
     nombre, lugar, direccion: privada ? direccion : null, fechaTs, hora: horaStr, horaFin, capacidad, capacidadDesconocida: sinTope, edadMinima,
-    precio, pagoInfo, pagoTitular, linkEntradas: linkVenta ? linkVenta.url.slice(0, 300) : '', lineup,
+    precio, pagoInfo, pagoTitular, cobroComprobante, linkEntradas: linkVenta ? linkVenta.url.slice(0, 300) : '', lineup,
     categoria: estilo, estiloOtro, musica, faq, eqCfg, dresscode: val('f-dresscode') || 'Libre', ocasion: OCASIONES[val('f-ocasion')] ? val('f-ocasion') : '', vip,
     bebida: tipo === 'previa' && document.getElementById('switch-bebida').classList.contains('on'),
     tipo, privacidad: privada ? 'privada' : 'publica',
@@ -7021,7 +7515,7 @@ async function publicarEventoUnaVez(){
     fechaTs, hora: horaStr,
     lugar, lat: exacta ? coords.lat : coords.lat + jitter(), lng: exacta ? coords.lng : coords.lng + jitter(), ubicacionExacta: exacta,
     ciudad: (coords.ciudad || ciudadReferencia() || '').slice(0, 60),
-    precio, pagoInfo, estado: 'publicado', ...(pagoTitular ? { pagoTitular } : {}),
+    precio, pagoInfo, estado: 'publicado', ...(pagoTitular ? { pagoTitular } : {}), ...(cobroComprobante ? { cobroComprobante: true } : {}),
     horaFin, lineup, linkEntradas: linkVenta ? linkVenta.url.slice(0, 300) : '',
     deOrganizacion: esOrganizacion(state.perfil),
     conQR: esOrganizacion(state.perfil) && document.getElementById('switch-qr').classList.contains('on'),
@@ -7081,7 +7575,7 @@ function resetFormularioCrear(){
   actualizarEstiloOtro(); pintarFaqForm([]);
   const ct = document.getElementById('campos-tipo'); if(ct){ ct.innerHTML = ''; ct.style.display = 'none'; }
   const setSwitch = (id, on) => { const el = document.getElementById(id); el.classList.toggle('on', on); el.setAttribute('aria-checked', on ? 'true' : 'false'); };
-  setSwitch('switch-pago', false); setSwitch('switch-vip', false); setSwitch('switch-qr', true);
+  setSwitch('switch-pago', false); setSwitch('switch-vip', false); setSwitch('switch-qr', true); setSwitch('switch-comprobante', true);
   elegirQuienCobra('yo');
   setSwitch('switch-bebida', true); setSwitch('switch-privacidad', true);
   document.getElementById('campo-precio').style.display = 'none';
@@ -7436,10 +7930,20 @@ function usarLugarElegido(l){
   aplicarUbicacion(coords, true, l.nombre);
   document.getElementById('rango-estado').textContent = `✓ Mostrando eventos cerca de ${l.nombre}.`; pintarTextoRango();
 }
+// Línea chica debajo del buscador cuando no sabemos tu ciudad: "📍 Mostrando todo Córdoba. Elegir zona".
+function pintarLineaUbic(){
+  const el = document.getElementById('home-ubic-linea');
+  if(!el) return;
+  if(state.userCoords || !state.geoFallo){ el.innerHTML = ''; el.hidden = true; return; }
+  // "todo Córdoba" solo si de verdad todo lo que se ve es de Córdoba; si no, "todos los eventos"
+  const conLugar = eventosVisibles().filter(e => typeof e.lat === 'number');
+  const todoCba = conLugar.length && conLugar.every(e => distanciaKm(e.lat, e.lng, CBA_CENTER.lat, CBA_CENTER.lng) < 60);
+  el.innerHTML = `<span aria-hidden="true">📍</span> Mostrando ${todoCba ? 'todo Córdoba' : 'todos los eventos'}. <button type="button" class="link-ciudad" onclick="abrirRango()">Elegir zona</button>`;
+  el.hidden = false;
+}
 // Aviso si no hay eventos en tu rango (o si no sabemos tu ciudad).
 function avisoRangoHTML(total, dentro){
-  if(!state.userCoords && state.geoFallo) return `<div class="aviso-rango">📍 No sabemos en qué ciudad estás, así que te mostramos <b>todos los eventos</b>. Activá la ubicación o elegí tu ciudad para ver lo que hay cerca.
-    <div class="fila"><button class="btn btn-primario btn-mini" onclick="abrirRango()">Elegir mi ciudad</button></div></div>`;
+  if(!state.userCoords && state.geoFallo) return '';   // va en la línea chica de debajo del buscador
   if(!state.radioKm || !state.userCoords || !total || dentro) return '';
   const sig = RANGOS.find(r => r > state.radioKm && r) ;
   return `<div class="aviso-rango">📍 No hay eventos a menos de <b>${state.radioKm} km</b> de ${esc(state.ciudadActual || 'tu ubicación')} todavía. Hay ${total} ${total === 1 ? 'evento' : 'eventos'} más lejos.
@@ -7719,7 +8223,7 @@ async function editarEvento(ev){
   setv('f-reglas', ev.reglas === 'Respetar el lugar y a los demás asistentes.' ? '' : ev.reglas);
   setv('f-lineup', ev.lineup);
   const pago = (ev.precio || 0) > 0;
-  setSwitch('switch-pago', pago);
+  setSwitch('switch-pago', pago); setSwitch('switch-comprobante', !!ev.cobroComprobante);
   document.getElementById('campo-precio').style.display = pago ? 'block' : 'none';
   document.getElementById('ayuda-capacidad').style.display = pago ? '' : 'none';
   setv('f-precio', pago ? ev.precio : ''); setv('f-pago-info', ev.pagoInfo); setv('f-link-entradas', ev.linkEntradas);
@@ -7773,7 +8277,7 @@ async function guardarEdicion(ev, d){
   const cambios = {
     tipo: d.tipo, tipoLugar: d.tipo === 'previa' ? 'Previa' : 'Fiesta', privacidad: d.privacidad,
     nombre: d.nombre, lugar: d.lugar, fechaTs: d.fechaTs, hora: d.hora, horaFin: d.horaFin,
-    capacidad: d.capacidad, capacidadDesconocida: d.capacidadDesconocida, edadMinima: d.edadMinima, precio: d.precio, pagoInfo: d.pagoInfo, ...(d.pagoTitular || ev.pagoTitular ? { pagoTitular: d.pagoTitular || '' } : {}),
+    capacidad: d.capacidad, capacidadDesconocida: d.capacidadDesconocida, edadMinima: d.edadMinima, precio: d.precio, pagoInfo: d.pagoInfo, ...(d.pagoTitular || ev.pagoTitular ? { pagoTitular: d.pagoTitular || '' } : {}), ...(d.cobroComprobante || ev.cobroComprobante ? { cobroComprobante: !!d.cobroComprobante } : {}),
     linkEntradas: d.linkEntradas, lineup: d.lineup, categoria: d.categoria, musica: d.musica, ocasion: d.ocasion,
     dresscode: d.dresscode, bebida: d.bebida, listaVip: d.listaVip, imagen: d.imagen, ...(d.imagenGrande ? { fotoGrande: true } : {}),
     descripcion: d.descripcion, reglas: d.reglas, editadoTs: Date.now(),
