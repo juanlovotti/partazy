@@ -1,0 +1,359 @@
+{
+  "version": 1,
+  "source": "vanillajs",
+  "flavor": "script-tag",
+  "strategy": "vertical-slice",
+  "secondary_strategies": [
+    "branch-by-abstraction"
+  ],
+  "phase": "plan",
+  "plan_approved": false,
+  "next_unit": "u01-vite-base",
+  "blocked_by_repo": "Al 11/11: 28 archivos sin commit en la compu de Juan y partazy.com con la versión anterior. No se toca código de la app hasta que publique y haga el commit.",
+  "units": [
+    {
+      "id": "u01-vite-base",
+      "title": "Vite arma el sitio en `dist/`. firebase.json: el sitio `partazy` publica `dist/`, los archivos con hash llevan caché larga y la redirección ",
+      "size": "M",
+      "status": "pending",
+      "depends_on": [],
+      "blocked_reason": null
+    },
+    {
+      "id": "u02-modulos",
+      "title": "app.js partido en módulos ES por sección, con las utilidades puras como módulo propio. Puente `window.*` para las ~70 funciones del HTML, la",
+      "size": "L",
+      "status": "pending",
+      "depends_on": [
+        "u01-vite-base"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u03-firebase-modular",
+      "title": "DataService, Auth (~28 usos), App Check, la caché local (`persistentLocalCache` + `persistentMultipleTabManager`) y los 2 `FieldValue.delete",
+      "size": "L",
+      "status": "pending",
+      "depends_on": [
+        "u02-modulos"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u04-peso-y-carga-diferida",
+      "title": "Medición de la primera descarga desde Hosting. Si supera la de hoy (≈221 KB gzip), Crear, Chats, Moderación, Puerta y Organizaciones pasan a",
+      "size": "M",
+      "status": "pending",
+      "depends_on": [
+        "u03-firebase-modular"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u05-pruebas-de-reglas",
+      "title": "Pruebas de firestore.rules con el emulador: pagos, entradas, previas privadas y amistades primero. Necesita Java y descargar el emulador (ve",
+      "size": "M",
+      "status": "pending",
+      "depends_on": [
+        "u01-vite-base"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u06-react-base",
+      "title": "React + TS + Tailwind 4 (paleta en `@theme` y tipografías, sin preflight). `montarPantalla(id, Componente)` con los interruptores por pantal",
+      "size": "M",
+      "status": "pending",
+      "depends_on": [
+        "u03-firebase-modular"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u07-puente-estado",
+      "title": "Store puente sobre `state` y `NAV` (sesión, perfil, invitado, eventos, ubicación, amistades y planes). Las escrituras viejas siguen andando ",
+      "size": "M",
+      "status": "pending",
+      "depends_on": [
+        "u06-react-base"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u08-datos-y-tipos",
+      "title": "Tipos TS de los documentos, módulo `api/` sobre DataService, hooks de suscripción con cierre y un servicio de geocodificación (los 7 `fetch`",
+      "size": "M",
+      "status": "pending",
+      "depends_on": [
+        "u07-puente-estado"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u09-sistema-de-diseno",
+      "title": "Tokens y componentes base con el aspecto actual (Botón, Chip, Tarjeta, Hoja, Ventana, Interruptor, Campo, Avatar) y guía en HTML (Mobile Des",
+      "size": "M",
+      "status": "pending",
+      "depends_on": [
+        "u06-react-base"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u10-primitivas-ui",
+      "title": "Aviso (toast), cargador, `confirmar`, `pedirTexto` y `pedirClave`, hoja genérica y \"elegir amigos\", hechos en React pero con la misma API qu",
+      "size": "M",
+      "status": "pending",
+      "depends_on": [
+        "u09-sistema-de-diseno",
+        "u07-puente-estado"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u11-decision-idiomas",
+      "title": "Registro de decisión: Google Translate cambia el texto por debajo y hace fallar a React. Opciones con costo y riesgo.",
+      "size": "S",
+      "status": "pending",
+      "depends_on": [
+        "u06-react-base"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u12-ayuda-legales-contacto",
+      "title": "Ayuda, Privacidad, Términos, Normas y el formulario de contacto. Los textos pasan a una fuente compartida, y el generador y `test_paginas` s",
+      "size": "M",
+      "status": "pending",
+      "depends_on": [
+        "u08-datos-y-tipos",
+        "u10-primitivas-ui"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u13-guia-y-tutorial",
+      "title": "Guía de colores y tutorial de 5 pasos.",
+      "size": "S",
+      "status": "pending",
+      "depends_on": [
+        "u10-primitivas-ui"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u14-instalar-idioma-avisos",
+      "title": "Instalar la app, avisos del celular, `sw.js` y el idioma, según la decisión de u11.",
+      "size": "M",
+      "status": "pending",
+      "depends_on": [
+        "u11-decision-idiomas"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u15-verificacion-org",
+      "title": "Pantalla de verificación de organizaciones.",
+      "size": "S",
+      "status": "pending",
+      "depends_on": [
+        "u08-datos-y-tipos",
+        "u10-primitivas-ui"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u16-puerta",
+      "title": "Control de puerta con escáner (html5-qrcode dentro de un componente que lo frena al salir).",
+      "size": "S",
+      "status": "pending",
+      "depends_on": [
+        "u08-datos-y-tipos",
+        "u10-primitivas-ui"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u17-moderacion",
+      "title": "Panel de moderación, denuncias, bloqueos y cuenta suspendida.",
+      "size": "M",
+      "status": "pending",
+      "depends_on": [
+        "u08-datos-y-tipos",
+        "u10-primitivas-ui"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u18-notificaciones",
+      "title": "Avisos internos y contadores.",
+      "size": "S",
+      "status": "pending",
+      "depends_on": [
+        "u08-datos-y-tipos",
+        "u07-puente-estado"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u19-ubicacion-y-rango",
+      "title": "Elegir ciudad y distancia, y la línea de ubicación.",
+      "size": "M",
+      "status": "pending",
+      "depends_on": [
+        "u08-datos-y-tipos",
+        "u07-puente-estado"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u20-mapas",
+      "title": "Mapa para elegir el lugar y mapa de Explorar (Leaflet diferido).",
+      "size": "M",
+      "status": "pending",
+      "depends_on": [
+        "u19-ubicacion-y-rango"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u21-tarjetas-y-portadas",
+      "title": "Tarjetas de evento, portadas prediseñadas, ambiente, banda e inclinación. Las usan Inicio, Explorar y Detalle.",
+      "size": "M",
+      "status": "pending",
+      "depends_on": [
+        "u09-sistema-de-diseno",
+        "u07-puente-estado"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u22-entradas-y-pagos",
+      "title": "Entrada con QR, pago con comprobante, pasar la entrada, \"Mis entradas\" y chat del grupo.",
+      "size": "L",
+      "status": "pending",
+      "depends_on": [
+        "u21-tarjetas-y-portadas",
+        "u10-primitivas-ui"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u23-perfil-propio",
+      "title": "Perfil, editar, foto, @usuario, gustos, organización, menú ☰ y eliminar cuenta.",
+      "size": "L",
+      "status": "pending",
+      "depends_on": [
+        "u21-tarjetas-y-portadas",
+        "u10-primitivas-ui"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u24-social",
+      "title": "Amigos, perfil de otra persona, chats y mensajes directos.",
+      "size": "L",
+      "status": "pending",
+      "depends_on": [
+        "u23-perfil-propio"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u25-crear-y-editar",
+      "title": "Crear en 3 pasos, editar, filtro de fotos, mapa de elección, vista previa y confirmación.",
+      "size": "XL",
+      "status": "pending",
+      "depends_on": [
+        "u20-mapas",
+        "u21-tarjetas-y-portadas"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u26-inicio-y-explorar",
+      "title": "Inicio y Explorar: filas, Para vos, red de amigos, buscador, chips y personas.",
+      "size": "L",
+      "status": "pending",
+      "depends_on": [
+        "u19-ubicacion-y-rango",
+        "u20-mapas",
+        "u21-tarjetas-y-portadas",
+        "u24-social"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u27-detalle",
+      "title": "Detalle con calificaciones, equipos, solicitudes, prensa, exportar, cancelar, \"ya compré\" y el botón principal con todos sus estados.",
+      "size": "XL",
+      "status": "pending",
+      "depends_on": [
+        "u16-puerta",
+        "u22-entradas-y-pagos",
+        "u24-social",
+        "u25-crear-y-editar"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u28-cuentas-y-arranque",
+      "title": "Bienvenida, registro, links de los mails, modo sin cuenta (hoja \"Sumate\" y portero) y arranque.",
+      "size": "L",
+      "status": "pending",
+      "depends_on": [
+        "u26-inicio-y-explorar",
+        "u27-detalle"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u29-armazon",
+      "title": "React toma la raíz: `ir`/`volver`/`NAV`, botón atrás, rutas `#/...`, delegador de clics, barra de abajo y lateral. Se sacan los `onclick` y ",
+      "size": "XL",
+      "status": "pending",
+      "depends_on": [
+        "u01-vite-base",
+        "u02-modulos",
+        "u03-firebase-modular",
+        "u04-peso-y-carga-diferida",
+        "u05-pruebas-de-reglas",
+        "u06-react-base",
+        "u07-puente-estado",
+        "u08-datos-y-tipos",
+        "u09-sistema-de-diseno",
+        "u10-primitivas-ui",
+        "u11-decision-idiomas",
+        "u12-ayuda-legales-contacto",
+        "u13-guia-y-tutorial",
+        "u14-instalar-idioma-avisos",
+        "u15-verificacion-org",
+        "u16-puerta",
+        "u17-moderacion",
+        "u18-notificaciones",
+        "u19-ubicacion-y-rango",
+        "u20-mapas",
+        "u21-tarjetas-y-portadas",
+        "u22-entradas-y-pagos",
+        "u23-perfil-propio",
+        "u24-social",
+        "u25-crear-y-editar",
+        "u26-inicio-y-explorar",
+        "u27-detalle",
+        "u28-cuentas-y-arranque"
+      ],
+      "blocked_reason": null
+    },
+    {
+      "id": "u30-cambio-final",
+      "title": "Se borran el código viejo, los puentes y los interruptores, y se depura `app.css`. Queda escrito cómo volver atrás desde el historial de Hos",
+      "size": "M",
+      "status": "pending",
+      "depends_on": [
+        "u29-armazon"
+      ],
+      "blocked_reason": null
+    }
+  ],
+  "updated": "2026-11-11"
+}

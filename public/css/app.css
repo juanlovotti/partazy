@@ -1697,9 +1697,15 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 /* Selector de ciudad: "Córdoba ▾" (la distancia se elige adentro) */
 .ubic-btn{min-height:44px; font-size:13px; padding:0 15px 0 12px;}
 .ubic-btn .flecha{color:var(--gris); font-size:11px;}
-/* Encabezado: al bajar toma fondo (así el logo no queda encima del texto) */
-#pantalla-home .topbar.con-fondo:not(.compacta){background:rgba(2,7,10,.85); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px);
-  box-shadow:0 0 0 100vmax rgba(2,7,10,.85), 0 1px 0 100vmax rgba(31,44,53,.6);}
+/* Encabezado del Inicio en el celu: al bajar toma fondo (así el logo no queda encima del texto).
+   En el celu el encabezado ya ocupa todo el ancho, así que va con fondo común y una línea abajo, como el de las
+   demás pantallas. Nada de la "sombra gigante recortada con clip-path" que se usa en compu: en el iPhone (Safari)
+   ese recorte no siempre se aplica y la sombra tapaba toda la pantalla de negro al bajar. */
+@media (max-width:899px){
+  #pantalla-home .topbar{box-shadow:none; clip-path:none;}
+  #pantalla-home .topbar.con-fondo:not(.compacta){background:rgba(2,7,10,.85); -webkit-backdrop-filter:blur(12px); backdrop-filter:blur(12px); box-shadow:0 1px 0 rgba(31,44,53,.6);}
+  #pantalla-home .topbar.compacta{background:#02070A; box-shadow:0 1px 0 var(--gris-linea);}
+}
 /* Letra mínima de 12 px */
 .nav-item{font-size:12px;}
 .saludo .eyebrow{font-size:12px;}

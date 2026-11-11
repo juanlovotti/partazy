@@ -8537,19 +8537,22 @@ async function guardarPerfil(){
 // =========================================================
 //  INIT
 // =========================================================
+// Si el arranque falla: se deja de animar el cargador para mostrar el error y "Reintentar".
+// (Antes buscaba ".loader .spinner", que ya no existe desde que el cargador es el logo, y el error cortaba todo.)
+function pararCargador(){ const l = document.querySelector('#loader .lv-carga, #loader .spinner'); if(l) l.style.display = 'none'; }
 async function init(){
   mostrarLoader('CONECTANDO...');
 
   if(!FIREBASE_OK){
     document.getElementById('loader-txt').innerHTML =
       'No se pudo cargar Firebase.<br><small>Si estás en una vista previa, abrí la app desde su link publicado.<br>Si ya está publicada, revisá tu conexión o un bloqueador de anuncios.</small>';
-    document.querySelector('.loader .spinner').style.display = 'none';
+    pararCargador();
     return;
   }
 
   if(firebaseConfig.projectId === 'TU_PROYECTO'){
     document.getElementById('loader-txt').innerHTML = 'Falta configurar Firebase.<br>Editá <b>firebaseConfig</b> en el HTML.';
-    document.querySelector('.loader .spinner').style.display = 'none';
+    pararCargador();
     return;
   }
 
@@ -8642,7 +8645,7 @@ async function init(){
     } catch(e){
       console.error('Init error:', e);
       mostrarLoader();
-      document.querySelector('.loader .spinner').style.display = 'none';
+      pararCargador();
       document.getElementById('loader-txt').innerHTML =
         'Error de conexión.<br><small>' + esc(e.message || 'Intentá de nuevo') + '</small><br><br><button class="btn btn-primario btn-mini" onclick="location.reload()">Reintentar</button>';
     }
