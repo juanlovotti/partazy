@@ -18,7 +18,7 @@ ok(/Ley 25\.326/.test(priv.body.textContent) && priv.querySelectorAll('.tabla-le
 ok(/10 días corridos/.test(priv.body.textContent) && /5 días hábiles/.test(priv.body.textContent), 'privacidad: plazos para responder pedidos');
 ok(!priv.querySelector('[onclick]') && priv.querySelector('a[href="mailto:partazycontacto@gmail.com"]'), 'privacidad: sin botones de la app y con el mail de contacto');
 
-const js = fs.readFileSync(path.join(PUB, 'js', 'app.js'), 'utf8');
+const js = fs.readFileSync(path.join(__dirname, '..', 'src', 'app.js'), 'utf8');
 const preguntas = require('vm').runInNewContext(js.match(/const AYUDA = (\[[\s\S]*?\n\]);/)[1]).reduce((n, [, qs]) => n + qs.length, 0);
 const sop = doc('soporte.html');
 ok(sop.querySelectorAll('details.faq').length === preguntas && preguntas > 5, `soporte: están las ${preguntas} preguntas frecuentes de la app`);

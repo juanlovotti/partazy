@@ -2,14 +2,14 @@
 <!--
   PARTAZY · index.html
   Estructura de la app (una sola página):
-    - <head>: metadatos, vista previa al compartir (Open Graph), fuentes y estilos (css/app.css).
+    - <head>: metadatos, vista previa al compartir (Open Graph), fuentes y estilos (src/app.css, que Vite empaqueta).
     - #loader: pantalla de carga inicial.
     - #app: contenedor de la app. Cada pantalla es un <div class="screen" id="pantalla-NOMBRE">
-      y js/app.js muestra una u otra con ir('NOMBRE').
+      y src/app.js muestra una u otra con ir('NOMBRE').
     - Navbar: barra de abajo en el celu / barra lateral en la compu.
     - Ventanas que se abren encima (mapas, menús, avisos, tutorial).
-    - Al final: librerías externas (Firebase, QR) y js/app.js.
-  Los onclick="..." llaman a funciones de js/app.js (son globales a propósito).
+    - Al final: librerías externas (Firebase) y src/app.js (Vite lo empaqueta en assets/).
+  Los onclick="..." llaman a funciones de src/app.js (las publica en window el puente de herramientas/vite-puente-global.mjs).
 -->
 <html lang="es">
 <head>
@@ -48,7 +48,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Unbounded:wght@700;800&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/css/app.css">
+<link rel="stylesheet" href="/src/app.css">
 </head>
 <body>
 <!-- Logo: formas compartidas (la P, el punto, el degradé y el difuminado del tornasol) -->
@@ -1186,6 +1186,6 @@ Ivo Paz +1"></textarea>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.0/firebase-firestore-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/firebase@10.12.0/firebase-app-check-compat.js"></script>
 
-<script src="/js/app.js"></script>
+<script type="module" src="/src/app.js"></script>
 </body>
 </html>

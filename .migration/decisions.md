@@ -60,3 +60,40 @@ Antes de escribir código contra una librería, revisar su documentación instal
 
 ## 2026-11-11: Particularidades que se mantienen
 - Bug del cargador (`.loader .spinner` inexistente), `#/u/` con uid, `partazy_vista_*` sin límite y las ventanas compartidas que se pisan: se mantienen tal cual en la migración y se anotan. Si se arreglan, va aparte y con el OK de Juan.
+
+## 2026-11-11: Juan aprueba y delega
+- Juan publicó y commiteó lo pendiente (commit 3e374d5) y pidió: "arrancá la migración, hacé lo que creas que no va a arruinar la funcionalidad".
+- Se toma el plan como aprobado. Las preguntas abiertas se resolvieron así:
+  - armazón al final;
+  - sin UX Agent Skill (lo reemplazan las pruebas de recorridos y las capturas comparadas);
+  - plugin de Firebase sin tocar (no hizo falta);
+  - bug del cargador arreglado aparte, antes de la migración.
+
+## 2026-11-11: u02 sin partir app.js en varios archivos
+- app.js pasó a ser **un** módulo ES (`src/app.js`), empaquetado por Vite. No se partió por secciones.
+  - **Por qué:** partirlo exige importar y exportar entre ~45 secciones con dependencias circulares, y cambia el orden en que corre el código de primer nivel. Es mucho riesgo y no mejora nada visible. Cada sección se mueve a `src/` (con tipos) cuando su pantalla pase a React.
+- El puente global se arma solo (plugin de Vite que lee las declaraciones con acorn): 625 nombres con get/set. Así las pruebas que reemplazan funciones (`w.confirmar = …`) siguen funcionando igual.
+
+## 2026-11-11: u03 (SDK modular) postergada
+- Medido con 13.2.0:
+
+  | Forma de cargar el SDK | Peso (gzip) |
+  |---|---|
+  | Modular empaquetado, solo lo que usa la app | ≈216 KB |
+  | Compat empaquetado | ≈242 KB |
+  | Modular desde gstatic (10.12) | ≈181 KB |
+  | Hoy (compat desde jsdelivr) | ≈158 KB |
+
+- Empaquetarlo rompe el criterio de "no subir el peso desde Hosting". Desde el CDN suma peso para cada persona, sin beneficio visible.
+- React usa DataService, así que no lo necesita.
+
+## 2026-11-11: u04 cerrada por medición
+- La primera visita desde Hosting bajó de ≈221 KB a ≈175 KB (minificado). No hizo falta partir el código.
+
+## 2026-11-11: Interruptores solo fuera de producción
+- `?react=` se ignora en partazy.com. Solo funciona en el link de prueba o en local. En producción solo cuenta la lista PUBLICADAS.
+- **Por qué:** que nadie le prenda una pantalla a otra persona con un link.
+
+## 2026-11-11: Primera pantalla: Ayuda (de u12), con paridad exacta
+- Mismo HTML, clases e ids. Las capturas vieja contra React dan 0 píxeles distintos. El pie legal queda de la app vieja.
+- **Diferencia aceptada:** la animación de entrada escalonada de la pantalla (`:nth-child`) ve un solo hijo, porque el contenedor de React usa display:contents.

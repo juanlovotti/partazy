@@ -6,16 +6,15 @@
   "secondary_strategies": [
     "branch-by-abstraction"
   ],
-  "phase": "plan",
-  "plan_approved": false,
-  "next_unit": "u01-vite-base",
-  "blocked_by_repo": "Al 11/11: 28 archivos sin commit en la compu de Juan y partazy.com con la versión anterior. No se toca código de la app hasta que publique y haga el commit.",
+  "phase": "execute",
+  "plan_approved": true,
+  "next_unit": "u07-puente-estado",
   "units": [
     {
       "id": "u01-vite-base",
       "title": "Vite arma el sitio en `dist/`. firebase.json: el sitio `partazy` publica `dist/`, los archivos con hash llevan caché larga y la redirección ",
       "size": "M",
-      "status": "pending",
+      "status": "done",
       "depends_on": [],
       "blocked_reason": null
     },
@@ -23,7 +22,7 @@
       "id": "u02-modulos",
       "title": "app.js partido en módulos ES por sección, con las utilidades puras como módulo propio. Puente `window.*` para las ~70 funciones del HTML, la",
       "size": "L",
-      "status": "pending",
+      "status": "done",
       "depends_on": [
         "u01-vite-base"
       ],
@@ -33,17 +32,17 @@
       "id": "u03-firebase-modular",
       "title": "DataService, Auth (~28 usos), App Check, la caché local (`persistentLocalCache` + `persistentMultipleTabManager`) y los 2 `FieldValue.delete",
       "size": "L",
-      "status": "pending",
+      "status": "blocked",
       "depends_on": [
         "u02-modulos"
       ],
-      "blocked_reason": null
+      "blocked_reason": "Postergada a propósito: empaquetar el SDK modular 13.2 suma ~216 KB gzip por primera visita al cupo de Hosting; desde gstatic suma ~23 KB por persona sin mejora visible. Se retoma al pasar a Blaze o si se anuncia el fin del SDK compat. React usa DataService."
     },
     {
       "id": "u04-peso-y-carga-diferida",
       "title": "Medición de la primera descarga desde Hosting. Si supera la de hoy (≈221 KB gzip), Crear, Chats, Moderación, Puerta y Organizaciones pasan a",
       "size": "M",
-      "status": "pending",
+      "status": "done",
       "depends_on": [
         "u03-firebase-modular"
       ],
@@ -53,17 +52,17 @@
       "id": "u05-pruebas-de-reglas",
       "title": "Pruebas de firestore.rules con el emulador: pagos, entradas, previas privadas y amistades primero. Necesita Java y descargar el emulador (ve",
       "size": "M",
-      "status": "pending",
+      "status": "blocked",
       "depends_on": [
         "u01-vite-base"
       ],
-      "blocked_reason": null
+      "blocked_reason": "El emulador de Firestore se descarga de storage.googleapis.com, que esta sesión no puede alcanzar. Correrlo en la compu de Juan con Java, o permitir el dominio."
     },
     {
       "id": "u06-react-base",
       "title": "React + TS + Tailwind 4 (paleta en `@theme` y tipografías, sin preflight). `montarPantalla(id, Componente)` con los interruptores por pantal",
       "size": "M",
-      "status": "pending",
+      "status": "done",
       "depends_on": [
         "u03-firebase-modular"
       ],
@@ -124,7 +123,7 @@
       "id": "u12-ayuda-legales-contacto",
       "title": "Ayuda, Privacidad, Términos, Normas y el formulario de contacto. Los textos pasan a una fuente compartida, y el generador y `test_paginas` s",
       "size": "M",
-      "status": "pending",
+      "status": "in-progress",
       "depends_on": [
         "u08-datos-y-tipos",
         "u10-primitivas-ui"

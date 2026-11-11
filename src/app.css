@@ -37,7 +37,7 @@
   .phone{height:100vh; height:100dvh; min-height:0;}
   .screen{display:none; flex-direction:column; flex:1; padding-bottom:92px; overflow-y:auto; animation:fadein .28s ease;}
   .screen.activa{display:flex;}
-  .screen > *{flex-shrink:0;}
+  .screen > *, .screen > [data-react] > *{flex-shrink:0;}
   @keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
   @media (prefers-reduced-motion: reduce){ .screen{animation:none;} .skeleton,.loader .spinner{animation:none;} }
   .screen::-webkit-scrollbar{width:0;}
@@ -694,7 +694,7 @@
   }
   /* Tablet: misma app, más aire y contenido centrado */
   @media (min-width:421px) and (max-width:899px){
-    .screen > *{width:100%; max-width:680px; margin-left:auto !important; margin-right:auto !important;}
+    .screen > *, .screen > [data-react] > *{width:100%; max-width:680px; margin-left:auto !important; margin-right:auto !important;}
     .navbar{padding-left:max(6px, calc((100% - 560px) / 2)); padding-right:max(6px, calc((100% - 560px) / 2));}
     .fila-scroll > .tarjeta{width:250px;}
   }
@@ -726,7 +726,7 @@
 
     .screen{padding:8px 44px 48px;}
     .phone.sin-nav .screen{padding-bottom:48px;}
-    .screen > *{width:100%; max-width:1140px; margin-left:auto !important; margin-right:auto !important;}
+    .screen > *, .screen > [data-react] > *{width:100%; max-width:1140px; margin-left:auto !important; margin-right:auto !important;}
     .toast{bottom:32px; left:calc(50% + 128px);}
     .navbar{transition:width .45s cubic-bezier(.4,0,.2,1), padding .45s cubic-bezier(.4,0,.2,1);}
     .phone{transition:padding-left .45s cubic-bezier(.4,0,.2,1);}
@@ -766,7 +766,7 @@
     .seccion-titulo h2{font-size:28px;}
 
     /* Pantallas de lectura: columna más angosta */
-    #pantalla-perfil > *, #pantalla-usuario > *, #pantalla-ayuda > *, #pantalla-privacidad > *, #pantalla-terminos > *,
+    #pantalla-perfil > *, #pantalla-usuario > *, #pantalla-ayuda > *, #pantalla-ayuda > [data-react] > *, #pantalla-privacidad > *, #pantalla-terminos > *,
     #pantalla-crear > *, #pantalla-notificaciones > *, #pantalla-amigos > *, #pantalla-verificacion > *, #pantalla-puerta > *,
     #pantalla-ticket > *, #pantalla-chats > *, #pantalla-chat > *, #pantalla-moderacion > *, #pantalla-confirmacion > *{max-width:780px;}
     #pantalla-usuario .lista-vertical, #pantalla-perfil .lista-vertical{grid-template-columns:1fr;}

@@ -2,11 +2,19 @@
 
 ## Idea general
 
-Es una **app de una sola página** (SPA) sin frameworks: `index.html` tiene todas las pantallas (`<div class="screen" id="pantalla-...">`) y `js/app.js` muestra una u otra con `ir('nombre')`. No hay servidor propio: el navegador habla directo con Firebase, y **las reglas de `firestore.rules` son las que protegen los datos**.
+Es una **app de una sola página** (SPA) sin frameworks: `index.html` tiene todas las pantallas (`<div class="screen" id="pantalla-...">`) y `src/app.js` muestra una u otra con `ir('nombre')`. Vite empaqueta `src/app.js` y `src/app.css` (minificados y con hash) en `dist/`, que es lo que publica Firebase Hosting. No hay servidor propio: el navegador habla directo con Firebase, y **las reglas de `firestore.rules` son las que protegen los datos**.
 
 Como el plan es **Spark (gratis)**, no hay Cloud Functions. Todo lo que en otra app haría el servidor (contadores, avisos, limpieza) lo hace el cliente, y las reglas validan que lo haga bien. Por ejemplo: para confirmar asistencia, el cliente crea su asistencia **y** suma +1 al contador en la misma transacción, y la regla exige las dos cosas juntas.
 
-## Mapa de `js/app.js`
+## Migración a React (en curso)
+
+- `src/app.js` es un módulo ES. Lo que declara arriba de todo sigue siendo global: el puente `herramientas/vite-puente-global.mjs` lo publica en `window`, porque de eso dependen los `onclick` del HTML, las plantillas y las pruebas. Es temporal.
+- `src/react/interruptores.ts` decide qué pantallas dibuja React. Si no hay ninguna prendida, React ni se descarga.
+- `src/react/arranque.tsx` monta cada pantalla prendida dentro de su `<div class="screen">`. La app vieja la sigue mostrando con `ir()`, pero no toca lo de adentro.
+- `src/react/legado.ts` es por donde React usa cosas de la app vieja (DataService, state, toast…).
+- Detalle y avance: `docs/MIGRACION.md` y `.migration/`.
+
+## Mapa de `src/app.js`
 
 El archivo está dividido en secciones con este formato de encabezado:
 
@@ -99,7 +107,7 @@ Buscá el nombre para saltar. En orden:
 ## Pruebas
 
 - `tests/fakefb.js`: imitación en memoria de Firebase (Auth + Firestore). Con `store.estricto = true` imita además los permisos de un usuario sin cuenta.
-- `tests/cargar-html.js`: arma la página uniendo `index.html` + `css/app.css` + `js/app.js` y saca las librerías de internet.
+- `tests/cargar-html.js`: arma la página uniendo `index.html` + `src/app.css` + el paquete de prueba (`tests/.paquete/app.js`, armado por `tests/armar-paquete.mjs` con Vite, en modo estricto y con el mismo puente) y saca las librerías de internet.
 - Cada `test_*.js` abre una o varias "ventanas" (usuarios distintos) con jsdom y recorre un flujo real.
 
 ## Velocidad de carga

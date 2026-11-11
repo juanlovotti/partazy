@@ -1,6 +1,6 @@
 # Plan de migración: Partazy, de JavaScript puro a React
 
-Estado: **borrador para aprobar** (11/11/2026). Nada de la app se toca hasta que Juan lo apruebe y haya hecho el commit de lo pendiente.
+Estado: **aprobado el 11/11/2026** (Juan delegó: "hacé lo que creas que no va a arruinar la funcionalidad"). Avance en `state.json` y `units/`.
 
 ## 1. Resumen
 - **Qué es:** Partazy (partazy.com) es una app web de una sola página, para descubrir y organizar eventos en Córdoba. Usa Firebase (Auth, Firestore, App Check y Hosting) en el plan Spark.

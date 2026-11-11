@@ -64,7 +64,7 @@ function abrir(url, ajustes = {}){
   ok(w.eval('firebaseConfig.authDomain') === 'partazy.com', 'el dominio de ingreso sigue siendo partazy.com');
 
   // 6) Si el contenido no entra (el navegador de Instagram es más bajo), la pantalla de ingreso tiene que scrollear
-  const css = require('fs').readFileSync(require('path').join(__dirname, '..', 'public', 'css', 'app.css'), 'utf8');
+  const css = require('fs').readFileSync(require('path').join(__dirname, '..', 'src', 'app.css'), 'utf8');
   const regla = sel => (css.match(new RegExp('(^|\\n)\\s*' + sel.replace(/[.#]/g, '\\$&') + '\\{([^}]*)\\}')) || [])[2] || '';
   ok(/overflow-y:auto/.test(regla('#pantalla-bienvenida')) && !/(^|;)\s*overflow:hidden/.test(regla('#pantalla-bienvenida')), 'la pantalla de ingreso se puede scrollear (no corta lo de abajo)');
   ok(/overflow-y:auto/.test(regla('.accion-correo')), 'la pantalla de contraseña nueva también scrollea si no entra');

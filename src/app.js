@@ -1,3 +1,4 @@
+import './react/interruptores';   // interruptores de las pantallas que ya tienen versión React (si no hay ninguna, React ni se descarga)
 // =========================================================
 //  PARTAZY · js/app.js — toda la lógica de la app
 //  - Script clásico (no módulo): las funciones quedan globales porque index.html
@@ -3441,14 +3442,21 @@ const AYUDA = [
 
 // Pinta las preguntas frecuentes.
 function renderAyuda(){
+  if(document.querySelector('#pantalla-ayuda > [data-react]')) return;   // la dibuja React
   document.getElementById('lista-ayuda').innerHTML = AYUDA.map(([seccion, preguntas]) => `
     <div class="subtitulo"><h3 class="titulo-bloque">${esc(seccion)}</h3></div>
     <div class="lista-faq">${preguntas.map(([p, r]) => `<details class="faq"><summary>${esc(p)}</summary><p>${esc(r)}</p></details>`).join('')}</div>`).join('');
 }
 // Abre Ayuda (con el nombre precargado en el formulario de contacto si hay sesión).
-function abrirAyuda(){ renderAyuda(); prepararContacto(); ir('ayuda'); }
+function abrirAyuda(){
+  // Si la pantalla ya la dibuja React (interruptor "ayuda"), la app vieja no toca su contenido: solo avisa y la muestra
+  // (Si React todavía no terminó de montarla, sigue la versión vieja; cuando React monta, la reemplaza.)
+  if(document.querySelector('#pantalla-ayuda > [data-react]')){ document.dispatchEvent(new CustomEvent('partazy:abrir-pantalla', { detail: 'ayuda' })); ir('ayuda'); return; }
+  renderAyuda(); prepararContacto(); ir('ayuda');
+}
 // Precarga el nombre en el formulario de contacto (el mail lo escribe cada uno) y muestra WhatsApp si está configurado.
 function prepararContacto(){
+  if(document.querySelector('#pantalla-ayuda > [data-react]')) return;   // la dibuja React
   const n = document.getElementById('ct-nombre');
   if(n && !n.value && state.perfil) n.value = state.perfil.nombre || '';
   const wa = document.getElementById('ct-whatsapp');
@@ -3456,6 +3464,7 @@ function prepararContacto(){
 }
 // Valida y manda la consulta del formulario de contacto.
 async function enviarConsulta(){
+  if(document.querySelector('#pantalla-ayuda > [data-react]')) return;   // el formulario lo maneja React
   const v = id => document.getElementById(id).value.trim();
   const nombre = v('ct-nombre'), email = v('ct-email'), motivo = v('ct-motivo'), mensaje = v('ct-mensaje');
   if(nombre.length < 2){ toast('Escribí tu nombre'); return; }

@@ -3,11 +3,28 @@
   "private": true,
   "description": "PARTAZY: red social de eventos (fiestas, recitales, charlas, ferias...) sobre Firebase Hosting + Firestore.",
   "scripts": {
-    "test": "node tests/correr-todas.js",
+    "dev": "vite",
+    "build": "vite build",
+    "test": "node tests/correr-todas.js && npm run test:react",
     "paginas": "node herramientas/generar-paginas.js",
-    "deploy": "firebase deploy"
+    "deploy": "firebase deploy",
+    "test:react": "tsc -p tsconfig.json && vitest run"
   },
   "devDependencies": {
-    "jsdom": "^24.0.0"
+    "@tailwindcss/vite": "4.3.5",
+    "@testing-library/react": "16.3.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "acorn": "8.19.0",
+    "jsdom": "^24.0.0",
+    "tailwindcss": "4.3.5",
+    "typescript": "7.0.2",
+    "vite": "8.3.7",
+    "vitest": "5.1.0"
+  },
+  "dependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
   }
 }

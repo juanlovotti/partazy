@@ -2,8 +2,8 @@
 // /eliminar-cuenta y /organizadores) a partir de los textos que ya están en la app.
 //
 // La fuente de verdad sigue siendo la app:
-//   - Privacidad y Términos salen de index.html (#pantalla-privacidad y #pantalla-terminos).
-//   - Las preguntas de Soporte salen de AYUDA en js/app.js.
+//   - Privacidad y Términos salen de index.html, en la raíz del proyecto (#pantalla-privacidad y #pantalla-terminos).
+//   - Las preguntas de Soporte salen de AYUDA en src/app.js.
 // Si cambiás alguno de esos textos, corré:  npm run paginas
 // (la prueba tests/test_paginas.js avisa si las páginas quedaron desactualizadas).
 const fs = require('fs');
@@ -77,7 +77,7 @@ ${scripts}
 
 // ---------- Textos que ya están en la app ----------
 function textosDeLaApp(){
-  const html = fs.readFileSync(path.join(PUB, 'index.html'), 'utf8');
+  const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');   // la página de la app (Vite la toma de la raíz)
   const doc = new JSDOM(html).window.document;
   const legal = id => {
     const el = doc.querySelector(`#${id} .texto-legal`).cloneNode(true);
@@ -85,7 +85,7 @@ function textosDeLaApp(){
     el.querySelectorAll('.mail-contacto').forEach(s => { s.outerHTML = `<a href="mailto:${MAIL}">${MAIL}</a>`; });
     return el.innerHTML.trim();
   };
-  const js = fs.readFileSync(path.join(PUB, 'js', 'app.js'), 'utf8');
+  const js = fs.readFileSync(path.join(__dirname, '..', 'src', 'app.js'), 'utf8');
   const m = js.match(/const AYUDA = (\[[\s\S]*?\n\]);/);
   if(!m) throw new Error('No encontré AYUDA en app.js');
   const ayuda = vm.runInNewContext(m[1]);
