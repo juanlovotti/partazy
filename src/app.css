@@ -1731,3 +1731,16 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 .idiomas button::before{content:''; position:absolute; inset:-9px -3px;}
 .seccion-titulo span{padding:15px 0 15px 18px; margin:-15px 0;}
 .pie-legal .mail-contacto a, .pie-legal a.mail-contacto{display:inline-block; padding:14px 0; margin:-14px 0;}
+
+/* ===== Accesibilidad (11/11/2026): nada de esto cambia cómo se ve la app ===== */
+/* La ventana recibe el foco al abrirse (para el teclado y el lector de pantalla), sin recuadro alrededor de toda la ventana */
+.hoja-bg[tabindex="-1"]:focus, .modal-bg[tabindex="-1"]:focus, .tuto-bg[tabindex="-1"]:focus, .mapa-bg[tabindex="-1"]:focus{outline:none;}
+/* Preguntas de Ayuda: se puede tocar toda la tarjeta, no solo la línea del texto */
+.faq summary{margin:-12px -14px; padding:12px 14px;}
+.faq[open] summary{margin-bottom:0; padding-bottom:0;}
+/* Links y botones chicos: área para tocar de al menos 44 px, sin cambiar cómo se ven */
+.link-btn, .link-ref, .link-ext, .tuto-saltar, .hoja-cuenta .seguir, #vista-lista, #vista-mapa, .toggle-tipo .op, #btn-denunciar-evento{position:relative;}
+.link-btn::after, .link-ref::after, .link-ext::after, .tuto-saltar::after, .hoja-cuenta .seguir::after, #vista-lista::after, #vista-mapa::after, .toggle-tipo .op::after, #btn-denunciar-evento::after{
+  content:""; position:absolute; left:50%; top:50%; width:max(100%, 44px); height:max(100%, 44px); transform:translate(-50%, -50%);}
+/* (menos el link de las normas, que está pegado a la casilla de aceptarlas) */
+.check-normas .link-btn{position:static;} .check-normas .link-btn::after{content:none;}

@@ -8,7 +8,7 @@
   ],
   "phase": "execute",
   "plan_approved": true,
-  "next_unit": "u07-puente-estado",
+  "next_unit": "u08-datos-y-tipos",
   "units": [
     {
       "id": "u01-vite-base",
@@ -72,7 +72,7 @@
       "id": "u07-puente-estado",
       "title": "Store puente sobre `state` y `NAV` (sesión, perfil, invitado, eventos, ubicación, amistades y planes). Las escrituras viejas siguen andando ",
       "size": "M",
-      "status": "pending",
+      "status": "done",
       "depends_on": [
         "u06-react-base"
       ],
@@ -354,5 +354,5 @@
       "blocked_reason": null
     }
   ],
-  "updated": "2026-11-11"
+  "updated": "2026-11-12"
 }

@@ -137,5 +137,17 @@ const notifs = (u, tipo) => [...store.docs.entries()].filter(([k, v]) => k.start
   await O.publicarEvento(); await sleep(300);
   ok(nuevos().length === 1 && nuevos()[0][1].cobroComprobante === true, 'con el alias se publica con cobro por comprobante');
 
+  // Alias sin puntos (12/11: "alias: partazyproductora" no dejaba publicar)
+  const casosAlias = [['alias: partazyproductora', 'partazyproductora'], ['partazyproductora', 'partazyproductora'], ['Transferencia al alias vortex.club', 'vortex.club'],
+    ['cvu: 0000 0031 0001 2345 6789 01', '0000003100012345678901'], ['Efectivo en la puerta', ''], ['www.partazy.com', ''], ['Pedile el alias al organizador', ''], ['alias: ab', '']];
+  ok(casosAlias.every(([t, e]) => O.datoPago(t) === e), 'reconoce alias sin puntos, con puntos y CBU/CVU en grupos; no confunde frases ni páginas web');
+  O.ir('crear'); await sleep(80); O.elegirTipo('fiesta');
+  $O('f-nombre').value = 'Fiesta alias sin puntos'; $O('f-lugar').value = 'Belgrano 800, Güemes'; $O('f-fecha').value = fecha; $O('f-hora').value = '23:00'; $O('f-capacidad').value = '40';
+  if(!$O('switch-pago').classList.contains('on')) O.toggleSwitchPago($O('switch-pago'));
+  $O('f-precio').value = '15000'; $O('f-pago-info').value = 'alias: partazyproductora';
+  await O.publicarEvento(); await sleep(300);
+  const sinPuntos = [...store.docs.entries()].filter(([k, v]) => /^events\/[^/]+$/.test(k) && v.nombre === 'Fiesta alias sin puntos');
+  ok(sinPuntos.length === 1 && sinPuntos[0][1].cobroComprobante === true, 'con "alias: partazyproductora" se publica con cobro por comprobante');
+
   console.log(f ? '\nFALLAS: ' + f : '\nTODO OK'); process.exit(f ? 1 : 0);
 })();

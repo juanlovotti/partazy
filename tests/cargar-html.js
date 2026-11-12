@@ -5,10 +5,10 @@
 const fs = require('fs'), path = require('path'), { execSync } = require('child_process');
 const RAIZ = path.join(__dirname, '..');
 const PAQUETE = path.join(__dirname, '.paquete', 'app.js');
-// Todo lo que entra al paquete: app.js, el puente y lo de React (src/react)
+// Todo lo que entra al paquete: lo de src/ (app.js, ventanas.js, React), el puente y el armador
 function fuentes(){
-  const lista = [path.join(RAIZ, 'src', 'app.js'), path.join(RAIZ, 'herramientas', 'vite-puente-global.mjs'), path.join(__dirname, 'armar-paquete.mjs')];
-  (function rec(d){ for(const n of fs.readdirSync(d)){ const p = path.join(d, n); fs.statSync(p).isDirectory() ? rec(p) : lista.push(p); } })(path.join(RAIZ, 'src', 'react'));
+  const lista = [path.join(RAIZ, 'herramientas', 'vite-puente-global.mjs'), path.join(__dirname, 'armar-paquete.mjs')];
+  (function rec(d){ for(const n of fs.readdirSync(d)){ const p = path.join(d, n); fs.statSync(p).isDirectory() ? rec(p) : lista.push(p); } })(path.join(RAIZ, 'src'));
   return lista;
 }
 function paqueteAlDia(){

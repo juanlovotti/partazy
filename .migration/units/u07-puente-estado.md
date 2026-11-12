@@ -1,0 +1,21 @@
+# u07: puente de estado
+
+- **Qué cambió:**
+  - `src/estado.js` (nuevo): `observar(nombre, obj)` envuelve un objeto en un Proxy. La app vieja lo sigue leyendo y escribiendo igual, y cada vez que se reemplaza una clave de primer nivel anota el cambio (`estado.perfil`, `nav.actual`). Los avisos se juntan y salen una sola vez por tanda (microtarea). Publica `window.__puenteEstado` (`suscribir`, `version`).
+  - `src/app.js`: `state` y `NAV` pasan por `observar()`. En los 5 lugares que cambian algo por dentro (`state.eventos[i] =`, `push` + `sort`, `Object.assign(state.perfil, …)`), se agregó `avisarEstado('eventos'|'perfil')`.
+  - `src/react/estado.ts` (nuevo): hooks con `useSyncExternalStore`:
+    - `useEstado(clave)` y `useNav(clave)`;
+    - atajos `useSesion`, `useUbicacion`, `useEventos`, `useAmistades`, `usePlanes`, `usePantallaActual`.
+    - Cada componente vuelve a pintarse solo cuando cambia la clave que lee. La foto se guarda por versión, así que un `push` avisado también repinta aunque el arreglo sea el mismo.
+  - `src/react/legado.ts`: `navegar.ir/volver/evento/entrada/persona/chats/avisos/pedirCuenta`. React navega a través de la app vieja: mismo historial, mismo "atrás" y mismas reglas de invitado.
+- **Pruebas:**
+  - Vitest: `src/react/estado.test.tsx`, 10 pruebas (tanda única, sin aviso si no cambia, avisos por dentro, oyente que falla, hooks, desmontar).
+  - jsdom: `tests/test_estado_puente.js`, la app completa (avisos al entrar, eventos, `ir()`, el "atrás").
+  - Todo: 52 archivos jsdom + 17 de Vitest + TypeScript.
+- **Paridad:** capturas antes y después de 10 pantallas: 0 píxeles distintos, 0 errores de JavaScript. No cambia nada a la vista.
+- **Peso:** +0,3 KB gzip en el archivo principal (117,0 KB). El de React no cambia.
+- **Límites conocidos (anotados para u08):**
+  - Si la app vieja cambia algo por dentro sin `avisarEstado` (por ejemplo, un evento suelto de la lista), React se entera recién en el próximo cambio de esa clave. Los cambios que vienen de Firestore reemplazan la lista entera, así que sí avisan.
+  - `state.usuarios` (caché de perfiles) no avisa: React lo va a leer con hooks de datos en u08.
+- **Volver atrás:** sacar `observar()` de `state` y `NAV` y borrar las llamadas a `avisarEstado`. Nada más depende de esto todavía.
+- **Se borra en u30:** `src/estado.js`, `src/estado.d.ts` y `src/react/estado.ts` (cuando el estado viva en React).

@@ -97,3 +97,15 @@ Antes de escribir código contra una librería, revisar su documentación instal
 ## 2026-11-11: Primera pantalla: Ayuda (de u12), con paridad exacta
 - Mismo HTML, clases e ids. Las capturas vieja contra React dan 0 píxeles distintos. El pie legal queda de la app vieja.
 - **Diferencia aceptada:** la animación de entrada escalonada de la pantalla (`:nth-child`) ve un solo hijo, porque el contenedor de React usa display:contents.
+
+## 11/11: revisión de accesibilidad y estrategia de pruebas (cierre de fase 1)
+- Se corrieron `design:accessibility-review` (axe-core + teclado + áreas para tocar + contraste) y `engineering:testing-strategy`, que faltaban del cierre de fase 1. Informes: `docs/ACCESIBILIDAD.md` y `docs/PRUEBAS.md`.
+- Se arreglaron solo cosas que no cambian el aspecto (0 píxeles distintos en 21 estados): foco en las ventanas (`src/ventanas.js`), áreas para tocar de 44 px y preguntas de Ayuda tocables en toda la tarjeta (`src/app.css`). Prueba: `tests/test_ventanas_foco.js`.
+- Quedan propuestos para que Juan elija (cambian algo a la vista): borde de foco en el buscador de Explorar y contraste del sello "Verificado" de /organizadores.
+- Las pantallas React de la fase 3 heredan esto: si una ventana pasa a React, tiene que mantener foco adentro, Tab, Escape y vuelta del foco.
+
+## 12/11: u07, puente de estado con Proxy
+- `state` y `NAV` se envuelven con un Proxy (`src/estado.js`) en lugar de cambiar cada escritura de la app vieja: las ~60 asignaciones de primer nivel quedan cubiertas sin tocarlas, y solo 5 cambios por dentro necesitan `avisarEstado()`.
+- Alternativas descartadas: un store nuevo con `store.set()` en cada escritura (muchos cambios en app.js, fácil olvidarse uno) y revisar `state` cada tanto (gasta batería y llega tarde).
+- Los avisos se juntan por microtarea: React nunca ve un estado a medio cambiar (por ejemplo, `uid` nuevo con el `perfil` viejo).
+- React navega llamando a las funciones de la app vieja (`navegar.*` en legado.ts) hasta que la navegación pase a React (u29).

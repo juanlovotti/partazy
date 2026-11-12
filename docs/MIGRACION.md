@@ -11,6 +11,8 @@ El plan completo está en `.migration/plan.md` y el avance en `.migration/state.
 | u02 Módulo ES | `app.js` → `src/app.js`, empaquetado por Vite (minificado y con hash). Un puente publica en `window` todo lo que antes era global (los `onclick` siguen andando). Las pruebas cargan un paquete de prueba armado igual, en modo estricto. | No |
 | u06 Base React | React 19 + TypeScript + interruptores por pantalla. Si ninguna pantalla está prendida, React ni se descarga. | No |
 | Ayuda en React | Primera pantalla migrada: misma apariencia (comparada píxel por píxel), mismo formulario de contacto. **Está apagada en partazy.com.** | No (apagada) |
+| Accesibilidad (11/11, después de publicar) | Las ventanas se pueden usar con teclado y lector de pantalla (el foco entra, Tab queda adentro, Escape cierra) y los links chicos tienen área de 44 px para tocar. Detalle en `docs/ACCESIBILIDAD.md`; plan de pruebas en `docs/PRUEBAS.md`. **Falta publicar.** | No |
+| u07 Puente de estado (12/11) | React se entera de lo que cambia en la app vieja (sesión, perfil, eventos, ubicación, amistades, pantalla actual) y puede navegar con el mismo historial. Base para las pantallas de la fase 3. **Falta publicar.** | No |
 
 ## Números
 
@@ -19,7 +21,7 @@ El plan completo está en `.migration/plan.md` y el avance en `.migration/state.
 | Primera visita desde Firebase Hosting (gzip) | ≈221 KB | **≈175 KB** (index.html 36 + JS 114 + CSS 25) |
 | React (solo si hay una pantalla React prendida) | – | 69 KB, en un archivo aparte |
 | Firebase (desde jsdelivr, no cuenta en el cupo de Hosting) | ≈158 KB | ≈158 KB (sin cambios) |
-| Pruebas | 48 archivos | 50 archivos + 7 pruebas de componentes React + chequeo de TypeScript |
+| Pruebas | 48 archivos | 52 archivos + 17 pruebas de componentes React + chequeo de TypeScript |
 | Capturas comparadas (vieja vs. nueva, 10 pantallas) | – | 0 píxeles distintos, 0 errores de JavaScript |
 
 ## Cómo probar una pantalla React
@@ -58,7 +60,7 @@ En partazy.com, `?react=` no hace nada: nadie puede prenderle una pantalla a otr
 ## Checklist para publicar esta versión (fase 1)
 
 **Antes**
-- [ ] Las pruebas pasan (`npm test`: 50 archivos + componentes React + TypeScript).
+- [ ] Las pruebas pasan (`npm test`: 52 archivos + componentes React + TypeScript).
 - [ ] La revisión de código y la de paridad están hechas (ver `.migration/units/`).
 - [ ] No hay cambios en `firestore.rules` ni en los datos.
 - [ ] Los interruptores de React están apagados en partazy.com (`PUBLICADAS = []`).

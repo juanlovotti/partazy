@@ -12,6 +12,8 @@ Como el plan es **Spark (gratis)**, no hay Cloud Functions. Todo lo que en otra 
 - `src/react/interruptores.ts` decide qué pantallas dibuja React. Si no hay ninguna prendida, React ni se descarga.
 - `src/react/arranque.tsx` monta cada pantalla prendida dentro de su `<div class="screen">`. La app vieja la sigue mostrando con `ir()`, pero no toca lo de adentro.
 - `src/react/legado.ts` es por donde React usa cosas de la app vieja (DataService, state, toast…).
+- `src/estado.js` es el puente de estado: `state` y `NAV` están envueltos con `observar()` y avisan qué clave cambió. React los lee con los hooks de `src/react/estado.ts` (`useSesion`, `useEventos`, `useUbicacion`…). Si cambiás algo por dentro (push, Object.assign), llamá a `avisarEstado('clave')` después.
+- `src/ventanas.js` maneja el foco de todas las ventanas (`.hoja-bg`, `.modal-bg`, `.tuto-bg`, `.mapa-bg`): al abrir entra, Tab queda adentro, Escape cierra y al cerrar vuelve. Ver `docs/ACCESIBILIDAD.md`.
 - Detalle y avance: `docs/MIGRACION.md` y `.migration/`.
 
 ## Mapa de `src/app.js`

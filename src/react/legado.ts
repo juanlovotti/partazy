@@ -15,6 +15,13 @@ type Legado = {
   abrirTutorial(): void;
   abrirReferencias(): void;
   abrirPrivacidad(): void;
+  ir(nombre: string, opts?: { clave?: string; abrir?: () => void }): void;
+  abrirDetalle(id: string): void;
+  abrirTicket(id: string): void;
+  abrirUsuario(uid: string): void;
+  abrirChats(): void;
+  abrirNotificaciones(): void;
+  pedirCuenta(motivo?: string): void;
 };
 const w = () => window as unknown as Legado;
 
@@ -29,6 +36,19 @@ export const legado = {
   abrirTutorial: () => w().abrirTutorial(),
   abrirReferencias: () => w().abrirReferencias(),
   abrirPrivacidad: () => w().abrirPrivacidad(),
+};
+
+// Navegar desde React a través de la app vieja (mismo historial, mismo "atrás" del celular,
+// mismas reglas de invitado). Cuando la navegación pase a React, esto cambia por el router.
+export const navegar = {
+  ir: (nombre: string, opts?: { clave?: string; abrir?: () => void }) => w().ir(nombre, opts),
+  volver: (destino?: string) => w().volver(destino),
+  evento: (id: string) => w().abrirDetalle(id),
+  entrada: (id: string) => w().abrirTicket(id),
+  persona: (uid: string) => w().abrirUsuario(uid),
+  chats: () => w().abrirChats(),
+  avisos: () => w().abrirNotificaciones(),
+  pedirCuenta: (motivo?: string) => w().pedirCuenta(motivo),
 };
 
 // La app vieja avisa con este evento cuando abre una pantalla que dibuja React

@@ -1,4 +1,6 @@
 import './react/interruptores';   // interruptores de las pantallas que ya tienen versión React (si no hay ninguna, React ni se descarga)
+import './ventanas';              // ventanas accesibles con teclado y lector de pantalla (sin cambios a la vista)
+import { observar, avisarEstado } from './estado';   // puente de estado: React se entera de los cambios de state y NAV (u07)
 // =========================================================
 //  PARTAZY · js/app.js — toda la lógica de la app
 //  - Script clásico (no módulo): las funciones quedan globales porque index.html
@@ -815,7 +817,7 @@ const BARRIOS = {
   'Barrio Jardín':[-31.4555,-64.1790], 'Villa Allende':[-31.2950,-64.2950]
 };
 
-const state = {
+const state = observar('estado', {
   uid: null,
   perfil: null,
   eventos: [],
@@ -850,7 +852,7 @@ const state = {
   email: '',
   tok: 0,               // invalida renders asíncronos viejos al cambiar de pantalla
   ultimoCreado: null
-};
+});
 
 // =========================================================
 //  UTILS
@@ -1127,7 +1129,7 @@ async function eventoActual(id){
   try{ ev = await DataService.getEvento(id); } catch(e){ console.warn('evento', id, e); }
   if(!ev) return eventoEnCache(id) || null;
   const i = state.eventos.findIndex(e => e.id === id);
-  if(i >= 0) state.eventos[i] = ev;
+  if(i >= 0){ state.eventos[i] = ev; avisarEstado('eventos'); }
   return ev;
 }
 // Suma 1 confirmado en la copia local (para no recargar).
@@ -1640,7 +1642,7 @@ async function entrarALaApp(){
   // Perfiles creados antes de existir la búsqueda: se completan solos
   if(!state.perfil.nombreBusqueda){
     const extra = camposBusqueda(state.perfil.nombre, state.perfil.usuario, state.perfil.apodo);
-    Object.assign(state.perfil, extra);
+    Object.assign(state.perfil, extra); avisarEstado('perfil');
     DataService.savePerfil(state.uid, extra).catch(e => console.warn('busqueda', e));
   }
   // Si llegó por un link compartido, lo abrimos
@@ -3550,9 +3552,17 @@ function textoInscripcion(ev){
 // Saca el alias o CBU/CVU del texto de pago ("transferencia a: juli.mp.cumple" → "juli.mp.cumple").
 function datoPago(t){
   const s = String(t || '');
-  const cbu = s.match(/\b\d{22}\b/); if(cbu) return cbu[0];
-  const alias = s.match(/\b[a-zA-Z0-9-]{2,}(?:\.[a-zA-Z0-9-]{2,}){1,3}\b/); 
-  return alias && !/^(www|https?)\b/i.test(alias[0]) && !/\.(com|ar|net|org)$/i.test(alias[0]) ? alias[0] : '';
+  // CBU o CVU: 22 números (también escritos en grupos: "0000 0031 0001 ...")
+  const cbu = s.replace(/(\d)[ -]+(?=\d)/g, '$1').match(/\b\d{22}\b/); if(cbu) return cbu[0];
+  // Alias: de 6 a 20 letras, números, puntos o guiones (los puntos no son obligatorios)
+  const limpio = x => x.replace(/[.-]+$/, '');
+  const esAlias = x => /^[a-zA-Z0-9.-]{6,20}$/.test(x) && /[a-zA-Z]/.test(x) && !/^(www|https?)\b/i.test(x) && !/\.(com|ar|net|org)$/i.test(x);
+  const trasPalabra = s.match(/\balias\s*[:=]?\s*([a-zA-Z0-9.-]{6,21})/i);   // "alias: partazyproductora"
+  if(trasPalabra && esAlias(limpio(trasPalabra[1]))) return limpio(trasPalabra[1]);
+  const conPuntos = s.match(/\b[a-zA-Z0-9-]{2,}(?:\.[a-zA-Z0-9-]{2,}){1,3}\b/);   // "Transferencia a vortex.club"
+  if(conPuntos && !/^(www|https?)\b/i.test(conPuntos[0]) && !/\.(com|ar|net|org)$/i.test(conPuntos[0])) return conPuntos[0];
+  const solo = limpio(s.trim());   // el alias solo, sin nada más: "partazyproductora"
+  return esAlias(solo) ? solo : '';
 }
 // Copia el alias al portapapeles.
 async function copiarDatoPago(btn, dato){
@@ -4432,7 +4442,7 @@ window.addEventListener('hashchange', () => { if(Date.now() - NAV.popTs < 600) r
 //  NAVEGACIÓN
 // =========================================================
 // Historial: cada pantalla recuerda de dónde viniste, y el botón "atrás" del celular también funciona
-const NAV = { pila: [], actual: null, clave: null, abrir: null, volviendo: false, popTs: 0, modalHist: false, ignorarPop: false };
+const NAV = observar('nav', { pila: [], actual: null, clave: null, abrir: null, volviendo: false, popTs: 0, modalHist: false, ignorarPop: false });
 // Los paneles grandes (tutorial, guía de colores) ocupan un paso del historial: "atrás" los cierra
 function abrirModalHist(){ if(NAV.modalHist) return; try{ history.pushState({ partazyModal: 1 }, '', location.href); NAV.modalHist = true; } catch(e){} }
 // Saca del historial el paso que agregó un panel al abrirse.
@@ -7553,7 +7563,7 @@ async function publicarEventoUnaVez(){
     });
     // La escucha en vivo puede haberlo sumado antes de que termine de guardarse: no duplicarlo
     if(!state.eventos.some(e => e.id === nuevoId)) state.eventos.push({ id: nuevoId, ...nuevo });
-    state.eventos.sort((a,b) => a.fechaTs - b.fechaTs);
+    state.eventos.sort((a,b) => a.fechaTs - b.fechaTs); avisarEstado('eventos');
     state.ultimoCreado = nuevoId;
     if(esOrganizacion(state.perfil) && !privada) avisarSeguidores(nuevoId, nombre).then(fans => avisarAmigosEvento(nuevoId, nombre, fans));
     else avisarAmigosEvento(nuevoId, nombre);
@@ -8345,7 +8355,7 @@ async function guardarEdicion(ev, d){
     if(d.listaVip) DataService.guardarVip(ev.id, d.vip).catch(e => console.warn('vip', e));
     const enLista = state.eventos.find(e => e.id === ev.id);
     if(enLista) Object.assign(enLista, cambios);
-    state.eventos.sort((a,b) => a.fechaTs - b.fechaTs);
+    state.eventos.sort((a,b) => a.fechaTs - b.fechaTs); avisarEstado('eventos');
     resetFormularioCrear();
     renderHome(); renderExplorar(); renderPerfilVista();
     toast(mensaje ? 'Cambios guardados · avisamos en el grupo' : 'Cambios guardados');
@@ -8529,7 +8539,7 @@ async function guardarPerfil(){
   try{
     await DataService.actualizarPerfil(state.uid, cambios, state.perfil.usuario || '');
     state.fotoPerfilNueva = null;
-    Object.assign(state.perfil, cambios);
+    Object.assign(state.perfil, cambios); avisarEstado('perfil');
     const desdeGustos = state.desdeGustos;
     cancelarEdicionPerfil();
     renderPerfilVista();

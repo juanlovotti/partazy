@@ -42,7 +42,7 @@ npm install
 npm test
 ```
 
-Corre 50 archivos de prueba (más de 500 comprobaciones) contra la app real, con una base de datos falsa en memoria (`tests/fakefb.js`), y después las pruebas de los componentes React (Vitest) y el chequeo de TypeScript. Para correr una sola: `node tests/test_calif.js`.
+Corre 52 archivos de prueba (más de 600 comprobaciones) contra la app real, con una base de datos falsa en memoria (`tests/fakefb.js`), y después las pruebas de los componentes React (Vitest) y el chequeo de TypeScript. Para correr una sola: `node tests/test_calif.js`.
 
 Las pruebas cargan la app desde un "paquete de prueba" (`tests/.paquete/app.js`) que arma Vite solo cuando hace falta.
 
