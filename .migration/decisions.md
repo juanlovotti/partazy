@@ -139,3 +139,8 @@ Antes de escribir código contra una librería, revisar su documentación instal
 - Con el sitio traducido (`idiomaActual() !== 'es'`) se usa el formulario de siempre: Google Translate cambia el texto por debajo y puede romper React (u11 sigue pendiente).
 - `?react=0` ahora apaga todo, también lo publicado y también en partazy.com (salida de emergencia; prender sigue sin poder hacerse por link en partazy.com). Las pruebas del formulario de siempre usan `?react=0`.
 - "Charla / Seminario" pasa a llamarse "Seminario" (OK de Juan).
+
+## 13/11: u08 datos y tipos
+- `src/geo.js` junta los 6 pedidos a Nominatim. Sin memoria de resultados (hubiera cambiado cuántos pedidos se hacen y lo vigilan las pruebas); se puede sumar después con su prueba.
+- La capa `datos.*` solo tiene los métodos que van a usar las próximas pantallas (perfil, entradas, social): se agregan a medida que hagan falta, no todo DataService de una.
+- Perfil (u23): diseño elegido por Juan el 12/11 en Superdesign, portada de la variante A con los accesos rápidos de la B.

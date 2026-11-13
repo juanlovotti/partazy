@@ -1,6 +1,7 @@
 import './react/interruptores';   // interruptores de las pantallas que ya tienen versión React (si no hay ninguna, React ni se descarga)
 import './ventanas';              // ventanas accesibles con teclado y lector de pantalla (sin cambios a la vista)
 import { observar, avisarEstado } from './estado';   // puente de estado: React se entera de los cambios de state y NAV (u07)
+import { buscarDireccion, direccionDePunto, cajaCerca } from './geo';   // direcciones de OpenStreetMap (u08)
 // =========================================================
 //  PARTAZY · js/app.js — toda la lógica de la app
 //  - Script clásico (no módulo): las funciones quedan globales porque index.html
@@ -1078,10 +1079,8 @@ async function ubicarLugar(lugar){
     try{
       const ctl = typeof AbortController === 'function' ? new AbortController() : null;
       const t = ctl && setTimeout(() => ctl.abort(), 4500);
-      const caja = it.caja && u ? `&viewbox=${u.lng - 0.45},${u.lat + 0.45},${u.lng + 0.45},${u.lat - 0.45}&bounded=1` : '';
-      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=ar&addressdetails=1&accept-language=es${caja}&q=${encodeURIComponent(it.q)}`, ctl ? { signal: ctl.signal } : {});
+      const [x] = await buscarDireccion(it.q, { caja: it.caja && u ? cajaCerca(u) : '', signal: ctl?.signal });
       clearTimeout(t);
-      const [x] = await r.json();
       if(!x) continue;
       const c = { lat: parseFloat(x.lat), lng: parseFloat(x.lon) };
       // Sin la ciudad escrita, no aceptamos un resultado a más de 60 km de donde estás
@@ -7879,8 +7878,7 @@ function eventosParaVer(){ return enRango(eventosVisibles()); }
 // Ciudad o barrio a partir de coordenadas (OpenStreetMap).
 async function nombreDeLugar(lat, lng){
   try{
-    const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=12&accept-language=es&lat=${lat}&lon=${lng}`);
-    const d = await r.json(), a = d.address || {};
+    const d = await direccionDePunto(lat, lng, { zoom: 12, detalles: false }), a = d.address || {};
     return a.city || a.town || a.village || a.suburb || a.county || a.state_district || '';
   } catch(e){ return ''; }
 }
@@ -7959,11 +7957,10 @@ function usarMiUbicacion(){
 async function buscarLugares(q, limite = 5, cerca){
   try{
     const u = cerca ? (state.userCoords || leerPref('geoPerfil')) : null;
-    const caja = u && typeof u.lat === 'number' ? `&viewbox=${u.lng - 0.45},${u.lat + 0.45},${u.lng + 0.45},${u.lat - 0.45}&bounded=1` : '';
+    const caja = cajaCerca(u);
     const ref = cerca ? ciudadReferencia() : '';
     const qq = ref && !normalizar(q).includes(normalizar(ref)) && !q.includes(',') ? `${q}, ${ref}` : q;
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=${limite}&countrycodes=ar&addressdetails=1&accept-language=es${caja}&q=${encodeURIComponent(qq)}`);
-    const lista = await r.json();
+    const lista = await buscarDireccion(qq, { limite, caja });
     const vistos = new Set();
     return (lista || []).map(x => {
       const a = x.address || {};
@@ -8031,8 +8028,7 @@ async function buscarCiudadRango(){
   if(inp.dataset.ok === '1' && inp.dataset.lat){ usarLugarElegido({ nombre: q, lat: +inp.dataset.lat, lng: +inp.dataset.lng }); return; }
   est.textContent = 'Buscando...';
   try{
-    const r = await fetch(`https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&countrycodes=ar&addressdetails=1&accept-language=es&q=${encodeURIComponent(q)}`);
-    const [x] = await r.json();
+    const [x] = await buscarDireccion(q);
     if(!x){ est.textContent = 'No encontramos ese lugar. Probá con otro nombre.'; return; }
     const a = x.address || {}, nombre = a.city || a.town || a.village || a.suburb || x.name || q;
     const coords = { lat: parseFloat(x.lat), lng: parseFloat(x.lon) };
@@ -8223,8 +8219,7 @@ function marcarPunto(lat, lng, centrar){
   clearTimeout(MAPA.tRev);
   MAPA.tRev = setTimeout(async () => {
     try{
-      const r = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&addressdetails=1&zoom=18&accept-language=es&lat=${lat}&lon=${lng}`);
-      const d = await r.json();
+      const d = await direccionDePunto(lat, lng);
       if(MAPA.punto?.lat !== lat) return;
       MAPA.dir = partesDireccion(d);
     } catch(e){ MAPA.dir = { corta: '', barrio: '', completa: '' }; }
@@ -8253,11 +8248,10 @@ async function buscarEnMapa(){
   try{
     // Busca cerca de donde estás (o de donde está el mapa), en cualquier ciudad de Argentina
     const c = MAPA.mapa ? MAPA.mapa.getCenter() : (state.userCoords ? { lat: state.userCoords.lat, lng: state.userCoords.lng } : null);
-    const caja = c ? `&viewbox=${c.lng - 0.5},${c.lat + 0.5},${c.lng + 0.5},${c.lat - 0.5}` : '';
-    const url = qq => `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=5&countrycodes=ar&accept-language=es${caja}&q=${encodeURIComponent(qq)}`;
+    const caja = cajaCerca(c, 0.5, false);
     const ciudad = state.ciudadActual && !q.includes(',') && !normalizar(q).includes(normalizar(state.ciudadActual)) ? ', ' + state.ciudadActual : '';
-    let lista = await (await fetch(url(q + ciudad))).json();
-    if(!lista.length && ciudad) lista = await (await fetch(url(q))).json();
+    let lista = await buscarDireccion(q + ciudad, { limite: 5, caja });
+    if(!lista.length && ciudad) lista = await buscarDireccion(q, { limite: 5, caja });
     MAPA.resultados = lista;
     cont.innerHTML = lista.length ? lista.map((x, i) => `<button data-res="${i}">${esc(x.display_name)}</button>`).join('')
       : '<div class="ayuda" style="padding:4px 2px 10px;">No encontramos esa dirección. Probá con calle y número, o tocá el mapa.</div>';

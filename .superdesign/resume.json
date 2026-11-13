@@ -116,6 +116,47 @@
         "fecha": "2026-11-12",
         "por": "Juan"
       }
+    },
+    "#/perfil": {
+      "targetKind": "existing-ui",
+      "projectId": "825dc3b4-54bd-4b0d-a167-d2c103476dc7",
+      "activeDraftId": "23756746-73f7-4c2e-82eb-1cbf78bbd64a",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [],
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "27ea4694b81d7c071a3708519644f62cdd8ba8a0e45602a05e3c34fc6fc2a194",
+        ".superdesign/init/theme.md": "387a49bff329f48f5d21af845da60bb869ad0bf24a3ed153e63911bfed36fadc"
+      },
+      "components": [],
+      "drafts": {
+        "67123948-1273-4234-a8ca-dadf4241b0bd": {
+          "title": "Perfil, variante A: portada y pestañas",
+          "visualDirection": "portada a todo el ancho, foto superpuesta, pestañas Eventos/Organiza/Compartiste",
+          "currentVersion": 2
+        },
+        "eba6b815-61ed-4398-a15f-aed06e5dbfe2": {
+          "title": "Perfil, variante B: panel del organizador",
+          "visualDirection": "próximo evento destacado con números, accesos rápidos (pagos, puerta, entradas, amigos)",
+          "currentVersion": 1
+        },
+        "1f6ec349-ecf7-42b7-8e8e-36a5097a464e": {
+          "title": "Perfil, variante C: credencial",
+          "visualDirection": "tarjeta tipo pase con borde de marca y QR para compartir el perfil",
+          "currentVersion": 1
+        },
+        "23756746-73f7-4c2e-82eb-1cbf78bbd64a": {
+          "title": "Perfil elegido: portada de la A con los accesos de la B",
+          "visualDirection": "elegido por Juan 12/11",
+          "parentDraftId": "67123948-1273-4234-a8ca-dadf4241b0bd",
+          "currentVersion": 1
+        }
+      },
+      "status": "elegido: A + accesos de B",
+      "updated": "2026-11-13"
     }
   }
 }

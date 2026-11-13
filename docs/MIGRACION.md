@@ -13,6 +13,7 @@ El plan completo está en `.migration/plan.md` y el avance en `.migration/state.
 | Ayuda en React | Primera pantalla migrada: misma apariencia (comparada píxel por píxel), mismo formulario de contacto. **Está apagada en partazy.com.** | No (apagada) |
 | Accesibilidad (11/11, después de publicar) | Las ventanas se pueden usar con teclado y lector de pantalla (el foco entra, Tab queda adentro, Escape cierra) y los links chicos tienen área de 44 px para tocar. Detalle en `docs/ACCESIBILIDAD.md`; plan de pruebas en `docs/PRUEBAS.md`. **Falta publicar.** | No |
 | u07 Puente de estado (12/11) | React se entera de lo que cambia en la app vieja (sesión, perfil, eventos, ubicación, amistades, pantalla actual) y puede navegar con el mismo historial. Base para las pantallas de la fase 3. **Falta publicar.** | No |
+| u08 Datos y tipos (13/11) | Las búsquedas de direcciones (OpenStreetMap) pasan por un solo lugar (`src/geo.js`). React tiene los tipos de los documentos, una capa de datos y hooks que siempre cierran las escuchas. Sin cambios a la vista. | No |
 | Tarjetas nuevas (12/11) | Diseño elegido en Superdesign (variante 1): la fecha va sobre la foto (día grande y mes), la hora grande y el lugar con el pin. Sellos de cupo: "Últimos 3 lugares" en azul cuando quedan 9 o menos (o "Últimos lugares" desde el 85 %) y una banda "Agotado" en la esquina. En las listas, una franja abajo de la foto ("Quedan 3", "Agotado"). Con venta en otra página o sin tope, no hay sello (Partazy no sabe cuántos quedan). Se cambió en la app de siempre (no es React). **Falta publicar.** | **Sí** |
 | Crear por pasos en React (12/11) | El "Crear" conversacional elegido en Superdesign: 7 pantallas cortas (tipo, nombre y foto, cuándo, dónde, entrada, lugares y detalles, revisar) con "Siguiente" fijo abajo, la tarjeta tal como la va a ver la gente y la casilla de las normas. Valida y guarda con las mismas reglas que el formulario de siempre. **Prendido para todos desde el 12/11 (OK de Juan)**, para quien tiene cuenta y usa el sitio en español (con el traductor de Google sigue el de siempre). React se baja recién al entrar con la cuenta. Editar un evento sigue en el formulario de siempre. Salida de emergencia: `partazy.com/?react=0` vuelve todo a la versión de siempre en ese navegador. | **Sí** |
 
@@ -23,7 +24,7 @@ El plan completo está en `.migration/plan.md` y el avance en `.migration/state.
 | Primera visita desde Firebase Hosting (gzip) | ≈221 KB | **≈175 KB** (index.html 36 + JS 114 + CSS 25) |
 | React (solo si hay una pantalla React prendida) | – | 84 KB + 3 KB de estilos, en archivos aparte (con Ayuda y el Crear por pasos) |
 | Firebase (desde jsdelivr, no cuenta en el cupo de Hosting) | ≈158 KB | ≈158 KB (sin cambios) |
-| Pruebas | 48 archivos | 54 archivos + 38 pruebas de componentes React + chequeo de TypeScript |
+| Pruebas | 48 archivos | 54 archivos + 46 pruebas de componentes React + chequeo de TypeScript |
 | Capturas comparadas (vieja vs. nueva, 10 pantallas) | – | 0 píxeles distintos, 0 errores de JavaScript |
 
 ## Cómo probar una pantalla React

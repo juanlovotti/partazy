@@ -8,7 +8,7 @@
   ],
   "phase": "execute",
   "plan_approved": true,
-  "next_unit": "u08-datos-y-tipos",
+  "next_unit": "u09-sistema-de-diseno",
   "units": [
     {
       "id": "u01-vite-base",
@@ -82,11 +82,12 @@
       "id": "u08-datos-y-tipos",
       "title": "Tipos TS de los documentos, módulo `api/` sobre DataService, hooks de suscripción con cierre y un servicio de geocodificación (los 7 `fetch`",
       "size": "M",
-      "status": "pending",
+      "status": "done",
       "depends_on": [
         "u07-puente-estado"
       ],
-      "blocked_reason": null
+      "blocked_reason": null,
+      "note": "13/11: geo.js (Nominatim), tipos, capa datos y hooks useCarga/useEscucha."
     },
     {
       "id": "u09-sistema-de-diseno",
@@ -247,7 +248,8 @@
         "u21-tarjetas-y-portadas",
         "u10-primitivas-ui"
       ],
-      "blocked_reason": null
+      "blocked_reason": null,
+      "note": "Diseño elegido 12/11 en Superdesign: portada de la variante A con los accesos rápidos de la B (draft 23756746)."
     },
     {
       "id": "u24-social",
@@ -356,5 +358,5 @@
       "blocked_reason": null
     }
   ],
-  "updated": "2026-11-12"
+  "updated": "2026-11-13"
 }

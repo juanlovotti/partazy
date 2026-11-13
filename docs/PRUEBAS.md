@@ -4,7 +4,7 @@
 
 | Nivel | Qué | Cuánto | Dónde corre |
 |---|---|---|---|
-| Unidad (componentes React) | Vitest + Testing Library: Ayuda, el montaje con interruptores, el puente de estado y el Crear por pasos (`src/react/crear/borrador.test.ts` y `CrearPasos.test.tsx`) | 38 pruebas | `npm run test:react` |
+| Unidad (componentes React) | Vitest + Testing Library: Ayuda, el montaje con interruptores, el puente de estado y el Crear por pasos (`src/react/crear/borrador.test.ts` y `CrearPasos.test.tsx`) | 46 pruebas | `npm run test:react` |
 | Tipos | TypeScript estricto en `src/react` | 1 chequeo | `npm run test:react` |
 | Integración (la app entera en memoria) | jsdom con la app empaquetada igual que en el sitio y Firebase falso (`tests/fakefb.js`) | 51 archivos, más de 650 comprobaciones | `npm test` |
 | Armado y publicación | `test_vite.js` (dist/, hashes, puente), `test_redireccion_hosting.js`, `test_paginas.js` | 3 archivos | `npm test` |
