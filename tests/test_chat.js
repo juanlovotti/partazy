@@ -43,8 +43,11 @@ let fallas=0; const ok=(c,m)=>{ console.log((c?'✔ ':'✘ ')+m); if(!c) fallas+
   ok(/escribiendo/.test(txt($A('chat-top-persona'))) && $A('dm-escribiendo').classList.contains('on'), 'Juan ve "escribiendo…" mientras Sofi tipea');
   $B('dm-enviar').click(); await sleep(400);
   ok(/sii/.test(txt($A('dm-mensajes'))) && !!A.document.querySelector('#dm-mensajes .msj.nuevo'), 'el mensaje nuevo entra con animación');
-  B.document.querySelector('[data-rapido="🔥"]').click(); await sleep(400);
-  ok(!!A.document.querySelector('#dm-mensajes .msj.solo-emoji'), 'los emojis rápidos se mandan y se ven grandes');
+  ok([...B.document.querySelectorAll('[data-rapido]')].every(x => !/\p{Extended_Pictographic}/u.test(x.textContent)), 'las respuestas rápidas son solo texto (sin emojis)');
+  B.document.querySelector('[data-rapido="Me sumo"]').click(); await sleep(400);
+  ok(/Me sumo/.test(txt($A('dm-mensajes'))), 'las respuestas rápidas se mandan');
+  $B('dm-input').value='🔥'; $B('dm-enviar').click(); await sleep(400);
+  ok(!!A.document.querySelector('#dm-mensajes .msj.solo-emoji'), 'un emoji que escribe la persona se ve grande');
   ok(/Hoy/.test(txt($A('dm-mensajes'))), 'separador de día "Hoy"');
 
   // Rechazar

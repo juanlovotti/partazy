@@ -171,9 +171,9 @@ ${faq}
   <div class="acciones"><a class="btn btn-primario" href="/#/crear">Publicar mi evento</a><a class="btn btn-secundario" href="#contacto">Quiero que me contacten</a></div>
 </section>
 <section class="tres">
-  <div class="tarjeta"><span class="ico">💸</span><h3>Sin comisiones</h3><p>Partazy no cobra comisiones por tus entradas: la plata va directo a vos, por transferencia o con tu link de venta.</p></div>
-  <div class="tarjeta"><span class="ico">⚡</span><h3>En 3 pasos</h3><p>Lo básico, el tipo de evento y los detalles. Cada tipo pide lo suyo: un torneo no pide lo mismo que una charla.</p></div>
-  <div class="tarjeta"><span class="ico">🎯</span><h3>Llega a quien le interesa</h3><p>Partazy le muestra tu evento a la gente de tu zona a la que le gustan ese tipo de planes.</p></div>
+  <div class="tarjeta"><span class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 5 5 19"/><circle cx="6.5" cy="6.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg></span><h3>Sin comisiones</h3><p>Partazy no cobra comisiones por tus entradas: la plata va directo a vos, por transferencia o con tu link de venta.</p></div>
+  <div class="tarjeta"><span class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 2 3 14h9l-1 8 10-12h-9z"/></svg></span><h3>En 3 pasos</h3><p>Lo básico, el tipo de evento y los detalles. Cada tipo pide lo suyo: un torneo no pide lo mismo que una charla.</p></div>
+  <div class="tarjeta"><span class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></span><h3>Llega a quien le interesa</h3><p>Partazy le muestra tu evento a la gente de tu zona a la que le gustan ese tipo de planes.</p></div>
 </section>
 <section class="banda">
   <span class="sello">✓ Verificado</span>
@@ -181,13 +181,13 @@ ${faq}
 </section>
 <h2>Todo lo que tenés para tu evento</h2>
 <ul class="herramientas">
-  <li><b>🎟️ Entradas con QR</b> y control en la puerta desde el celular.</li>
-  <li><b>📋 Lista de asistentes</b>, lista de espera y fecha límite para anotarse.</li>
-  <li><b>⭐ Lista VIP</b> para tus invitados.</li>
-  <li><b>🔒 Eventos con invitación:</b> vos aprobás quién entra y la dirección solo la ven los aprobados.</li>
-  <li><b>📈 Métricas:</b> cuánta gente vio tu evento y cuántos se anotaron.</li>
-  <li><b>💬 Grupo del evento</b> para hablar con los asistentes.</li>
-  <li><b>🤝 Publicás para otros:</b> si cobra otra persona, indicás el titular de la cuenta.</li>
+  <li><b>Entradas con QR</b> y control en la puerta desde el celular.</li>
+  <li><b>Lista de asistentes</b>, lista de espera y fecha límite para anotarse.</li>
+  <li><b>Lista VIP</b> para tus invitados.</li>
+  <li><b>Eventos con invitación:</b> vos aprobás quién entra y la dirección solo la ven los aprobados.</li>
+  <li><b>Métricas:</b> cuánta gente vio tu evento y cuántos se anotaron.</li>
+  <li><b>Grupo del evento</b> para hablar con los asistentes.</li>
+  <li><b>Publicás para otros:</b> si cobra otra persona, indicás el titular de la cuenta.</li>
 </ul>
 <section class="tarjeta form-org" id="contacto">
   <h2>¿Querés que te ayudemos a arrancar?</h2>
@@ -229,7 +229,7 @@ ${faq}
     for(let i = 0; i < n; i++) for(let j = 0; j < n; j++) if(!esq(i, j) && r() < .5) cel += `<rect x="${i}" y="${j}" width="1" height="1"/>`;
     for(const [x, y] of [[0, 0], [14, 0], [0, 14]]) cel += `<path d="M${x} ${y}h7v7h-7zM${x + 1} ${y + 1}v5h5v-5z" fill-rule="evenodd"/><rect x="${x + 2}" y="${y + 2}" width="3" height="3"/>`;
     return `<svg class="lz-qr" viewBox="-1 -1 23 23" aria-hidden="true"><rect x="-1" y="-1" width="23" height="23" fill="#fff" rx="1.5"/><g fill="#02070A">${cel}</g></svg>`; };
-  const evento = `<div class="lz-ev"><span class="lz-ev-tapa" style="background:linear-gradient(135deg,#0297DE,#7A8BE0)">🎧</span><span class="lz-ev-txt"><b>Noche Vortex</b><small>Hoy, 23:30<br>Güemes</small></span></div>`;
+  const evento = `<div class="lz-ev"><span class="lz-ev-tapa" style="background:linear-gradient(135deg,#0297DE,#7A8BE0)"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg></span><span class="lz-ev-txt"><b>Noche Vortex</b><small>Hoy, 23:30<br>Güemes</small></span></div>`;
   const av = (l, c, i = 0) => `<i style="background:${c};--i:${i}">${l}</i>`;
   const PANT = {
     1: `<div class="lz-pant" aria-hidden="true">
@@ -242,12 +242,12 @@ ${faq}
             <g stroke="#13222D" stroke-width="4"><path d="M-10 138H350M-10 230H350M117-10V410M223-10V410"/></g>
             <path d="M20 410 300-10" stroke="#1D3343" stroke-width="12" stroke-linecap="round"/></svg>
           <span class="lz-vos" style="--x:52%;--y:63%"></span>
-          <span class="lz-pin" style="--x:25%;--y:20%;--i:0">🎧 Fiesta</span>
-          <span class="lz-pin a" style="--x:72%;--y:15%;--i:1">🎸 Peña</span>
-          <span class="lz-pin" style="--x:28%;--y:49%;--i:2">🎤 Recital</span>
-          <span class="lz-pin a" style="--x:73%;--y:43%;--i:3">⚽ Fútbol 5</span>
-          <span class="lz-pin" style="--x:27%;--y:83%;--i:4">🎨 Taller</span>
-          <span class="lz-pin a" style="--x:73%;--y:80%;--i:5">🛍️ Feria</span>
+          <span class="lz-pin" style="--x:25%;--y:20%;--i:0">Fiesta</span>
+          <span class="lz-pin a" style="--x:72%;--y:15%;--i:1">Peña</span>
+          <span class="lz-pin" style="--x:28%;--y:49%;--i:2">Recital</span>
+          <span class="lz-pin a" style="--x:73%;--y:43%;--i:3">Fútbol 5</span>
+          <span class="lz-pin" style="--x:27%;--y:83%;--i:4">Taller</span>
+          <span class="lz-pin a" style="--x:73%;--y:80%;--i:5">Feria</span>
         </div>
       </div>`,
     2: `<div class="lz-pant" aria-hidden="true">${evento}
@@ -306,7 +306,7 @@ ${faq}
     <p>Cerca tuyo están pasando mil cosas y casi siempre te enterás tarde. Partazy te las muestra todas juntas, con tus amigos adentro.</p>
   </div>
   <div class="lz-chat" aria-hidden="true">
-    <div class="lz-chat-cab"><span class="lz-chat-av">🎉</span><span class="lz-chat-nom"><b>Los del sábado</b><small>Agus, Cami, Ivo, Sofi y vos</small></span></div>
+    <div class="lz-chat-cab"><span class="lz-chat-av"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/></svg></span><span class="lz-chat-nom"><b>Los del sábado</b><small>Agus, Cami, Ivo, Sofi y vos</small></span></div>
     <div class="lz-chat-cuerpo">
       <div class="lz-msj" style="--i:0"><small style="color:#6CCBF5">Agus</small><span>¿qué hacemos hoy?</span><time>22:41</time></div>
       <div class="lz-msj" style="--i:1"><small style="color:#FFA98C">Cami</small><span>ni idea</span><time>22:43</time></div>
@@ -330,7 +330,7 @@ ${faq}
   <h2 class="lz-h">¿Qué hacés <span>este&nbsp;sábado?</span></h2>
   <p class="lz-bajada">Tocá un plan y mirá cómo se vería en Partazy.</p>
   <div class="lz-chips" role="group" aria-label="Planes">
-    ${chip('fiesta', '🎧 Fiesta')}${chip('pena', '🎸 Peña')}${chip('recital', '🎤 Recital')}${chip('futbol', '⚽ Fútbol 5')}${chip('taller', '🎨 Taller')}${chip('feria', '🛍️ Feria')}
+    ${chip('fiesta', 'Fiesta')}${chip('pena', 'Peña')}${chip('recital', 'Recital')}${chip('futbol', 'Fútbol 5')}${chip('taller', 'Taller')}${chip('feria', 'Feria')}
   </div>
   <div class="lz-cartas" id="lz-cartas" aria-live="polite"></div>
   <p class="lz-nota">Son eventos de ejemplo, para que te des una idea.</p>
@@ -362,7 +362,7 @@ if(require.main === module){
   const P = generar();
   for(const [nombre, html] of Object.entries(P)){
     fs.writeFileSync(path.join(PUB, nombre), html);
-    console.log('✔ public/' + nombre);
+    console.log('public/' + nombre);
   }
 }
 module.exports = { generar };

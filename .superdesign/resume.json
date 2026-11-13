@@ -157,6 +157,273 @@
       },
       "status": "elegido: A + accesos de B",
       "updated": "2026-11-13"
+    },
+    "#/home": {
+      "targetKind": "existing-ui",
+      "projectId": "825dc3b4-54bd-4b0d-a167-d2c103476dc7",
+      "activeDraftId": "ebda3e41-73e0-47bc-87d3-69d89413573c",
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md"
+      ],
+      "drafts": {
+        "f1a2f36c-1530-4030-8a6f-91271b4005b9": {
+          "title": "Inicio, variante A: saludo limpio",
+          "currentVersion": 1
+        },
+        "4a50c16a-c411-4b36-95eb-b162de31a097": {
+          "title": "Inicio, variante B: agenda de la semana",
+          "currentVersion": 1
+        },
+        "ebda3e41-73e0-47bc-87d3-69d89413573c": {
+          "title": "Inicio elegido: variante A con los días de la B arriba",
+          "currentVersion": 1,
+          "parentDraftId": "f1a2f36c-1530-4030-8a6f-91271b4005b9"
+        }
+      },
+      "status": "elegido 13/11: A con los días de la B arriba",
+      "updated": "2026-11-13"
+    },
+    "#/chats": {
+      "targetKind": "existing-ui",
+      "projectId": "825dc3b4-54bd-4b0d-a167-d2c103476dc7",
+      "activeDraftId": "b317f0c4-03d7-4e08-97b1-775968974fb2",
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md"
+      ],
+      "drafts": {
+        "3bf22d0f-21b3-4824-ac08-dfbf7885e900": {
+          "title": "Chats, variante A: lista con no leídos",
+          "currentVersion": 1
+        },
+        "49a07bb3-e9f8-4509-9c9d-64cee9fa7be3": {
+          "title": "Chats, variante B: en línea arriba y pestañas",
+          "currentVersion": 1
+        },
+        "b317f0c4-03d7-4e08-97b1-775968974fb2": {
+          "title": "Chats elegido: variante A con los que están en línea arriba",
+          "currentVersion": 1,
+          "parentDraftId": "3bf22d0f-21b3-4824-ac08-dfbf7885e900"
+        }
+      },
+      "status": "elegido 13/11: A con la fila de en línea de la B",
+      "updated": "2026-11-13"
+    },
+    "#/notificaciones": {
+      "targetKind": "existing-ui",
+      "projectId": "825dc3b4-54bd-4b0d-a167-d2c103476dc7",
+      "activeDraftId": "34cb1db7-1efd-4b95-870a-dde3447ec0ab",
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md"
+      ],
+      "drafts": {
+        "34cb1db7-1efd-4b95-870a-dde3447ec0ab": {
+          "title": "Notificaciones, variante A: por día y con botones",
+          "currentVersion": 1
+        },
+        "d8a28534-5e97-4a93-a413-31fe5b5c2466": {
+          "title": "Notificaciones, variante B: pendientes arriba",
+          "currentVersion": 1
+        }
+      },
+      "status": "elegido 13/11: variante A",
+      "updated": "2026-11-13"
+    },
+    "#/explorar": {
+      "targetKind": "existing-ui",
+      "projectId": "825dc3b4-54bd-4b0d-a167-d2c103476dc7",
+      "activeDraftId": "9cc893fc-cfe5-4786-9b79-9aae984d7b07",
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md"
+      ],
+      "drafts": {
+        "9cc893fc-cfe5-4786-9b79-9aae984d7b07": {
+          "title": "Explorar, variante A: filtros en una hoja y vacío útil",
+          "currentVersion": 1
+        },
+        "5f7cf7ac-764a-480e-8c18-b63e673e4944": {
+          "title": "Explorar, variante B: mapa arriba y lista abajo",
+          "currentVersion": 1
+        }
+      },
+      "status": "elegido 13/11: variante A",
+      "updated": "2026-11-13"
+    },
+    "barra-lateral": {
+      "targetKind": "existing-ui",
+      "projectId": "825dc3b4-54bd-4b0d-a167-d2c103476dc7",
+      "activeDraftId": "9e31fd0d-6634-4d55-9bb4-2d861af701ca",
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md"
+      ],
+      "drafts": {
+        "a2e53c61-919c-4452-8327-c2721aa0ed2d": {
+          "title": "Barra lateral (compu), variante A: tu perfil abajo",
+          "currentVersion": 1
+        },
+        "9e31fd0d-6634-4d55-9bb4-2d861af701ca": {
+          "title": "Barra lateral (compu), variante B: agrupada",
+          "currentVersion": 1
+        }
+      },
+      "status": "elegido 13/11: variante B",
+      "updated": "2026-11-13"
+    },
+    "#/bienvenida": {
+      "targetKind": "existing-ui",
+      "projectId": "825dc3b4-54bd-4b0d-a167-d2c103476dc7",
+      "activeDraftId": "81e3d320-c3a4-43a3-9a4d-44cb27ee8177",
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md"
+      ],
+      "drafts": {
+        "f7a819bb-c4ae-43fe-a441-d8974bcefbda": {
+          "title": "Ingreso, variante A: la ciudad de fondo",
+          "currentVersion": 1
+        },
+        "38db9ecc-8b46-449e-85ee-3d214e101de7": {
+          "title": "Ingreso, variante B: una columna con pestañas",
+          "currentVersion": 1
+        },
+        "33c03785-6087-49ed-a156-7c13e4fb40ec": {
+          "title": "Ingreso, variante C: tu entrada",
+          "currentVersion": 1
+        },
+        "01b036a2-c0fe-4914-b960-7095cb5c2fd3": {
+          "title": "Ingreso, variante D: la P gigante",
+          "currentVersion": 1
+        },
+        "85d05d9b-533d-468d-9f9b-9bea02defe6d": {
+          "title": "Ingreso, variante E: el pulso",
+          "currentVersion": 1
+        },
+        "5721128a-4925-47ad-92a6-fe4fcd2428b3": {
+          "title": "Ingreso, variante E con fondo de marca",
+          "currentVersion": 1,
+          "parentDraftId": "85d05d9b-533d-468d-9f9b-9bea02defe6d",
+          "visualDirection": "descartada por Juan: no le gustó el fondo con P, puntos y grano"
+        },
+        "12ac9a8a-ea33-487a-ae4b-b99e911806e3": {
+          "title": "Ingreso, variante E con degradé suave",
+          "currentVersion": 1,
+          "parentDraftId": "85d05d9b-533d-468d-9f9b-9bea02defe6d"
+        },
+        "81e3d320-c3a4-43a3-9a4d-44cb27ee8177": {
+          "title": "Ingreso, variante E con degradé que se mueve lento",
+          "currentVersion": 1
+        }
+      },
+      "status": "elegido 13/11: variante E con degradé que se mueve lento (draft activo)",
+      "updated": "2026-11-13"
+    },
+    "cargador": {
+      "targetKind": "existing-ui",
+      "projectId": "825dc3b4-54bd-4b0d-a167-d2c103476dc7",
+      "activeDraftId": "cc619bbd-2801-44bd-97ee-44d0173ce4b8",
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md"
+      ],
+      "drafts": {
+        "49be360a-cc6f-49fc-b7c1-a0ddb9dfeddb": {
+          "title": "Pantalla de carga, variante A: logo y barra",
+          "currentVersion": 1
+        },
+        "2e672034-a032-4e2c-a90d-45cc82140f50": {
+          "title": "Pantalla de carga, variante B: la app dibujándose",
+          "currentVersion": 1
+        },
+        "cc619bbd-2801-44bd-97ee-44d0173ce4b8": {
+          "title": "Pantalla de carga, variante C: el pulso del ingreso con el degradé",
+          "currentVersion": 1
+        },
+        "4f3e8302-82dc-4934-93fd-f75a445b271f": {
+          "title": "Pantalla de carga, variante B con el degradé",
+          "currentVersion": 1
+        }
+      },
+      "status": "elegido 13/11: variante C (pulso, logo y degradé que se mueve, como el ingreso)",
+      "updated": "2026-11-13"
+    },
+    "hoja-sumate": {
+      "targetKind": "existing-ui",
+      "projectId": "825dc3b4-54bd-4b0d-a167-d2c103476dc7",
+      "activeDraftId": null,
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md"
+      ],
+      "drafts": {
+        "487151fd-d1ea-4496-acc1-eb75f1714629": {
+          "title": "Pedir cuenta, variante A: corta y al grano",
+          "currentVersion": 1
+        },
+        "a466cd55-b8a3-4cd6-a675-15bc603ee063": {
+          "title": "Pedir cuenta, variante B: lo que ganás, en tres líneas",
+          "currentVersion": 1
+        }
+      },
+      "status": "esperando que Juan elija",
+      "updated": "2026-11-13"
+    },
+    "menu-perfil": {
+      "targetKind": "existing-ui",
+      "projectId": "825dc3b4-54bd-4b0d-a167-d2c103476dc7",
+      "activeDraftId": "a62cab3d-5af5-47d9-9201-0d32b0d6eafc",
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md"
+      ],
+      "drafts": {
+        "a62cab3d-5af5-47d9-9201-0d32b0d6eafc": {
+          "title": "Menú del perfil, variante A: lista con íconos",
+          "currentVersion": 1
+        },
+        "1e925252-dd9a-4749-a3e5-9d1a9861aa40": {
+          "title": "Menú del perfil, variante B: accesos en baldosas",
+          "currentVersion": 1
+        }
+      },
+      "status": "esperando que Juan elija",
+      "updated": "2026-11-13",
+      "eleccion": "A (13/11), ya aplicada en la app"
+    },
+    "tutorial": {
+      "targetKind": "existing-ui",
+      "projectId": "825dc3b4-54bd-4b0d-a167-d2c103476dc7",
+      "activeDraftId": "b0a17bd2-1b10-4f33-bbf1-14f9860f6825",
+      "designSystemPath": ".superdesign/design-system.md",
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md"
+      ],
+      "drafts": {
+        "de4e3902-8117-4398-a9ac-ddf2d96b44c0": {
+          "title": "Tutorial, variante A: un ícono grande por paso",
+          "currentVersion": 1
+        },
+        "b0a17bd2-1b10-4f33-bbf1-14f9860f6825": {
+          "title": "Tutorial, variante B: la app en chiquito",
+          "currentVersion": 1
+        }
+      },
+      "status": "esperando que Juan elija",
+      "updated": "2026-11-13",
+      "eleccion": "B con las animaciones del tutorial de antes (13/11), ya aplicada en la app"
     }
   }
 }

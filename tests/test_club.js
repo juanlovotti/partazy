@@ -78,7 +78,7 @@ let fallos = 0; const check = (c, m) => { console.log((c ? '✔ ' : '✘ ') + m)
   check(det.includes('a 05:00 hs') && det.includes('ATP (todo público)'), 'detalle: horario con cierre y clasificación ATP');
   check(B.document.querySelectorAll('.lineup-item').length === 2 && txt(B.document.querySelector('.lineup-item .hora')) === '23:30', 'detalle: line-up con horarios');
   check(!!B.document.querySelector('#detalle-contenido a.link-ext[href^="https://www.google.com/maps"]'), 'detalle: "Cómo llegar"');
-  check(txt($B('btn-accion-detalle')) === 'Comprar en alpogo.com ↗', 'botón principal: "Comprar en alpogo.com ↗"');
+  check(txt($B('btn-accion-detalle')) === 'Comprar en alpogo.com', 'botón principal: "Comprar en alpogo.com"');
   $B('btn-accion-detalle').click(); await sleep(30);
   check(B.abiertos[0] === 'https://alpogo.com/evento/noche-larga', 'tocarlo abre la venta externa');
 

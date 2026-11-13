@@ -72,8 +72,8 @@ export default function Ayuda(){
       <button className="btn btn-primario" type="submit" id="ct-enviar" disabled={enviando}>{enviando ? 'Enviando...' : 'Enviar'}</button>
       <div className="otra-via">
         <span>O si preferís, escribinos directo:</span>
-        <a className="btn btn-wa" id="ct-whatsapp" style={whatsapp ? undefined : { display: 'none' }} href={whatsapp ? 'https://wa.me/' + whatsapp + '?text=' + encodeURIComponent('Hola Partazy! Tengo una consulta: ') : undefined} target="_blank" rel="noopener noreferrer">💬 Escribir por WhatsApp</a>
-        <a className="btn btn-secundario" id="ct-mail" href={'mailto:' + mail}>✉️ {mail}</a>
+        <a className="btn btn-wa" id="ct-whatsapp" style={whatsapp ? undefined : { display: 'none' }} href={whatsapp ? 'https://wa.me/' + whatsapp + '?text=' + encodeURIComponent('Hola Partazy! Tengo una consulta: ') : undefined} target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a>
+        <a className="btn btn-secundario" id="ct-mail" href={'mailto:' + mail}>{mail}</a>
       </div>
     </form>
     <div style={{ padding: '0 20px 28px' }}><button className="btn btn-secundario" onClick={() => legado.abrirPrivacidad()}>Política de privacidad</button></div>

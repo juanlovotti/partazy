@@ -2,6 +2,57 @@ import './react/interruptores';   // interruptores de las pantallas que ya tiene
 import './ventanas';              // ventanas accesibles con teclado y lector de pantalla (sin cambios a la vista)
 import { observar, avisarEstado } from './estado';   // puente de estado: React se entera de los cambios de state y NAV (u07)
 import { buscarDireccion, direccionDePunto, cajaCerca } from './geo';   // direcciones de OpenStreetMap (u08)
+// Íconos de línea (sin emojis): ico('pin'), ico('candado', 14)... Si el nombre es un tipo de evento usa ICONOS_TIPO.
+const ICONOS = {
+  pin: '<path d="M20 10c0 5-5.5 10.2-7.4 11.8a1 1 0 0 1-1.2 0C9.5 20.2 4 15 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/>',
+  reloj: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
+  globo: '<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20M2 12h20"/>',
+  calendario: '<rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>',
+  ticket: '<path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2M13 17v2M13 11v2"/>',
+  musica: '<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  auriculares: '<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',
+  estrella: '<path d="M11.5 2.9a.5.5 0 0 1 .9 0l2.6 5.2 5.7.8a.5.5 0 0 1 .3.9l-4.1 4 1 5.7a.5.5 0 0 1-.8.5L12 17.3l-5.1 2.7a.5.5 0 0 1-.7-.5l1-5.7-4.2-4a.5.5 0 0 1 .3-.9l5.7-.8z"/>',
+  candado: '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  mensaje: '<path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/>',
+  mail: '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-9 5.7a2 2 0 0 1-2 0L2 7"/>',
+  campana: '<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>',
+  'campana-off': '<path d="M8.7 3A6 6 0 0 1 18 8a21 21 0 0 0 .6 5M17 17H3s3-2 3-9a4.7 4.7 0 0 1 .3-1.7M10.3 21a1.94 1.94 0 0 0 3.4 0M2 2l20 20"/>',
+  usuarios: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+  'usuario-mas': '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/>',
+  ok: '<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+  no: '<circle cx="12" cy="12" r="10"/><path d="m15 9-6 6M9 9l6 6"/>',
+  prohibido: '<circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/>',
+  alerta: '<path d="m21.7 18-8-14a2 2 0 0 0-3.5 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3"/><path d="M12 9v4M12 17h.01"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/>',
+  insignia: '<path d="M3.9 8.6a4 4 0 0 1 4.7-4.7 4 4 0 0 1 6.8 0 4 4 0 0 1 4.7 4.7 4 4 0 0 1 0 6.8 4 4 0 0 1-4.7 4.7 4 4 0 0 1-6.8 0 4 4 0 0 1-4.7-4.7 4 4 0 0 1 0-6.8Z"/><path d="m9 12 2 2 4-4"/>',
+  recibo: '<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8M12 17.5v-11"/>',
+  repost: '<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
+  arroba: '<circle cx="12" cy="12" r="4"/><path d="M16 8v5a3 3 0 0 0 6 0v-1a10 10 0 1 0-4 8"/>',
+  megafono: '<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>',
+  diario: '<path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8M15 18h-5M10 6h8v4h-8z"/>',
+  escudo: '<path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/>',
+  copa: '<path d="M8 22h8M12 15v7M6 3h12l-.6 6.2a5.4 5.4 0 0 1-10.8 0z"/>',
+  compartir: '<path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/>',
+  tendencia: '<path d="M22 7 13.5 15.5l-5-5L2 17"/><path d="M16 7h6v6"/>',
+  credencial: '<rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M14 10h4M14 14h4M5 16c.6-1 1.6-1.5 3-1.5s2.4.5 3 1.5"/>',
+  celular: '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/>',
+  ayuda: '<circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/>',
+  gorro: '<path d="M21.4 10.9a1 1 0 0 0 0-1.8l-8.6-3.9a2 2 0 0 0-1.7 0L2.6 9.1a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.7 0z"/><path d="M22 10v6M6 12.5V16a6 3 0 0 0 12 0v-3.5"/>',
+  libro: '<path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/>',
+  salir: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+  vitrina: '<path d="M3 9l2-5h14l2 5"/><path d="M3 9c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3"/><path d="M5 12v8h14v-8M10 20v-5h4v5"/>',
+  buscar: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+  lista: '<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+  mapa: '<path d="M14.1 6.2 9.9 4.1a2 2 0 0 0-1.8 0L3.6 6.4A1 1 0 0 0 3 7.3v12.1a1 1 0 0 0 1.4.9l3.7-1.8a2 2 0 0 1 1.8 0l4.2 2.1a2 2 0 0 0 1.8 0l4.5-2.3a1 1 0 0 0 .6-.9V5.3a1 1 0 0 0-1.4-.9l-3.7 1.8a2 2 0 0 1-1.8 0zM15 6v15M9 3v15"/>',
+  mas: '<path d="M12 5v14M5 12h14"/>',
+  externo: '<path d="M7 17 17 7M7 7h10v10"/>',
+};
+function ico(nombre, tam = 16){
+  const p = ICONOS[nombre] || (typeof ICONOS_TIPO !== 'undefined' && ICONOS_TIPO[nombre]) || ICONOS.info;
+  return `<svg class="ico-svg" width="${tam}" height="${tam}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
+}
+// Razón de una recomendación en la tarjeta ("Porque te gusta Techno"), con su ícono.
+function razonHTML(r){ return r && typeof r === 'object' ? `<div class="razon-tarjeta">${ico(r.ico, 13)}<span>${esc(r.texto)}</span></div>` : ''; }
 // =========================================================
 //  PARTAZY · js/app.js — toda la lógica de la app
 //  - Script clásico (no módulo): las funciones quedan globales porque index.html
@@ -1406,12 +1457,12 @@ function renderSelectorIntereses(contId, seleccion, esOrg){
   const propios = gustosPropios(sel);
   const chip = (i, extra = '') => `<div class="chip ${sel.includes(i) ? 'activo' : ''}" role="button" tabindex="0" aria-pressed="${sel.includes(i)}" data-interes="${esc(i)}"${extra}>${esc(i)}</div>`;
   const chipOtro = `<div class="chip ${propios.length ? 'activo' : ''}" role="button" tabindex="0" aria-pressed="${!!propios.length}" data-interes="${OTRO_MUSICA}">Otro</div>`;
-  const musica = `<div class="grupo-intereses" data-grupo="musica"><div class="grupo-tit">🎧 ${esOrg ? '¿Qué música suena en tus eventos?' : 'Música que te gusta'}</div>
+  const musica = `<div class="grupo-intereses" data-grupo="musica"><div class="grupo-tit">${esOrg ? '¿Qué música suena en tus eventos?' : 'Música que te gusta'}</div>
       <div class="grupo-chips">${INTERESES_MUSICA.map(i => chip(i)).join('')}${chipOtro}</div>
       <input type="text" class="otro-musica" maxlength="60" placeholder="¿Cuál? Ej: jazz, metal, salsa" aria-label="Otro estilo de música" value="${esc(propios.join(', '))}"></div>`;
   const planes = esOrg
-    ? `<div class="grupo-intereses" data-grupo="planes"><div class="grupo-tit">🎪 ¿Qué tipo de eventos organizás?</div><div class="grupo-chips">${ORG_TIPOS.map(i => chip(i, ORG_TIPOS_CON_MUSICA.has(i) ? ' data-musical="1"' : '')).join('')}</div></div>`
-    : `<div class="grupo-intereses" data-grupo="planes"><div class="grupo-tit">🎉 Planes que te copan</div><div class="grupo-chips">${INTERESES_PLANES.map(i => chip(i)).join('')}</div></div>`;
+    ? `<div class="grupo-intereses" data-grupo="planes"><div class="grupo-tit">¿Qué tipo de eventos organizás?</div><div class="grupo-chips">${ORG_TIPOS.map(i => chip(i, ORG_TIPOS_CON_MUSICA.has(i) ? ' data-musical="1"' : '')).join('')}</div></div>`
+    : `<div class="grupo-intereses" data-grupo="planes"><div class="grupo-tit">Planes que te copan</div><div class="grupo-chips">${INTERESES_PLANES.map(i => chip(i)).join('')}</div></div>`;
   const cont = document.getElementById(contId);
   cont.classList.toggle('es-org', !!esOrg);
   cont.innerHTML = esOrg ? planes + musica : musica + planes;
@@ -1794,8 +1845,8 @@ function estrellasHTML(nombre){
 }
 // Las dos filas de estrellas: la joda y quien organiza.
 function filasCalifHTML(ev, org){
-  return `<div class="calif-fila"><span>🎉 La joda<br><small class="valor-txt" style="color:var(--gris); font-weight:600; font-size:11px;">Música, gente, ambiente</small></span>${estrellasHTML('joda')}</div>
-    <div class="calif-fila"><span>${org ? '🎪' : '🏠'} ${etiquetaAnfitrion(ev, org)}<br><small class="valor-txt" style="color:var(--gris); font-weight:600; font-size:11px;">Trato, orden, lo que prometió</small></span>${estrellasHTML('anfitrion')}</div>`;
+  return `<div class="calif-fila"><span>La joda<br><small class="valor-txt" style="color:var(--gris); font-weight:600; font-size:11px;">Música, gente, ambiente</small></span>${estrellasHTML('joda')}</div>
+    <div class="calif-fila"><span>${etiquetaAnfitrion(ev, org)}<br><small class="valor-txt" style="color:var(--gris); font-weight:600; font-size:11px;">Trato, orden, lo que prometió</small></span>${estrellasHTML('anfitrion')}</div>`;
 }
 // Bloque con los promedios del evento.
 function resumenCalifHTML(ev, org){
@@ -1859,7 +1910,7 @@ async function enviarCalificacion(id, btn){
     Object.assign(ev, { califN: (ev.califN || 0) + 1, califJoda: (ev.califJoda || 0) + joda, califAnf: (ev.califAnf || 0) + anf });
     const u = state.usuarios[ev.creador];
     if(org && u) Object.assign(u, { califN: (u.califN || 0) + 1, califSuma: (u.califSuma || 0) + anf });
-    toast('¡Gracias por calificar! ⭐');
+    toast('¡Gracias por calificar!');
     if(document.getElementById('hoja-vista').classList.contains('show') && root.closest('#hoja-vista')) cerrarHoja();
     if(NAV.actual === 'detalle' && NAV.clave === 'detalle:' + id) renderDetalle(id);
   } catch(e){
@@ -2512,7 +2563,7 @@ async function renderModeracion(){
   setBadge('badge-moderacion', grupos.length + state.verifPendientes.length);
   if(pantallaActual() !== 'moderacion') return;
   renderVerificacionesAdmin();
-  if(!grupos.length){ cont.innerHTML = emptyState('No hay denuncias pendientes. 🎉'); return; }
+  if(!grupos.length){ cont.innerHTML = emptyState('No hay denuncias pendientes.'); return; }
   const tok = state.tok;
   const autores = grupos.map(g => g.autor).filter(Boolean);
   await Promise.all(autores.map(getUsuario));
@@ -2595,29 +2646,29 @@ function mostrarSuspendido(){
 //  (el plan gratuito no tiene funciones en el servidor). Solo el destinatario las lee.
 // =========================================================
 const TIPOS_NOTIF = {
-  amistad_solicitud:      { icono: '👋', texto: n => `${n.deNombre} te mandó una solicitud de amistad`, ir: () => abrirAmigos() },
-  amistad_aceptada:       { icono: '🤝', texto: n => `${n.deNombre} aceptó tu solicitud de amistad`, ir: n => abrirUsuario(n.de) },
-  evento_solicitud:       { icono: '🔐', texto: n => `${n.deNombre} pidió unirse a ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
-  evento_aprobada:        { icono: '✅', texto: n => `Te aprobaron en ${n.objetoNombre}. Ya podés ver la dirección y tu entrada.`, ir: n => abrirDetalle(n.objetoId) },
-  evento_rechazada:       { icono: '❌', texto: n => `Tu solicitud para ${n.objetoNombre} no fue aceptada`, ir: n => abrirDetalle(n.objetoId) },
-  evento_cancelado:       { icono: '🚫', texto: n => `Se canceló ${n.objetoNombre}${n.texto ? ': ' + n.texto : ''}`, ir: n => abrirDetalle(n.objetoId) },
-  evento_confirmacion:    { icono: '🎟️', texto: n => `${n.deNombre} confirmó asistencia a ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
-  verificacion_aprobada:  { icono: '✔️', texto: () => '¡Tu organización fue verificada! Tu perfil y tus eventos ya muestran la insignia ✓.', ir: () => ir('perfil') },
-  mensaje_solicitud:      { icono: '✉️', texto: n => `${n.deNombre} te mandó una solicitud de mensaje`, ir: n => abrirDM(n.de) },
-  mensaje_aceptado:       { icono: '💬', texto: n => `${n.deNombre} aceptó tu solicitud de mensaje`, ir: n => abrirDM(n.de) },
-  amigo_evento:           { icono: '🎉', texto: n => `${n.deNombre} publicó ${n.objetoNombre}. ¿Vas?`, ir: n => abrirDetalle(n.objetoId) },
-  evento_compartido:      { icono: '🔁', texto: n => `${n.deNombre} compartió ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
-  mencion:                { icono: '👉', texto: n => `${n.deNombre} te mencionó en ${n.objetoNombre}${n.texto ? ': ' + n.texto : ''}`, ir: n => abrirDetalle(n.objetoId) },
-  nuevo_evento:           { icono: '📣', texto: n => `${n.deNombre} publicó una fecha nueva: ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
-  acreditacion_solicitud: { icono: '📰', texto: n => `${n.deNombre}${n.texto ? ' (' + n.texto + ')' : ''} pidió acreditación de prensa para ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
-  acreditacion_aprobada:  { icono: '✅', texto: n => `Aprobaron tu acreditación de prensa para ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
-  acreditacion_rechazada: { icono: '📰', texto: n => `Tu acreditación de prensa para ${n.objetoNombre} no fue aprobada`, ir: n => abrirDetalle(n.objetoId) },
-  verificacion_rechazada: { icono: 'ℹ️', texto: n => `No pudimos verificar tu organización${n.texto ? ': ' + n.texto : ''}. Podés volver a pedirlo.`, ir: () => abrirVerificacion() },
-  pago_enviado:           { icono: '🧾', texto: n => `${n.deNombre} ${n.texto === 'sin captura' ? 'avisó que pagó' : 'mandó el comprobante'} de su entrada para ${n.objetoNombre}. Fijate en tu cuenta y confirmalo.`, ir: n => abrirDetalle(n.objetoId) },
-  pago_confirmado:        { icono: '✅', texto: n => `${n.deNombre} confirmó tu pago para ${n.objetoNombre}. Ya tenés tu entrada.`, ir: n => abrirTicket(n.objetoId) },
-  pago_rechazado:         { icono: '⚠️', texto: n => `${n.deNombre} no encontró tu pago para ${n.objetoNombre}${n.texto ? ': ' + n.texto : ''}`, ir: n => abrirTicket(n.objetoId) },
-  entrada_transferencia:  { icono: '🎟️', texto: n => `${n.deNombre} te quiere pasar su entrada para ${n.objetoNombre}`, ir: n => abrirOfertaEntrada(n.objetoId, n.de) },
-  entrada_aceptada:       { icono: '🤝', texto: n => `${n.deNombre} aceptó tu entrada para ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) }
+  amistad_solicitud:      { icono: 'usuario-mas', texto: n => `${n.deNombre} te mandó una solicitud de amistad`, ir: () => abrirAmigos() },
+  amistad_aceptada:       { icono: 'usuarios', texto: n => `${n.deNombre} aceptó tu solicitud de amistad`, ir: n => abrirUsuario(n.de) },
+  evento_solicitud:       { icono: 'candado', texto: n => `${n.deNombre} pidió unirse a ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
+  evento_aprobada:        { icono: 'ok', texto: n => `Te aprobaron en ${n.objetoNombre}. Ya podés ver la dirección y tu entrada.`, ir: n => abrirDetalle(n.objetoId) },
+  evento_rechazada:       { icono: 'no', texto: n => `Tu solicitud para ${n.objetoNombre} no fue aceptada`, ir: n => abrirDetalle(n.objetoId) },
+  evento_cancelado:       { icono: 'prohibido', texto: n => `Se canceló ${n.objetoNombre}${n.texto ? ': ' + n.texto : ''}`, ir: n => abrirDetalle(n.objetoId) },
+  evento_confirmacion:    { icono: 'ticket', texto: n => `${n.deNombre} confirmó asistencia a ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
+  verificacion_aprobada:  { icono: 'insignia', texto: () => '¡Tu organización fue verificada! Tu perfil y tus eventos ya muestran la insignia ✓.', ir: () => ir('perfil') },
+  mensaje_solicitud:      { icono: 'mail', texto: n => `${n.deNombre} te mandó una solicitud de mensaje`, ir: n => abrirDM(n.de) },
+  mensaje_aceptado:       { icono: 'mensaje', texto: n => `${n.deNombre} aceptó tu solicitud de mensaje`, ir: n => abrirDM(n.de) },
+  amigo_evento:           { icono: 'calendario', texto: n => `${n.deNombre} publicó ${n.objetoNombre}. ¿Vas?`, ir: n => abrirDetalle(n.objetoId) },
+  evento_compartido:      { icono: 'repost', texto: n => `${n.deNombre} compartió ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
+  mencion:                { icono: 'arroba', texto: n => `${n.deNombre} te mencionó en ${n.objetoNombre}${n.texto ? ': ' + n.texto : ''}`, ir: n => abrirDetalle(n.objetoId) },
+  nuevo_evento:           { icono: 'megafono', texto: n => `${n.deNombre} publicó una fecha nueva: ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
+  acreditacion_solicitud: { icono: 'diario', texto: n => `${n.deNombre}${n.texto ? ' (' + n.texto + ')' : ''} pidió acreditación de prensa para ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
+  acreditacion_aprobada:  { icono: 'ok', texto: n => `Aprobaron tu acreditación de prensa para ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) },
+  acreditacion_rechazada: { icono: 'diario', texto: n => `Tu acreditación de prensa para ${n.objetoNombre} no fue aprobada`, ir: n => abrirDetalle(n.objetoId) },
+  verificacion_rechazada: { icono: 'info', texto: n => `No pudimos verificar tu organización${n.texto ? ': ' + n.texto : ''}. Podés volver a pedirlo.`, ir: () => abrirVerificacion() },
+  pago_enviado:           { icono: 'recibo', texto: n => `${n.deNombre} ${n.texto === 'sin captura' ? 'avisó que pagó' : 'mandó el comprobante'} de su entrada para ${n.objetoNombre}. Fijate en tu cuenta y confirmalo.`, ir: n => abrirDetalle(n.objetoId) },
+  pago_confirmado:        { icono: 'ok', texto: n => `${n.deNombre} confirmó tu pago para ${n.objetoNombre}. Ya tenés tu entrada.`, ir: n => abrirTicket(n.objetoId) },
+  pago_rechazado:         { icono: 'alerta', texto: n => `${n.deNombre} no encontró tu pago para ${n.objetoNombre}${n.texto ? ': ' + n.texto : ''}`, ir: n => abrirTicket(n.objetoId) },
+  entrada_transferencia:  { icono: 'ticket', texto: n => `${n.deNombre} te quiere pasar su entrada para ${n.objetoNombre}`, ir: n => abrirOfertaEntrada(n.objetoId, n.de) },
+  entrada_aceptada:       { icono: 'usuarios', texto: n => `${n.deNombre} aceptó tu entrada para ${n.objetoNombre}`, ir: n => abrirDetalle(n.objetoId) }
 };
 
 // Cómo se agrupan en la pantalla de notificaciones (en este orden)
@@ -2679,16 +2730,16 @@ async function renderNotificaciones(marcarLeidas){
 
   const htmlRec = recordatorios.map(e => `
     <div class="notif recordatorio" data-abrir="${esc(e.id)}" role="button" tabindex="0">
-      <div class="ico">⏰</div>
+      <div class="ico">${ico('reloj', 18)}</div>
       <div class="cuerpo">${esMismoDia(e.fechaTs, Date.now()) ? 'Hoy' : 'Mañana'}: <b>${esc(e.nombre)}</b> a las ${esc(horaCorta(e.fechaTs))} hs
         <span class="cuando">Tu entrada está en "Mis entradas"</span></div>
     </div>`).join('');
   const htmlDe = n => {
     const t = TIPOS_NOTIF[n.tipo];
     const u = state.usuarios[n.de];
-    const ico = u && fotoValida(u.foto) && (n.tipo.startsWith('amistad') || GRUPO_NOTIF[n.tipo] === 'amigos') ? avatarHTML(u) : t.icono;
+    const icoN = u && fotoValida(u.foto) && (n.tipo.startsWith('amistad') || GRUPO_NOTIF[n.tipo] === 'amigos') ? avatarHTML(u) : ico(t.icono, 18);
     return `<div class="notif ${state.notifResaltadas.has(n.id) ? 'nueva' : ''}" data-notif="${esc(n.id)}" role="button" tabindex="0">
-      <div class="ico">${ico}</div>
+      <div class="ico">${icoN}</div>
       <div class="cuerpo">${esc(t.texto(n))}<span class="cuando">${esc(hace(n.ts))}</span></div>
     </div>`;
   };
@@ -2808,7 +2859,7 @@ function renderTarjetaVerificacion(){
   if(!esOrganizacion(p)){
     // Acceso visible para quienes organizan: pasar a cuenta de organizador
     cont.innerHTML = `<div class="tarjeta-verif">
-      <b>🎪 ¿Organizás eventos?</b>
+      <b>¿Organizás eventos?</b>
       <span>Si sos boliche, bar, productora, centro de estudiantes o DJ, pasá a cuenta de organizador: vas a poder dar entradas con QR y pedir la insignia de verificado ✓.</span>
       <button class="btn btn-secundario" onclick="pasarAOrganizador()">Pasar a cuenta de organizador</button>
     </div>`;
@@ -2819,7 +2870,7 @@ function renderTarjetaVerificacion(){
   if(p.verificado){
     html = `<b style="color:var(--verde);">✓ Organización verificada</b><span>Tu perfil y tus eventos muestran la insignia de verificado.</span>`;
   } else if(v?.estado === 'pendiente'){
-    html = `<b>⏳ Verificación en revisión</b><span>Recibimos tu solicitud el ${esc(fmtFecha(v.ts).split(' · ')[0])}. Te avisamos con una notificación cuando esté lista.</span>
+    html = `<b>Verificación en revisión</b><span>Recibimos tu solicitud el ${esc(fmtFecha(v.ts).split(' · ')[0])}. Te avisamos con una notificación cuando esté lista.</span>
       <button class="btn btn-secundario btn-mini" onclick="abrirVerificacion()">Ver o corregir mis datos</button>`;
   } else if(v?.estado === 'rechazada'){
     html = `<b>No pudimos verificar tu organización</b><span>${esc(v.motivoRechazo || 'Revisá los datos y volvé a intentarlo.')}</span>
@@ -2980,7 +3031,7 @@ function urlMaps(lugar, ciudad){
 }
 // Link que abre en otra pestaña.
 function aExterno(url, texto){
-  return `<a class="link-ext" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(texto)} ↗</a>`;
+  return `<a class="link-ext" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esc(texto)} ${ico('externo', 12)}</a>`;
 }
 // Abre un link externo en otra pestaña.
 function abrirExterno(url){ window.open(url, '_blank', 'noopener'); }
@@ -3071,9 +3122,9 @@ function pintarIGs(cont){
 function bloquesOrganizacion(u){
   const web = linkWeb(u.web);
   const filas = [
-    u.direccionPublica ? `<div class="info-fila"><span>📍</span><div><b>${esc(u.direccionPublica)}</b>${aExterno(urlMaps(u.direccionPublica), 'Cómo llegar')}</div></div>` : '',
-    u.horarios ? `<div class="info-fila"><span>🕒</span><div>${esc(u.horarios)}</div></div>` : '',
-    web ? `<div class="info-fila"><span>🌐</span><div>${aExterno(web.url, web.texto)}</div></div>` : ''
+    u.direccionPublica ? `<div class="info-fila"><span>${ico('pin')}</span><div><b>${esc(u.direccionPublica)}</b>${aExterno(urlMaps(u.direccionPublica), 'Cómo llegar')}</div></div>` : '',
+    u.horarios ? `<div class="info-fila"><span>${ico('reloj')}</span><div>${esc(u.horarios)}</div></div>` : '',
+    web ? `<div class="info-fila"><span>${ico('globo')}</span><div>${aExterno(web.url, web.texto)}</div></div>` : ''
   ].join('');
   return `
     ${u.bio ? `<div style="padding:0 20px 18px;"><p class="texto-desc">${esc(u.bio)}</p></div>` : ''}
@@ -3202,7 +3253,7 @@ async function validarCodigo(texto){
 }
 // Marca que la persona ingresó (una sola vez).
 async function registrarIngreso(a){
-  if(a.checkinTs) return resultadoPuerta('aviso', `⚠ ${a.nombre} ya ingresó a las ${horaCorta(a.checkinTs)}. Cada código se valida una sola vez.`);
+  if(a.checkinTs) return resultadoPuerta('aviso', `${a.nombre} ya ingresó a las ${horaCorta(a.checkinTs)}. Cada código se valida una sola vez.`);
   try{
     a.checkinTs = await DataService.registrarIngreso(Puerta.ev.id, a.uid);
     resultadoPuerta('ok', `✓ Puede pasar: ${a.nombre}`);
@@ -3211,7 +3262,7 @@ async function registrarIngreso(a){
     if(e.message === 'YA_INGRESO'){
       await cargarPuerta();
       const b = Puerta.asistentes.find(x => x.uid === a.uid);
-      return resultadoPuerta('aviso', `⚠ ${a.nombre} ya ingresó${b?.checkinTs ? ' a las ' + horaCorta(b.checkinTs) : ''}. Cada código se valida una sola vez.`);
+      return resultadoPuerta('aviso', `${a.nombre} ya ingresó${b?.checkinTs ? ' a las ' + horaCorta(b.checkinTs) : ''}. Cada código se valida una sola vez.`);
     }
     console.error(e);
     resultadoPuerta('mal', 'No se pudo registrar el ingreso. Probá de nuevo.');
@@ -3248,7 +3299,7 @@ async function detenerEscaner(){
   const cam = document.getElementById('puerta-camara');
   if(cam) cam.style.display = 'none';
   const b = document.getElementById('btn-escanear');
-  if(b) b.textContent = '📷 Escanear QR';
+  if(b) b.textContent = 'Escanear QR';
 }
 
 // =========================================================
@@ -3262,15 +3313,15 @@ function acreditacionAbierta(ev){ return ev.fechaTs - Date.now() > 24 * HORA; }
 function bloquePrensaHTML(ev, esCreador, miAcred){
   if(!ev.deOrganizacion || esCancelado(ev)) return '';
   if(esCreador) return `<div class="bloque">
-      <h3 class="titulo-bloque">📰 Prensa</h3>
+      <h3 class="titulo-bloque">Prensa</h3>
       <div class="lista-solicitudes" id="lista-prensa"><div class="empty-state">Cargando...</div></div>
     </div>`;
   let cuerpo;
   if(miAcred?.estado === 'aprobada') cuerpo = `<div class="aviso"><b>✓ Acreditación aprobada</b><span>Estás en la lista de prensa como ${esc(miAcred.medio)}. Presentate en la puerta con tu DNI.</span></div>`;
-  else if(miAcred?.estado === 'pendiente') cuerpo = `<div class="aviso"><b>⏳ Acreditación en revisión</b><span>Te avisamos con una notificación cuando la organización responda.</span></div>`;
+  else if(miAcred?.estado === 'pendiente') cuerpo = `<div class="aviso"><b>Acreditación en revisión</b><span>Te avisamos con una notificación cuando la organización responda.</span></div>`;
   else if(miAcred?.estado === 'rechazada') cuerpo = `<div class="aviso aviso-rojo"><b>Acreditación no aprobada</b><span>Esta vez la organización no pudo aprobar tu acreditación.</span></div>`;
   else if(!acreditacionAbierta(ev)) cuerpo = `<span style="font-size:12.5px; color:var(--gris);">Las acreditaciones de prensa cierran 24 h antes del evento.</span>`;
-  else cuerpo = `<button class="btn btn-secundario" id="btn-acreditacion">📰 Pedir acreditación de prensa</button>
+  else cuerpo = `<button class="btn btn-secundario" id="btn-acreditacion">Pedir acreditación de prensa</button>
       <span style="display:block; font-size:11.5px; color:var(--gris); margin-top:8px;">Hasta 24 h antes. La aprobación depende de la organización.</span>`;
   return `<div class="bloque">${cuerpo}</div>`;
 }
@@ -3535,7 +3586,7 @@ function estadisticasHTML(ev){
   const vistas = ev.vistasCount || 0, anot = Math.max(0, (ev.confirmadosCount || 0) - 1), comp = ev.repostsCount || 0;
   const conv = vistas ? Math.min(100, Math.round(anot / vistas * 100)) : 0;
   const caja = (n, t, s) => `<div class="stat"><b>${n}</b><span>${t}</span>${s ? `<small>${s}</small>` : ''}</div>`;
-  return `<div class="bloque"><h3 class="titulo-bloque">📊 Estadísticas</h3>
+  return `<div class="bloque"><h3 class="titulo-bloque">Estadísticas</h3>
     <div class="stats-grid">${caja(vistas, vistas === 1 ? 'persona lo vio' : 'personas lo vieron', 'vistas únicas')}${caja(anot, ev.privacidad === 'privada' ? 'aprobados' : 'anotados', 'sin contarte')}${caja(conv + '%', 'se anotaron', 'de los que lo vieron')}${caja(comp, comp === 1 ? 'lo compartió' : 'lo compartieron', 'con sus amigos')}</div>
     <div class="ayuda" style="margin-top:10px;">Solo vos ves esto. Cuentan las personas con cuenta (cada una una sola vez).</div></div>`;
 }
@@ -3792,7 +3843,7 @@ function abrirAmigos(enfocar, texto){
 // Invitar a alguien que todavía no usa Partazy (WhatsApp, Instagram, etc.)
 async function invitarAmigos(){
   const link = location.origin + (state.uid ? '/#/u/' + state.uid : '');
-  const texto = `Sumate a Partazy 🎉 la app de fiestas, previas y boliches. Agregame: ${link}`;
+  const texto = `Sumate a Partazy, la app de fiestas, previas y boliches. Agregame: ${link}`;
   if(navigator.share){
     try{ await navigator.share({ title: 'Partazy', text: texto }); return; } catch(e){ if(e && e.name === 'AbortError') return; }
   }
@@ -3806,7 +3857,7 @@ function renderCtaAmigos(){
   const n = amigosUids().length;
   pintarFilaAmigos();
   el.innerHTML = n >= 3 ? '' : `<div class="cta-amigos">
-      <div class="ico">👥</div>
+      <div class="ico">${ico('usuarios', 26)}</div>
       <div><b>${n ? 'Sumá más amigos' : 'Encontrá a tus amigos'}</b><span>Mirá a qué fiestas van y armen el plan juntos.</span></div>
       <div class="acc"><button class="btn btn-primario btn-mini" onclick="explorarPersonas()">Buscar</button><button class="btn btn-secundario btn-mini" onclick="invitarAmigos()">Invitar</button></div>
     </div>`;
@@ -3834,13 +3885,9 @@ function pintarFilaAmigos(){
   el.style.display = '';
   el.innerHTML = `<div class="seccion-titulo"><h2>Tus amigos</h2><span onclick="abrirAmigos()">Ver todos</span></div>
     <div class="fila-amigos">${datos.map(({ u, p, on }) => { const nom = nombreCorto(state.usuarios[u]); return `<button class="amigo-burbuja${p ? ' con-plan' : ''}${p?.ahora ? ' en-vivo' : ''}" ${p ? `data-abrir="${esc(p.ev.id)}"` : `data-usuario="${esc(u)}"`} aria-label="${esc(p ? `${nom} ${p.frase} ${p.ev.nombre}` : nombreVisible(state.usuarios[u]))}">
-      <span class="ab-foto">${avatarMini(state.usuarios[u])}${on ? '<i class="ab-on"></i>' : ''}${p ? `<i class="ab-emoji">${p.emoji}</i>` : ''}</span>
+      <span class="ab-foto">${avatarMini(state.usuarios[u])}${on ? '<i class="ab-on"></i>' : ''}${p ? `<i class="ab-emoji">${p.icono}</i>` : ''}</span>
       <b>${esc(nom)}</b>${p ? `<small class="ab-cuando">${p.ahora ? '<i class="ab-vivo"></i>' : ''}${esc(p.cuando)}</small><small class="ab-ev">${esc(p.ev.nombre)}</small>` : on ? '<small>En línea</small>' : ''}</button>`; }).join('')}</div>`;
 }
-// Emoji según el tipo de evento (para la fila de amigos y avisos cortos).
-const EMOJI_TIPO = { fiesta: '🎉', previa: '🍻', after: '🌅', pena: '🎸', egresados: '🎓', cumple: '🎂', musical: '🎤', gastronomico: '🍽️',
-  charla: '🎙️', taller: '🛠️', cultural: '🎨', deportivo: '⚽', feria: '🛍️', universitaria: '🎓', tematica: '🎭' };
-function emojiTipo(ev){ return EMOJI_TIPO[ev?.ocasion] || (ev?.tipo === 'previa' ? '🍻' : '🎉'); }
 // Qué hace un amigo con un evento, en pocas palabras: "Ahora en", "Hoy 23:00", "Mañana", "Organiza"...
 function planDeAmigo(ev, u){
   const ahora = Date.now(), org = ev.creador === u;
@@ -3851,7 +3898,7 @@ function planDeAmigo(ev, u){
   const DS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
   const cuandoTxt = enCurso ? 'Ahora' : dias <= 0 ? 'Hoy ' + hora : dias === 1 ? 'Mañana' : dias < 7 ? DS[d.getDay()] + ' ' + hora : DS[d.getDay()] + ' ' + d.getDate();
   return {
-    emoji: emojiTipo(ev), ahora: enCurso, hoy: dias <= 0, org,
+    icono: iconoTipo(ev), ahora: enCurso, hoy: dias <= 0, org,
     cuando: org ? 'Host · ' + (enCurso ? 'ahora' : dias <= 0 ? 'hoy' : dias === 1 ? 'mañana' : cuandoTxt.split(' ')[0].toLowerCase()) : (enCurso ? 'Ahora en' : cuandoTxt),
     frase: org ? 'es host de' : (enCurso ? 'está en' : 'va a'),
   };
@@ -4006,7 +4053,7 @@ async function renderUsuario(uid){
       <button class="btn btn-secundario" data-amigo-accion="rechazar" data-par="${esc(f.id)}">Rechazar</button>`;
   else acciones = `<button class="btn btn-secundario" data-amigo-accion="cancelar" data-par="${esc(f.id)}">Cancelar solicitud enviada</button>`;
   if(!esYo && !bloqueado && f?.estado !== 'aceptada' && (u.mensajesDe !== 'amigos' || dmDoc(parId(state.uid, uid))))
-    acciones += `<button class="btn btn-secundario" data-dm="${esc(uid)}">💬 Enviar mensaje</button>`;
+    acciones += `<button class="btn btn-secundario" data-dm="${esc(uid)}">Enviar mensaje</button>`;
 
   const intereses = Array.isArray(u.intereses) ? u.intereses : [];
   const organiza = bloqueado ? [] : misEventosOrganizando(uid).filter(eventoVisible);
@@ -4018,7 +4065,7 @@ async function renderUsuario(uid){
       ${u.usuario ? `<div class="handle">@${esc(u.usuario)}</div>` : ''}
       ${fundadorHTML(u)}
       ${!bloqueado ? igChipHTML(u) : ''}
-      ${esOrganizacion(u) ? `<div class="tags" style="justify-content:center; margin-top:8px;"><span class="tag">🎪 Organizador de eventos</span>${(u.califN || 0) ? `<span class="tag">${califOrgTxt(u)}</span>` : ''}${u.ocultarSeguidores && !esYo ? '' : `<span class="tag">${u.seguidores || 0} ${(u.seguidores || 0) === 1 ? 'seguidor' : 'seguidores'}</span>`}</div>` : ''}
+      ${esOrganizacion(u) ? `<div class="tags" style="justify-content:center; margin-top:8px;"><span class="tag">Organizador de eventos</span>${(u.califN || 0) ? `<span class="tag">${califOrgTxt(u)}</span>` : ''}${u.ocultarSeguidores && !esYo ? '' : `<span class="tag">${u.seguidores || 0} ${(u.seguidores || 0) === 1 ? 'seguidor' : 'seguidores'}</span>`}</div>` : ''}
       <div class="ubic">${esc([u.apodo ? u.nombre : '', u.ciudad].filter(Boolean).join(' · '))}</div>
       ${lineaEstadoHTML(u)}
       ${!org && !bloqueado ? '<div id="perfil-amigos-resumen" class="amigos-resumen"></div>' : ''}
@@ -4031,7 +4078,7 @@ async function renderUsuario(uid){
       ${acciones}
       ${esYo ? '' : `<div class="acciones-evento">
         ${bloqueado ? '' : `<button class="btn btn-secundario" data-bloquear="${esc(uid)}">Bloquear</button>`}
-        <button class="btn btn-secundario" data-denunciar-usuario="${esc(uid)}">🚩 Denunciar</button>
+        <button class="btn btn-secundario" data-denunciar-usuario="${esc(uid)}">Denunciar</button>
       </div>`}
     </div>
     ${org && !bloqueado ? bloquesOrganizacion(u) : ''}
@@ -4049,7 +4096,7 @@ async function renderUsuario(uid){
         <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs</span></div>
       </div>`).join('') : emptyState('No está organizando eventos próximos.')}</div>`;
   if(!bloqueado && !org && !u.ocultarAmigos) cargarAmigosDePerfil(uid, tok);   // después de pintar (si ya está en caché se completa al toque)
-  else if(!bloqueado && !org && u.ocultarAmigos){ const r = document.getElementById('perfil-amigos-resumen'); if(r) r.innerHTML = '<span class="link-amigos" style="cursor:default;">🔒 Lista de amigos privada</span>'; }
+  else if(!bloqueado && !org && u.ocultarAmigos){ const r = document.getElementById('perfil-amigos-resumen'); if(r) r.innerHTML = '<span class="link-amigos" style="cursor:default;">Lista de amigos privada</span>'; }
 }
 
 // Amigos de otra persona: cuántos son, cuántos en común y quiénes.
@@ -4090,7 +4137,7 @@ async function renderChats(){
   const lista = todas.filter(d => !esSolicitudRecibida(d) && !(d.estado === 'rechazado' && d.solicitante !== state.uid && !esAmigo(otroDe(d.id))));
   const verSol = state.verSolicitudesDM && solicitudes.length;
   const cabecera = solicitudes.length ? `<div class="solicitudes-dm" role="button" tabindex="0" onclick="state.verSolicitudesDM=!state.verSolicitudesDM; renderChats();">
-      <div class="ico">✉️</div><div style="flex:1;"><b>Solicitudes de mensajes (${solicitudes.length})</b><span>${verSol ? 'Tocá para volver a tus chats' : 'Personas que no son tus amigos quieren escribirte'}</span></div><span class="ir" style="color:var(--gris); font-size:20px;">${verSol ? '×' : '›'}</span></div>` : '';
+      <div class="ico">${ico('mail', 22)}</div><div style="flex:1;"><b>Solicitudes de mensajes (${solicitudes.length})</b><span>${verSol ? 'Tocá para volver a tus chats' : 'Personas que no son tus amigos quieren escribirte'}</span></div><span class="ir" style="color:var(--gris); font-size:20px;">${verSol ? '×' : '›'}</span></div>` : '';
   if(!lista.length && !solicitudes.length){
     cont.innerHTML = amigosUids().length
       ? emptyState('Todavía no tenés conversaciones. Tocá el lápiz para escribirle a un amigo, o mandale una fiesta desde el detalle de un evento.')
@@ -4175,10 +4222,10 @@ async function pintarEstadoDM(){
   const nom = esc(nombreCorto(u));
   const aviso = document.getElementById('dm-aviso'), caja = document.getElementById('dm-caja'), rap = document.getElementById('dm-rapidos');
   let html = '', bloq = false;
-  if(est === 'nueva' && u?.mensajesDe === 'amigos'){ html = `<div class="dm-aviso"><b>🔒 ${nom} solo recibe mensajes de amigos</b>Mandale una solicitud de amistad desde su perfil.</div>`; bloq = true; }
-  else if(est === 'nueva') html = `<div class="dm-aviso"><b>✉️ Solicitud de mensaje</b>No son amigos todavía: tu primer mensaje le llega a ${nom} como solicitud, y lo ve cuando la acepte.</div>`;
-  else if(est === 'enviada') html = `<div class="dm-aviso"><b>⏳ Esperando que ${nom} acepte</b>Podés seguir escribiendo; le llega todo junto cuando acepte tu solicitud.</div>`;
-  else if(est === 'recibida'){ html = `<div class="dm-aviso"><b>✉️ ${nom} quiere mandarte un mensaje</b>No son amigos. Si aceptás, pueden chatear. Si rechazás, no le avisamos y no te puede escribir más.
+  if(est === 'nueva' && u?.mensajesDe === 'amigos'){ html = `<div class="dm-aviso"><b>${nom} solo recibe mensajes de amigos</b>Mandale una solicitud de amistad desde su perfil.</div>`; bloq = true; }
+  else if(est === 'nueva') html = `<div class="dm-aviso"><b>Solicitud de mensaje</b>No son amigos todavía: tu primer mensaje le llega a ${nom} como solicitud, y lo ve cuando la acepte.</div>`;
+  else if(est === 'enviada') html = `<div class="dm-aviso"><b>Esperando que ${nom} acepte</b>Podés seguir escribiendo; le llega todo junto cuando acepte tu solicitud.</div>`;
+  else if(est === 'recibida'){ html = `<div class="dm-aviso"><b>${nom} quiere mandarte un mensaje</b>No son amigos. Si aceptás, pueden chatear. Si rechazás, no le avisamos y no te puede escribir más.
       <div class="fila"><button class="btn btn-secundario" data-sol-dm="rechazar">Rechazar</button><button class="btn btn-primario" data-sol-dm="aceptar">Aceptar</button></div>
       <div class="fila"><button class="btn btn-secundario" data-bloquear="${esc(act.uid)}">Bloquear</button><button class="btn btn-secundario" data-usuario="${esc(act.uid)}">Ver perfil</button></div></div>`; bloq = true; }
   else if(est === 'rechazada-por-otro'){ html = `<div class="dm-aviso"><b>No podés enviar más mensajes</b>${nom} no aceptó la solicitud de mensaje.</div>`; bloq = true; }
@@ -4399,7 +4446,7 @@ function compartirEvento(ev){
 }
 // Compartir el link de mi perfil.
 function compartirMiPerfil(){
-  compartirLink('Partazy', 'Agregame en Partazy para ver a qué fiestas voy 🔥', urlApp('u/' + state.uid));
+  compartirLink('Partazy', 'Agregame en Partazy para ver a qué fiestas voy', urlApp('u/' + state.uid));
 }
 
 // Mandar un evento por chat a uno o varios amigos.
@@ -4418,7 +4465,7 @@ async function enviarEventoAAmigos(ev){
   };
   const res = await Promise.allSettled(uids.map(uid => {
     const pid = parId(state.uid, uid);
-    return DataService.enviarDM(pid, pid.split('_'), state.uid, msg, '🎉 ' + ev.nombre);
+    return DataService.enviarDM(pid, pid.split('_'), state.uid, msg, ev.nombre);
   }));
   const okN = res.filter(r => r.status === 'fulfilled').length;
   if(okN === uids.length) toast(okN === 1 ? 'Enviado' : `Enviado a ${okN} amigos`);
@@ -4870,9 +4917,9 @@ function textoDistancia(ev, km){
 function esCancelado(ev){ return ev?.estado === 'cancelado'; }
 // Estado del evento calculado en el momento (cupo + horario + votos de los que están adentro)
 const VOTOS_AMB = {
-  tranqui:   { label: 'Tranqui',        clase: 'verde',    emoji: '😌', desc: 'Buena para charlar' },
-  bueno:     { label: 'Se pone bueno',  clase: 'amarillo', emoji: '🔥', desc: 'Arrancó la joda' },
-  explotado: { label: 'Explotado',      clase: 'rojo',     emoji: '🤯', desc: 'A full, mucha gente' }
+  tranqui:   { label: 'Tranqui',        clase: 'verde',    desc: 'Buena para charlar' },
+  bueno:     { label: 'Se pone bueno',  clase: 'amarillo', desc: 'Arrancó la joda' },
+  explotado: { label: 'Explotado',      clase: 'rojo',     desc: 'A full, mucha gente' }
 };
 // Hora estimada de fin del evento.
 function finEvento(ev){
@@ -4920,7 +4967,7 @@ function bloqueAmbienteHTML(ev, votos, puedeVotar, miVoto){
     <div class="votar-amb">
       <div class="q">${miVoto ? 'Tu voto quedó registrado. Podés cambiarlo:' : '¿Estás ahí? Contale a los demás cómo está:'}</div>
       <div class="ops">${Object.entries(VOTOS_AMB).map(([k, v]) =>
-        `<button data-votar="${k}" class="${miVoto === k ? 'elegido' : ''}"><span style="font-size:20px;">${v.emoji}</span>${esc(v.label)}<small>${(n => n + (n === 1 ? ' voto' : ' votos'))(votos?.c ? votos.c[k] : 0)}</small></button>`).join('')}</div>
+        `<button data-votar="${k}" class="${miVoto === k ? 'elegido' : ''}"><span class="punto-ambiente amb-${v.clase}" aria-hidden="true"></span>${esc(v.label)}<small>${(n => n + (n === 1 ? ' voto' : ' votos'))(votos?.c ? votos.c[k] : 0)}</small></button>`).join('')}</div>
     </div>` : '';
   return `<div class="ambiente-barra">
       <span class="punto-ambiente amb-${a.clase}${a.vivo ? ' amb-vivo' : ''}" style="width:12px;height:12px;"></span>
@@ -4960,15 +5007,15 @@ function abrirReferencias(){
     ${f('rojo', 'Rojo: lleno o cancelado', 'No quedan lugares (podés sumarte a la lista de espera) o el evento se canceló.')}
     <div class="ref-sub">Mientras pasa</div>
     ${f('verde', 'Punto que late: en vivo', 'El evento está pasando ahora. La gente que está ahí vota cómo está:', true)}
-    ${f('verde', '😌 Tranqui', 'Buena para charlar, poca gente.', true)}
-    ${f('amarillo', '🔥 Se pone bueno', 'Arrancó la joda.', true)}
-    ${f('rojo', '🤯 Explotado', 'A full, mucha gente.', true)}
+    ${f('verde', 'Tranqui', 'Buena para charlar, poca gente.', true)}
+    ${f('amarillo', 'Se pone bueno', 'Arrancó la joda.', true)}
+    ${f('rojo', 'Explotado', 'A full, mucha gente.', true)}
     <div class="ref-sub">Después</div>
     ${f('gris', 'Gris: terminó', 'El evento ya pasó.')}
     <div class="ref-sub">Otras marcas</div>
     <div class="ref-fila"><span class="pill-cupo ultimas">Últimos lugares</span><div><span>Quedan muy pocos lugares (si son 9 o menos, te dice cuántos).</span></div></div>
     <div class="ref-fila"><span class="pill-cupo agotado">Agotado</span><div><span>No hay más lugares.</span></div></div>
-    <div class="ref-fila"><span style="font-size:15px;">🔒</span><div><b>Previa privada</b><span>Pedís unirte y quien organiza te aprueba. Ahí ves la dirección.</span></div></div>
+    <div class="ref-fila"><span class="ref-ico">${ico('candado', 15)}</span><div><b>Previa privada</b><span>Pedís unirte y quien organiza te aprueba. Ahí ves la dirección.</span></div></div>
     <div class="ref-fila"><span style="color:var(--verde); font-weight:800;">✓</span><div><b>Verificado</b><span>Organización revisada por Partazy.</span></div></div>`;
   document.getElementById('modal-referencias').classList.add('show');
   abrirModalHist();
@@ -4987,44 +5034,45 @@ function esCompu(){ try{ return window.matchMedia('(min-width:900px)').matches; 
 // Los textos cambian según dónde están los botones (compu o celu).
 function pasosTutorial(){
   const nv = (nombreVisible(state.perfil) || '').trim();
-  const nombre = esOrganizacion(state.perfil) ? nv : nv.split(' ')[0];
+  const org = esOrganizacion(state.perfil);
+  const nombre = org ? nv : nv.split(' ')[0];
   const compu = esCompu();
   const porPasos = !!window.__pantallasReact?.has('crear') && idiomaActual() === 'es';   // Crear por pasos (React) prendido
   const dedo = '<span class="tm-dedo" aria-hidden="true"></span>';
+  const mas = `<div class="tm tm-crear"><div class="tm-mas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>${dedo}</div><div class="tm-crear-txt"><b>Crear evento</b><span>${porPasos ? 'Tipo, nombre, cuándo, dónde y listo' : 'Lo básico, el tipo y los detalles'}</span></div></div>`;
+  const pie = 'Lo volvés a ver en <b>Perfil</b>, menú, <b>Cómo usar Partazy</b>.';
+  const donde = compu ? '(<b>Crear evento</b>, a la izquierda)' : 'abajo en el medio';
   return [
     { logo: true, t: nombre ? `¡Hola, ${esc(nombre)}!` : '¡Bienvenido/a!',
-      p: 'Partazy es para encontrar <b>planes cerca tuyo</b>: fiestas, previas, recitales, charlas, talleres, ferias, partidos... Ver a dónde van tus amigos y anotarte. Son 5 pasos cortitos.' },
+      p: 'Fiestas, recitales, talleres, ferias y más, cerca tuyo y con tus amigos. Te lo mostramos en 5 pasos.' },
     { t: 'Encontrá un plan',
-      p: esOrganizacion(state.perfil) ? `En <b>Inicio</b> tenés lo de hoy y lo que se viene cerca. Filtrá por tipo (fiestas, talleres, deportes...) o buscá algo puntual.`
-        : `En <b>Inicio</b> tenés lo de hoy y <b>Para vos</b>, armado con tus gustos. Filtrá por tipo (fiestas, talleres, deportes...) o buscá algo puntual.`,
+      p: org ? 'En <b>Inicio</b> está lo de hoy y lo que viene. Filtrá por tipo o buscá algo puntual.'
+        : 'En <b>Inicio</b> está lo de hoy y <b>Para vos</b>, con tus gustos. Filtrá o buscá algo puntual.',
       dibujo: `<div class="tm tm-buscar">
         <div class="tm-barra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="tm-tipeo"></span></div>
-        <div class="tm-chips"><i>Hoy</i><i class="on">${esOrganizacion(state.perfil) ? 'Esta semana' : 'Para vos 🎧'}</i><i>Talleres</i><i>Deportes</i></div></div>` },
+        <div class="tm-chips"><i>Hoy</i><i class="on">${org ? 'Esta semana' : 'Para vos'}</i><i>Talleres</i><i>Deportes</i></div></div>` },
     { t: 'Anotate en un toque',
-      p: `Abrí un evento y tocá <b>Confirmar asistencia</b> (o <b>Reservar</b> si es pago: ahí ves a quién pagarle y copiás el alias). Algunos tienen <b>fecha límite</b> para anotarse. Tu entrada queda en <b>Mis entradas</b> 🎟️, ${compu ? 'en el menú de la izquierda' : 'el ícono del ticket arriba'}.`,
+      p: `Abrí un evento y tocá <b>Confirmar asistencia</b>. Tu entrada queda en <b>Mis entradas</b>, ${compu ? 'en el menú de la izquierda' : 'en el ticket de arriba'}.`,
       dibujo: `<div class="tm tm-evento">
         <div class="tm-foto"></div>
         <div class="tm-info"><small>TALLER, SÁB 18:00</small><b>Taller de cerámica</b><span><i class="punto-ambiente amb-verde"></i>Hay lugar</span></div>
         <div class="tm-boton">Confirmar asistencia${dedo}</div></div>` },
-    { t: 'El punto te dice cómo viene', p: 'Todos los eventos tienen un punto de color:',
-      extra: `<div class="tuto-mini">
+    { t: 'El punto te dice cómo viene', p: 'Cada evento tiene un punto de color. Si late, está pasando ahora.',
+      escena: `<div class="tuto-mini">
         <div><span class="punto-ambiente amb-verde"></span><b>Verde</b> hay lugar</div>
         <div><span class="punto-ambiente amb-amarillo"></span><b>Amarillo</b> se está llenando</div>
         <div><span class="punto-ambiente amb-rojo"></span><b>Rojo</b> lleno o cancelado</div>
-        <div><span class="punto-ambiente amb-verde amb-vivo"></span><b>Si late</b> está pasando ahora</div></div>` },
+        <div><span class="punto-ambiente amb-verde amb-vivo"></span><b>Late</b> está pasando ahora</div></div>` },
     { t: 'Mirá qué hacen tus amigos',
-      p: `Agregalos con el ícono de <b>personas</b> ${compu ? '(arriba a la derecha)' : '(arriba)'}. En <b>Tus amigos</b>, en Inicio, ves quién está en un evento <b>ahora</b>, quién va hoy y quién organiza. Compartí eventos con un comentario y <b>@arrobá</b> a quien quieras.`,
+      p: 'Agregalos con el ícono de <b>personas</b> y mirá quién va a dónde. Compartí eventos y <b>@arrobá</b> a quien quieras.',
       dibujo: `<div class="tm tm-amigos">
         <div class="tm-caras"><i>SG</i><i>IP</i><i>MR</i></div>
-        <div class="tm-txt">🎤 <b>Sofía</b> está ahora en un recital</div>
-        <div class="tm-nota">¡Vamos a esta! 🔥 <b>@ivo</b> <span>— Sofía</span></div></div>` },
-    porPasos ? { t: 'Publicá paso a paso', cierre: true,
-      p: `Tocá el <b>+ naranja</b> ${compu ? '(<b>Crear evento</b>, en el menú de la izquierda)' : 'abajo en el medio'}. Te preguntamos de a una cosa: <b>qué tipo de evento</b> es (fiesta, taller, deporte, feria...), cómo se llama, cuándo y dónde, la entrada y cuántos entran. Al final ves <b>cómo queda</b> antes de publicar. Si es una previa privada, la dirección solo la ven los aprobados.`,
-      dibujo: `<div class="tm tm-crear"><div class="tm-mas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>${dedo}</div><div class="tm-crear-txt"><b>Crear evento</b><span>Tipo, nombre, cuándo, dónde y listo</span></div></div>`,
-      pie: `¿Te perdiste? Volvé a ver esto desde <b>Perfil → ☰ → Tutorial</b>.` } : { t: 'Publicá en 3 pasos', cierre: true,
-      p: `Tocá el <b>+ naranja</b> ${compu ? '(<b>Crear evento</b>, en el menú de la izquierda)' : 'abajo en el medio'}. Son 3 pasos: <b>lo básico</b>, <b>qué tipo de evento</b> (fiesta, taller, deporte, feria...) y <b>los detalles</b>, que cambian según el tipo. Si es privado, elegís quién entra y la dirección solo la ven los aprobados.`,
-      dibujo: `<div class="tm tm-crear"><div class="tm-mas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>${dedo}</div><div class="tm-crear-txt"><b>Crear evento</b><span>Lo básico, el tipo y los detalles</span></div></div>`,
-      pie: `¿Te perdiste? Volvé a ver esto desde <b>Perfil → ☰ → Tutorial</b>.` }
+        <div class="tm-txt"><b>Sofía</b> está ahora en un recital</div>
+        <div class="tm-nota">¡Vamos a esta! <b>@ivo</b> <span>— Sofía</span></div></div>` },
+    porPasos ? { t: 'Publicá paso a paso', cierre: true, pie, dibujo: mas,
+      p: `Tocá el <b>+ naranja</b> ${donde}. Te preguntamos de a una cosa y antes de publicar ves cómo queda.` }
+    : { t: 'Publicá en 3 pasos', cierre: true, pie, dibujo: mas,
+      p: `Tocá el <b>+ naranja</b> ${donde}. Lo básico, el tipo de evento y los detalles.` }
   ];
 }
 const tuto = { i: 0 };
@@ -5069,12 +5117,12 @@ function tipearTutorial(){
 function pintarTutorial(){
   const pasos = pasosTutorial(), p = pasos[tuto.i], ultimo = tuto.i === pasos.length - 1;
   document.getElementById('tuto-paso').textContent = `${tuto.i + 1} / ${pasos.length}`;
-  const arriba = p.logo ? LOGO_TUTO : p.dibujo ? p.dibujo : '';
-  document.getElementById('tuto-slide').innerHTML = `<div class="tuto-slide">${arriba}<h2>${p.t}</h2><p>${p.p}</p>${p.extra || ''}${p.cierre ? `<div class="tuto-cierre"><b>Armá tu evento ahora con <span class="notranslate" translate="no">Partazy</span></b><span class="tuto-rayas" aria-hidden="true"><i></i><i></i><i></i></span></div>` : ''}${p.pie ? `<p class="tuto-nota">${p.pie}</p>` : ''}</div>`;
+  const escena = p.logo ? LOGO_TUTO : p.dibujo || p.escena || '';
+  document.getElementById('tuto-slide').innerHTML = `<div class="tuto-slide"><div class="tuto-escena${p.logo ? ' con-logo' : ''}">${escena}</div><div class="tuto-texto"><h2>${p.t}</h2>${p.cierre ? '<span class="tuto-rayas" aria-hidden="true"><i></i><i></i><i></i></span>' : ''}<p>${p.p}</p>${p.pie ? `<p class="tuto-nota">${p.pie}</p>` : ''}</div></div>`;
   tipearTutorial();
-  document.getElementById('tuto-puntos').innerHTML = pasos.map((_, k) => `<i class="${k === tuto.i ? 'on' : ''}"></i>`).join('');
+  document.getElementById('tuto-puntos').innerHTML = pasos.map((_, k) => `<i class="${k < tuto.i ? 'hecho' : k === tuto.i ? 'on' : ''}"></i>`).join('');
   document.getElementById('tuto-atras').style.display = tuto.i === 0 ? 'none' : '';
-  document.getElementById('tuto-sig').textContent = ultimo ? '¡Empezar!' : 'Siguiente';
+  document.getElementById('tuto-sig').innerHTML = (ultimo ? '¡Empezar!' : 'Siguiente') + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M12 5l7 7-7 7"/></svg>';
 }
 // Precio para mostrar ("Gratis", "$5.000"...).
 function precioTxt(ev){
@@ -5144,7 +5192,7 @@ function tarjetaHTML(ev, _dist, razon){
        <div class="cat">${iconoTipo(ev)}${esc(etiquetaTipo(ev))}</div>
        <h3>${esc(ev.nombre)}</h3>
        ${lineaTarjetaHTML(ev)}
-       ${amigos || (razon && /^[🎧👥📈]/u.test(razon) ? `<div class="razon-tarjeta">${esc(razon)}</div>` : '')}
+       ${amigos || razonHTML(razon)}
      </div>
    </div>`;
 }
@@ -5152,8 +5200,8 @@ function tarjetaHTML(ev, _dist, razon){
 // Tarjeta de evento horizontal (listas).
 function tarjetaHorizontalHTML(ev, razon){
   const amigos = amigosVanHTML(ev, false);
-  if(!(razon && /^[🎧👥📈]/u.test(razon)) && afinidad(ev).puntos === 2) razon = `🎧 ${afinidad(ev).motivo}`;   // en Explorar también se ve si va con tu música
-  const candado = ev.privacidad==='privada' ? ' 🔒' : '';
+  if(!(razon && typeof razon === 'object') && afinidad(ev).puntos === 2) razon = { ico: 'auriculares', texto: afinidad(ev).motivo };   // en Explorar también se ve si va con tu música
+  const candado = ev.privacidad==='privada' ? `<span class="cat-candado">${ico('candado', 12)}</span>` : '';
   const c = estadoCupo(ev);
   return `
    <div class="tarjeta-h${c?.clase === 'agotado' ? ' agotada' : ''}${esCancelado(ev) ? ' cancelada' : ''}" role="button" tabindex="0" data-abrir="${esc(ev.id)}" aria-label="${esc(etiquetaTarjeta(ev))}">
@@ -5162,7 +5210,7 @@ function tarjetaHorizontalHTML(ev, razon){
        <div class="cat">${iconoTipo(ev)}${esc(etiquetaTipo(ev))}${candado}</div>
        <h4>${esc(ev.nombre)}</h4>
        ${lineaTarjetaHTML(ev)}
-       ${amigos || (razon && /^[🎧👥📈]/u.test(razon) ? `<div class="razon-tarjeta">${esc(razon)}</div>` : '')}
+       ${amigos || razonHTML(razon)}
      </div>
    </div>`;
 }
@@ -5312,10 +5360,10 @@ function mostrarComoInstalar(paraAvisos){
   const pasos = app
     ? `<li>Estás viendo Partazy dentro de otra app (WhatsApp, Instagram...). Tocá los <b>tres puntitos</b> o <b>Compartir</b> y elegí <b>"Abrir en ${ios ? 'Safari' : 'Chrome'}"</b>.</li><li>Después seguí estos mismos pasos desde ahí.</li>`
     : ios
-      ? `<li>Tocá el botón <b>Compartir</b> ⬆️ de Safari (abajo o arriba).</li><li>Elegí <b>"Agregar a pantalla de inicio"</b> y tocá <b>Agregar</b>.</li><li>Abrí Partazy desde el ícono nuevo${paraAvisos ? ' y tocá <b>Activar notificaciones</b> en tu perfil' : ''}.</li>`
+      ? `<li>Tocá el botón <b>Compartir</b> ${ico('compartir', 14)} de Safari (abajo o arriba).</li><li>Elegí <b>"Agregar a pantalla de inicio"</b> y tocá <b>Agregar</b>.</li><li>Abrí Partazy desde el ícono nuevo${paraAvisos ? ' y tocá <b>Activar notificaciones</b> en tu perfil' : ''}.</li>`
       : `<li>Tocá los <b>tres puntitos</b> ⋮ del navegador.</li><li>Elegí <b>"Instalar app"</b> o <b>"Agregar a pantalla principal"</b>.</li><li>Abrí Partazy desde el ícono nuevo.</li>`;
   abrirHoja(`<div class="cuerpo" style="margin-top:0; padding-top:20px;">
-    <div class="cat">📲 Partazy en tu celular</div><h3>${paraAvisos ? 'Activá las notificaciones' : 'Instalá Partazy'}</h3>
+    <div class="cat">Partazy en tu celular</div><h3>${paraAvisos ? 'Activá las notificaciones' : 'Instalá Partazy'}</h3>
     <p style="font-size:13px; color:var(--gris); line-height:1.5; margin-bottom:12px;">${paraAvisos && ios ? 'En iPhone las notificaciones solo funcionan con Partazy agregada a la pantalla de inicio.' : 'Queda con su ícono, a pantalla completa y sin la barra del navegador. Es gratis y no ocupa espacio.'}</p>
     <ol style="font-size:13.5px; line-height:1.6; padding-left:20px; color:var(--hueso);">${pasos}</ol></div>
     <div class="acciones" style="margin-top:12px;"><button class="btn btn-primario" onclick="cerrarHoja()">Entendido</button></div>`);
@@ -5334,13 +5382,13 @@ function pintarBotonAvisos(){
   if(!b) return;
   if(!avisosSoportados()){
     // iPhone (o navegador de WhatsApp/Instagram): se explica cómo activarlas
-    if(esIOS() || esNavegadorDeApp()){ b.style.display = ''; b.disabled = false; b.innerHTML = '<span class="mi">🔔</span>Activar notificaciones en este celular'; b.onclick = () => mostrarComoInstalar(true); }
+    if(esIOS() || esNavegadorDeApp()){ b.style.display = ''; b.disabled = false; b.innerHTML = '<span class="mi">' + ico('campana', 18) + '</span>Activar notificaciones en este celular'; b.onclick = () => mostrarComoInstalar(true); }
     else b.style.display = 'none';
     return;
   }
   b.onclick = activarAvisos;
   const p = Notification.permission;
-  b.innerHTML = p === 'granted' ? '<span class="mi">🔔</span>Notificaciones activadas ✓' : p === 'denied' ? '<span class="mi">🔕</span>Notificaciones bloqueadas (activalas en el navegador)' : '<span class="mi">🔔</span>Activar notificaciones en este celular';
+  b.innerHTML = p === 'granted' ? '<span class="mi">' + ico('campana', 18) + '</span>Notificaciones activadas ✓' : p === 'denied' ? '<span class="mi">' + ico('campana-off', 18) + '</span>Notificaciones bloqueadas (activalas en el navegador)' : '<span class="mi">' + ico('campana', 18) + '</span>Activar notificaciones en este celular';
   b.disabled = p !== 'default';
 }
 // Pide permiso para notificaciones del sistema.
@@ -5348,7 +5396,7 @@ async function activarAvisos(){
   if(!avisosSoportados()){ toast('Tu navegador no permite notificaciones'); return; }
   try{
     const p = await Notification.requestPermission();
-    if(p === 'granted'){ toast('¡Listo! Te avisamos de mensajes y fiestas nuevas'); avisoSistema('Partazy', 'Las notificaciones quedaron activadas 🎉', null, true); }
+    if(p === 'granted'){ toast('¡Listo! Te avisamos de mensajes y fiestas nuevas'); avisoSistema('Partazy', 'Las notificaciones quedaron activadas', null, true); }
     else toast('No se activaron las notificaciones');
   } catch(e){ toast('No se pudieron activar'); }
   pintarBotonAvisos();
@@ -5387,7 +5435,7 @@ function avisarNotifNuevas(lista){
       if(!t) return;
       const destino = n.objetoId && /evento|nuevo_evento|amigo_evento|compartido|acreditacion/.test(n.tipo) ? 'evento:' + n.objetoId : 'notificaciones';
       avisoSistema('Partazy', t.texto(n), destino);
-      if(document.visibilityState === 'visible' && pantallaActual() !== 'notificaciones') toast(t.icono + ' ' + t.texto(n));
+      if(document.visibilityState === 'visible' && pantallaActual() !== 'notificaciones') toast(t.texto(n));
     });
   }
   AVISOS.notifIds = ids;
@@ -5405,8 +5453,8 @@ function avisarDMsNuevos(lista){
     getUsuario(otro).then(u => {
       const quien = nombreVisible(u) || 'Alguien';
       const sol = esSolicitudRecibida(d);
-      avisoSistema(sol ? `✉️ Solicitud de mensaje de ${quien}` : `💬 ${quien}`, d.ultimoMsg || 'Te mandó un mensaje', 'dm:' + otro);
-      if(document.visibilityState === 'visible') toast(sol ? `✉️ ${quien} quiere mandarte un mensaje` : `💬 Mensaje nuevo de ${quien}`);
+      avisoSistema(sol ? `Solicitud de mensaje de ${quien}` : `${quien}`, d.ultimoMsg || 'Te mandó un mensaje', 'dm:' + otro);
+      if(document.visibilityState === 'visible') toast(sol ? `${quien} quiere mandarte un mensaje` : `Mensaje nuevo de ${quien}`);
     });
   });
   AVISOS._dmListo = true;
@@ -5542,7 +5590,7 @@ function paraVos(){
     .filter(x => x.a.puntos > 0)
     .sort((x, y) => y.a.puntos - x.a.puntos || (amigosQueVan(y.e).length - amigosQueVan(x.e).length) || x.e.fechaTs - y.e.fechaTs)
     .slice(0, 10)
-    .map(x => ({ e: x.e, razon: `🎧 ${x.a.puntos === 2 ? 'Porque te gusta' : 'Parecido a'} ${x.a.motivo}` }));
+    .map(x => ({ e: x.e, razon: { ico: 'auriculares', texto: `${x.a.puntos === 2 ? 'Porque te gusta' : 'Parecido a'} ${x.a.motivo}` } }));
 }
 
 // Comentario al compartir: opcional, hasta 15 palabras y 100 letras.
@@ -5619,7 +5667,7 @@ function sugerencias(){
       const af = afinidad(e, [...gustos]), gusta = af.puntos > 0;
       const mov = Math.min(e.repostsCount || 0, 10) * 0.2 + ((e.confirmadosCount || 0) / Math.max(1, e.capacidad || 1)) * 0.5;
       const score = van * 4 + comp * 2 + fof + af.puntos * 0.9 + mov;
-      const razon = van ? null : comp ? 'Lo compartieron tus amigos' : fof ? '👥 Van amigos de tus amigos' : gusta ? `🎧 Porque te gusta ${af.motivo}` : '📈 Se está moviendo';
+      const razon = van ? null : comp ? 'Lo compartieron tus amigos' : fof ? { ico: 'usuarios', texto: 'Van amigos de tus amigos' } : gusta ? { ico: 'auriculares', texto: `Porque te gusta ${af.motivo}` } : { ico: 'tendencia', texto: 'Se está moviendo' };
       return { e, score, razon, social: van + comp + fof };
     })
     .filter(x => x.social > 0 || x.score >= 1.5)
@@ -5686,7 +5734,7 @@ async function alternarCompartir(ev, btn){
     } else {
       await Promise.all(amigosUids().slice(0, 100).map(u => getUsuario(u).catch(() => null)));   // para sugerirlos con @
       const nota = await pedirTexto('Compartir con tus amigos', 'Les aparece en su inicio. Si querés, sumá un comentario (es opcional). Escribí @ para mencionar a un amigo y le llega un aviso.',
-        'Ej: ¡Vamos a esta, @sofi! 🔥', 'Compartir', { maxPalabras: NOTA_MAX_PALABRAS, maxCaracteres: NOTA_MAX_CARACTERES, cancelarTxt: 'Cancelar', menciones: true });
+        'Ej: ¡Vamos a esta, @sofi!', 'Compartir', { maxPalabras: NOTA_MAX_PALABRAS, maxCaracteres: NOTA_MAX_CARACTERES, cancelarTxt: 'Cancelar', menciones: true });
       if(nota === null){ btn.disabled = false; return; }
       await DataService.compartirEvento(ev.id, state.uid, nombreVisible(state.perfil));
       state.misCompartidos = [ev.id, ...state.misCompartidos.filter(id => id !== ev.id)].slice(0, 60);
@@ -5727,8 +5775,8 @@ function miNotaHTML(id){
   return `<div class="mi-nota">
     <div class="mi-nota-txt">${n ? `<small>Tu comentario</small>${textoConMenciones(n)}` : '<small>Sin comentario</small>'}</div>
     <div class="mi-nota-acciones">
-      <button class="btn-nota" data-editar-nota="${esc(id)}">✏️ ${n ? 'Editar' : 'Agregar comentario'}</button>
-      ${n ? `<button class="btn-nota peligro" data-borrar-nota="${esc(id)}">🗑 Borrar</button>` : ''}
+      <button class="btn-nota" data-editar-nota="${esc(id)}">${n ? 'Editar' : 'Agregar comentario'}</button>
+      ${n ? `<button class="btn-nota peligro" data-borrar-nota="${esc(id)}">Borrar</button>` : ''}
     </div></div>`;
 }
 // Vuelve a pintar todo lo que muestra mis compartidos (detalle, perfil, inicio).
@@ -5744,7 +5792,7 @@ async function editarNotaCompartido(id){
   await Promise.all(amigosUids().slice(0, 100).map(u => getUsuario(u).catch(() => null)));
   const antes = state.misNotas[id] || '';
   const nota = await pedirTexto(antes ? 'Editar tu comentario' : 'Agregar un comentario', 'Lo ven tus amigos en su inicio. Escribí @ para mencionar a un amigo.',
-    'Ej: ¡Vamos a esta, @sofi! 🔥', 'Guardar', { maxPalabras: NOTA_MAX_PALABRAS, maxCaracteres: NOTA_MAX_CARACTERES, cancelarTxt: 'Cancelar', menciones: true, valorInicial: antes });
+    'Ej: ¡Vamos a esta, @sofi!', 'Guardar', { maxPalabras: NOTA_MAX_PALABRAS, maxCaracteres: NOTA_MAX_CARACTERES, cancelarTxt: 'Cancelar', menciones: true, valorInicial: antes });
   if(nota === null) return;
   const limpia = limpiarNota(nota);
   if(limpia) state.misNotas[id] = limpia; else delete state.misNotas[id];
@@ -5837,12 +5885,12 @@ function renderHome(){
   document.getElementById('sub-paravos').textContent = pv.length ? `Porque te gusta ${gustosTexto()}` : '';
   document.querySelector('#titulo-paravos > span').style.display = pv.length ? '' : 'none';
   document.getElementById('lista-paravos').innerHTML = pv.length ? pv.map(x => tarjetaHTML(x.e, null, x.razon)).join('')
-    : sinGustos ? `<div class="cta-gustos"><b>🎧 ¿Qué música te gusta?</b><span>Elegí tus estilos y te mostramos las fiestas que van con vos.</span><button class="btn btn-primario" onclick="elegirGustos()">Elegir mi música</button></div>` : '';
+    : sinGustos ? `<div class="cta-gustos"><b>¿Qué música te gusta?</b><span>Elegí tus estilos y te mostramos las fiestas que van con vos.</span><button class="btn btn-primario" onclick="elegirGustos()">Elegir mi música</button></div>` : '';
   const chipPV = document.getElementById('chip-paravos');
   if(chipPV) chipPV.style.display = misGustos().length && !state.invitado && !org ? '' : 'none';
   // Esta semana: primero lo que va con tu música (sin perder el orden por fecha entre iguales)
   if(misGustos().length && !org) deSemana.sort((a, b) => (afinidad(b).puntos > 0) - (afinidad(a).puntos > 0) || a.fechaTs - b.fechaTs);
-  document.getElementById('lista-semana').innerHTML = deSemana.map(e => tarjetaHTML(e, null, afinidad(e).puntos === 2 ? `🎧 ${afinidad(e).motivo}` : '')).join('');
+  document.getElementById('lista-semana').innerHTML = deSemana.map(e => tarjetaHTML(e, null, afinidad(e).puntos === 2 ? { ico: 'auriculares', texto: afinidad(e).motivo } : '')).join('');
   // En "Tal vez te interese" no repetimos lo que ya está en "Para vos"
   const enPV = new Set(pv.map(x => x.e.id));
   const sugF = sug.filter(x => !enPV.has(x.e.id) || x.social > 0);   // si tiene motivo social (amigos), se queda
@@ -5869,26 +5917,26 @@ function renderHome(){
   let filtrados;
   if(state.filtroActivoHome === 'cerca'){
     filtrados = conDistancia(base).sort(porDistancia);
-    titulo1.textContent = 'Más cerca tuyo 📍';
+    titulo1.textContent = 'Más cerca tuyo';
   } else {
     filtrados = filtrarPorChip(base, state.filtroActivoHome);
-    const TIT = { hoy: 'Hoy 🔥', paravos: 'Para vos 🎧', fiestas: 'Fiestas 🪩', previas: 'Previas 🍾', musica: 'Música en vivo 🎤', gastro: 'Gastronomía y ferias 🍽️', charlas: 'Talleres y ferias 🛠️', cultura: 'Arte y cultura 🎭', deportes: 'Deporte y aire libre ⚽', privadas: 'Con invitación 🔒' };
-    titulo1.textContent = TIT[state.filtroActivoHome] || 'Recomendados ✨';
+    const TIT = { hoy: 'Hoy', paravos: 'Para vos', fiestas: 'Fiestas', previas: 'Previas', musica: 'Música en vivo', gastro: 'Gastronomía y ferias', charlas: 'Talleres y ferias', cultura: 'Arte y cultura', deportes: 'Deporte y aire libre', privadas: 'Con invitación' };
+    titulo1.textContent = TIT[state.filtroActivoHome] || 'Recomendados';
     // Nada esta noche: arriba va lo próximo (así lo recién publicado se ve primero)
     if(state.filtroActivoHome === 'hoy' && !filtrados.length && futuros.length){
       const ocultar = (...ids) => ids.forEach(id => { document.getElementById(id).style.display = 'none'; });
-      if(deSemana.length){ filtrados = deSemana; titulo1.textContent = 'Esta semana 🔥'; ocultar('titulo-semana', 'lista-semana'); document.getElementById('lista-semana').innerHTML = ''; }
-      else { filtrados = queViene; titulo1.textContent = 'Lo que viene 🔥'; ocultar('titulo-viene'); document.getElementById('lista-viene').innerHTML = ''; }
+      if(deSemana.length){ filtrados = deSemana; titulo1.textContent = 'Esta semana'; ocultar('titulo-semana', 'lista-semana'); document.getElementById('lista-semana').innerHTML = ''; }
+      else { filtrados = queViene; titulo1.textContent = 'Lo que viene'; ocultar('titulo-viene'); document.getElementById('lista-viene').innerHTML = ''; }
       // Que "Hoy" no prometa de más: avisamos que hoy no hay nada y que abajo va lo próximo
       if(notaFila){
-        notaFila.textContent = `Hoy no hay nada cargado${state.userCoords && state.radioKm ? ' cerca' : ''}. Mirá lo que viene${deSemana.length ? ' esta semana' : ''} 👇`;
+        notaFila.textContent = `Hoy no hay nada cargado${state.userCoords && state.radioKm ? ' cerca' : ''}. Mirá lo que viene${deSemana.length ? ' esta semana' : ''}`;
         notaFila.hidden = false;
       }
     }
   }
   if(state.filtroActivoHome === 'hoy' && misGustos().length) filtrados = [...filtrados].sort((a, b) => (afinidad(b).puntos > 0) - (afinidad(a).puntos > 0) || a.fechaTs - b.fechaTs);
   cont1.innerHTML = filtrados.length
-    ? filtrados.map(e=>tarjetaHTML(e, e.dist!==undefined ? textoDistancia(e, e.dist) : null, afinidad(e).puntos === 2 ? `🎧 ${afinidad(e).motivo}` : '')).join('')
+    ? filtrados.map(e=>tarjetaHTML(e, e.dist!==undefined ? textoDistancia(e, e.dist) : null, afinidad(e).puntos === 2 ? { ico: 'auriculares', texto: afinidad(e).motivo } : '')).join('')
     : emptyState('No hay eventos para este filtro todavía. ¡Creá el primero!');
 
   // Sin repetir: un evento aparece una sola vez en el inicio. Lo que ya está en la primera fila no vuelve
@@ -5906,7 +5954,7 @@ function renderHome(){
   if(visible('lista-semana')){
     const semF = deSemana.filter(e => !yaVistos.has(e.id));
     mostrar('titulo-semana', semF.length); mostrar('lista-semana', semF.length);
-    document.getElementById('lista-semana').innerHTML = semF.map(e => tarjetaHTML(e, null, afinidad(e).puntos === 2 ? `🎧 ${afinidad(e).motivo}` : '')).join('');
+    document.getElementById('lista-semana').innerHTML = semF.map(e => tarjetaHTML(e, null, afinidad(e).puntos === 2 ? { ico: 'auriculares', texto: afinidad(e).motivo } : '')).join('');
     semF.forEach(e => yaVistos.add(e.id));
   }
   const todosCerca = conDistancia(base).sort(porDistancia);
@@ -6027,7 +6075,7 @@ async function renderDetalle(id){
         const dir = await DataService.getDireccionExacta(id);
         lugarMostrado = dir ? `${dir} (${lugarPublico(ev)})` : ev.lugar;
       } else {
-        lugarMostrado = `${lugarPublico(ev)} · 🔒 la dirección la ven solo los invitados aprobados`;
+        lugarMostrado = `${lugarPublico(ev)} · la dirección la ven solo los invitados aprobados`;
       }
     }
     if(tok !== state.tok) return;
@@ -6038,16 +6086,16 @@ async function renderDetalle(id){
     const ventaExterna = (!esPrivada && ev.linkEntradas) ? linkWeb(ev.linkEntradas, true) : null;
     if(adentro)                        accionTxt = 'Ver mi entrada';
     else if(estado === 'reservado')    accionTxt = 'Terminar el pago';
-    else if(estado === 'pago-enviado') accionTxt = 'Pago en revisión ⏳';
+    else if(estado === 'pago-enviado') accionTxt = 'Pago en revisión';
     else if(estado === 'pago-rechazado') accionTxt = 'Ver qué pasó con tu pago';
     else if(cancelado)                { accionTxt = 'Evento cancelado'; deshabilitado = true; }
-    else if(estado === 'solicitado')  { accionTxt = 'Solicitud enviada ⏳'; deshabilitado = true; }
+    else if(estado === 'solicitado')  { accionTxt = 'Solicitud enviada'; deshabilitado = true; }
     else if(estado === 'rechazado')   { accionTxt = 'Solicitud rechazada'; deshabilitado = true; }
-    else if(estado === 'en-espera')   { if(lleno){ accionTxt = 'En lista de espera ⏳'; deshabilitado = true; } else accionTxt = '¡Se liberó un lugar! Confirmar'; }
+    else if(estado === 'en-espera')   { if(lleno){ accionTxt = 'En lista de espera'; deshabilitado = true; } else accionTxt = '¡Se liberó un lugar! Confirmar'; }
     else if(esCreador && esPrivada)   { accionTxt = 'Sos el anfitrión'; deshabilitado = true; }
     else if(!esCreador && inscripcionCerrada(ev)) { accionTxt = 'Inscripción cerrada'; deshabilitado = true; }
     else if(esPrivada)                 accionTxt = 'Solicitar unirme';
-    else if(ventaExterna && !esCreador) accionTxt = 'Comprar en ' + ventaExterna.texto + ' ↗';
+    else if(ventaExterna && !esCreador) accionTxt = 'Comprar en ' + ventaExterna.texto;
     else if(lleno)                     accionTxt = 'Anotarme en lista de espera';
     else if(ev.precio > 0)             accionTxt = 'Reservar entrada';
     else                               accionTxt = 'Confirmar asistencia';
@@ -6062,7 +6110,7 @@ async function renderDetalle(id){
 
     const aviso = cancelado ? `
       <div class="bloque"><div class="aviso aviso-rojo">
-        <b>🚫 Este evento fue cancelado</b>
+        <b>Este evento fue cancelado</b>
         ${ev.motivoCancelacion ? `<span>Motivo: ${esc(ev.motivoCancelacion)}</span>` : ''}
         ${ev.precio > 0 ? `<span>Si pagaste una entrada, la devolución la coordinás directamente con ${esc(nombreOrg)}. Partazy no cobra ni devuelve dinero.</span><span>${esc(AVISO_DEVOLUCIONES)}</span>` : ''}
       </div></div>` : '';
@@ -6075,7 +6123,7 @@ async function renderDetalle(id){
           <div class="pago-monto"><small>Entrada</small><b>${esc(money(ev.precio))}</b></div>
           ${verPago && ev.pagoTitular ? `<div class="pago-como"><small>Le pagás a</small><b>${esc(ev.pagoTitular)}</b><em>Titular de la cuenta · publicado por ${esc(nombreOrg)}</em></div>` : ''}
           <div class="pago-como"><small>Cómo pagar</small><b>${esc(verPago ? (ev.pagoInfo || 'El organizador te indica cómo pagar.') : 'Se muestra cuando el anfitrión te aprueba.')}</b></div>
-          ${verPago && datoPago(ev.pagoInfo) ? `<button class="btn btn-primario btn-copiar-pago" onclick="copiarDatoPago(this, ${esc(JSON.stringify(datoPago(ev.pagoInfo)))})">📋 Copiar ${/^\d+$/.test(datoPago(ev.pagoInfo)) ? 'CBU / CVU' : 'alias'}: ${esc(datoPago(ev.pagoInfo))}</button>` : ''}
+          ${verPago && datoPago(ev.pagoInfo) ? `<button class="btn btn-primario btn-copiar-pago" onclick="copiarDatoPago(this, ${esc(JSON.stringify(datoPago(ev.pagoInfo)))})">Copiar ${/^\d+$/.test(datoPago(ev.pagoInfo)) ? 'CBU / CVU' : 'alias'}: ${esc(datoPago(ev.pagoInfo))}</button>` : ''}
         </div>
         <div class="aviso aviso-pago">
           <span>${ev.pagoTitular && verPago
@@ -6089,7 +6137,7 @@ async function renderDetalle(id){
     const bloqueAdmin = esCreador ? `
       <div class="bloque">
         <h3 class="titulo-bloque">Administrar evento</h3>
-        ${cancelado ? '' : '<button class="btn btn-primario" id="btn-editar-evento" style="margin-bottom:10px;">✎ Editar evento</button>'}
+        ${cancelado ? '' : '<button class="btn btn-primario" id="btn-editar-evento" style="margin-bottom:10px;">Editar evento</button>'}
         <div class="acciones-evento">
           ${cancelado ? '' : '<button class="btn btn-secundario" id="btn-cancelar-evento">Cancelar evento</button>'}
           <button class="btn btn-outline" id="btn-eliminar-evento">Eliminar evento</button>
@@ -6144,8 +6192,8 @@ async function renderDetalle(id){
       ${panelSolicitudes}
       ${esCreador ? `<div class="bloque">
         <h3 class="titulo-bloque">Lista de confirmados</h3>
-        ${cancelado ? '' : '<button class="btn btn-primario" id="btn-puerta" style="margin-bottom:12px;">🚪 Control de puerta</button>'}
-        <div class="exportar"><button class="btn btn-secundario" data-exportar="${esc(ev.id)}|csv">⬇ Excel (CSV)</button><button class="btn btn-secundario" data-exportar="${esc(ev.id)}|pdf">⬇ PDF</button></div>
+        ${cancelado ? '' : '<button class="btn btn-primario" id="btn-puerta" style="margin-bottom:12px;">Control de puerta</button>'}
+        <div class="exportar"><button class="btn btn-secundario" data-exportar="${esc(ev.id)}|csv">Excel (CSV)</button><button class="btn btn-secundario" data-exportar="${esc(ev.id)}|pdf">PDF</button></div>
         <div class="lista-solicitudes" id="lista-confirmados"><div class="empty-state">Cargando...</div></div>
       </div>` : ''}
 
@@ -6166,12 +6214,12 @@ async function renderDetalle(id){
                 <div class="barra-cupo ${nivelCupo(cupo, cap)}" role="img" aria-label="${cupo} de ${cap} lugares ocupados"><div class="fill" style="width:${Math.max(3, Math.min(100, (cupo/cap)*100))}%;"></div></div></div>${pillCupoHTML(ev) ? `<span class="ii-accion">${pillCupoHTML(ev)}</span>` : ''}</div>`}
         </div>
         ${extrasHTML(ev)}
-        ${ventaExterna && !esCreador && !estado && !cancelado ? `<button class="btn btn-secundario ya-compre" data-ya-compre="${esc(ev.id)}">✅ Ya compré mi entrada · Avisar que voy</button>` : ''}
+        ${ventaExterna && !esCreador && !estado && !cancelado ? `<button class="btn btn-secundario ya-compre" data-ya-compre="${esc(ev.id)}">Ya compré mi entrada · Avisar que voy</button>` : ''}
         <div class="tags">
           <span class="tag">Dress code: ${esc(ev.dresscode||'Libre')}</span>
           ${ev.tipo !== 'previa' ? `<span class="tag ${ev.listaVip?'si':'no'}">${ev.listaVip? 'Con lista VIP' : 'Sin lista VIP'}</span>` : ''}
           ${ev.tipo === 'previa' ? `<span class="tag ${ev.bebida?'si':'no'}">${ev.bebida? 'Podés llevar bebida' : 'Sin bebida propia'}</span>` : ''}
-          ${ev.musica ? `<span class="tag">🎵 ${esc(ev.musica)}</span>` : ''}
+          ${ev.musica ? `<span class="tag">${esc(ev.musica)}</span>` : ''}
         </div>
       </div>
 
@@ -6210,8 +6258,8 @@ async function renderDetalle(id){
 
       <div class="bloque bloque-pie-det">
         ${!esCreador && !cancelado && estado && estado !== 'rechazado' && ev.fechaTs > Date.now() - HORA && !asistencia?.checkinTs
-          ? `<button class="link-denuncia link-salir" data-salir="${esc(ev.id)}|${esc(estado)}">${estado === 'solicitado' ? '↩ Retirar mi solicitud' : estado === 'en-espera' ? '↩ Salir de la lista de espera' : '↩ Ya no voy · liberar mi lugar'}</button>` : ''}
-        ${esCreador ? '' : '<button class="link-denuncia" id="btn-denunciar-evento">🚩 Denunciar este evento</button>'}
+          ? `<button class="link-denuncia link-salir" data-salir="${esc(ev.id)}|${esc(estado)}">${estado === 'solicitado' ? 'Retirar mi solicitud' : estado === 'en-espera' ? 'Salir de la lista de espera' : 'Ya no voy · liberar mi lugar'}</button>` : ''}
+        ${esCreador ? '' : '<button class="link-denuncia" id="btn-denunciar-evento">Denunciar este evento</button>'}
       </div>
 
       <div class="cta-fija">
@@ -6249,7 +6297,7 @@ async function renderDetalle(id){
     if(esCreador && ev.listaVip) DataService.getVip(ev.id).then(l => {
       const b = document.getElementById('bloque-vip');
       if(!b || tok !== state.tok) return;
-      b.innerHTML = `<h3 class="titulo-bloque">⭐ Lista VIP (${l.length})</h3>` + (l.length
+      b.innerHTML = `<h3 class="titulo-bloque">Lista VIP (${l.length})</h3>` + (l.length
         ? `<div class="lista-vip">${l.map(n => `<span>${esc(n)}</span>`).join('')}</div>`
         : `<div class="ayuda">Todavía no anotaste a nadie. Tocá "Editar evento" para cargar los nombres.</div>`);
     }).catch(() => {});
@@ -6360,7 +6408,7 @@ async function cancelarEvento(ev){
     (pago ? ' Si alguien ya te pagó, la devolución corre por tu cuenta: Partazy no maneja el dinero de las entradas. ' + AVISO_DEVOLUCIONES : ''),
     'Motivo (opcional)', 'Cancelar evento');
   if(motivo === null) return;
-  const texto = '🚫 El organizador canceló el evento' + (motivo ? `: ${motivo}` : '.') +
+  const texto = 'El organizador canceló el evento' + (motivo ? `: ${motivo}` : '.') +
     (pago ? ' Las devoluciones se coordinan directamente con el organizador. ' + AVISO_DEVOLUCIONES : '');
   try{
     await DataService.cancelarEvento(ev.id, motivo, { uid: state.uid, nombre: state.perfil.nombre, texto: texto.slice(0, 500), ts: Date.now() });
@@ -6498,7 +6546,7 @@ function datosTransferenciaHTML(ev){
   return `<div class="pago-destacado con-titular pago-p2p">
       <div class="pago-monto"><small>Monto exacto</small><b>${esc(money(ev.precio))}</b></div>
       ${dato ? `<div class="pago-como"><small>${esCbu ? 'CBU / CVU' : 'Alias'}</small><b class="pago-dato">${esc(dato)}</b></div>
-      <button class="btn btn-primario btn-copiar-pago" onclick="copiarDatoPago(this, ${esc(JSON.stringify(dato))})">📋 Copiar ${esCbu ? 'CBU / CVU' : 'alias'}</button>` : ''}
+      <button class="btn btn-primario btn-copiar-pago" onclick="copiarDatoPago(this, ${esc(JSON.stringify(dato))})">Copiar ${esCbu ? 'CBU / CVU' : 'alias'}</button>` : ''}
       <div class="pago-como"><small>Titular de la cuenta</small><b>${esc(quien)}</b></div>
       ${ev.pagoInfo ? `<div class="pago-como"><small>Cómo se paga</small><b>${esc(ev.pagoInfo)}</b></div>` : ''}
     </div>`;
@@ -6522,7 +6570,7 @@ function pagoHTML(ev, a){
       <button class="btn btn-primario" id="btn-enviar-comprobante" disabled>Mandar comprobante</button>
       <button class="link-btn link-sin-comp" id="btn-sin-comprobante">Pagué, pero no tengo la captura</button>
       ${pie}
-      <button class="link-denuncia link-salir" data-cancelar-reserva="${esc(ev.id)}">↩ Cancelar la reserva y liberar el lugar</button>
+      <button class="link-denuncia link-salir" data-cancelar-reserva="${esc(ev.id)}">Cancelar la reserva y liberar el lugar</button>
     </div>`;
   }
   if(a.estado === 'pago-enviado'){
@@ -6818,20 +6866,20 @@ async function renderTicket(id){
         <p style="color:var(--gris); font-size:13px; margin-top:4px;">${ext ? `Tu entrada es la que compraste en ${esc(ext.texto)}: llevala a la puerta. Acá tenés el grupo del evento.` : ev.conQR ? 'Mostrá el QR en la puerta para tu check-in' : 'Este evento no usa QR: en la puerta alcanza con tu nombre, el organizador tiene la lista.'}</p>
       </div>
       ${ev.precio > 0 && !esCancelado(ev) && !ext ? `<div style="padding:0 20px 6px;"><div class="aviso">
-        <b>💳 Pago: ${esc(money(ev.precio))}</b>
+        <b>Pago: ${esc(money(ev.precio))}</b>
         <span>${esc(ev.pagoInfo || 'El organizador te indica cómo pagar.')}</span>
         ${ev.pagoTitular ? `<span>Le pagás a <b>${esc(ev.pagoTitular)}</b> (titular de la cuenta).</span>` : ''}
         <span>El pago es directo${ev.pagoTitular ? ' a esa cuenta' : ' al organizador'}. ${esc(AVISO_DEVOLUCIONES)}</span>
       </div></div>` : ''}
 
       ${esCancelado(ev) ? `<div style="padding:0 20px;"><div class="aviso aviso-rojo">
-        <b>🚫 Este evento fue cancelado</b>
+        <b>Este evento fue cancelado</b>
         ${ev.motivoCancelacion ? `<span>Motivo: ${esc(ev.motivoCancelacion)}</span>` : ''}
         ${ev.precio > 0 ? `<span>La devolución de lo que hayas pagado la coordinás directamente con ${esc(ev.creadorNombre || ev.organizador)}.</span><span>${esc(AVISO_DEVOLUCIONES)}</span>` : ''}
       </div></div>` : ''}
       <div class="acciones-ticket" style="margin-top:14px;">
         <button class="btn btn-secundario btn-mini" data-abrir="${esc(ev.id)}">Ver evento</button>
-        ${ev.creador === state.uid && !esCancelado(ev) ? `<button class="btn btn-secundario btn-mini" data-editar="${esc(ev.id)}">✏️ Editar</button>` : ''}
+        ${ev.creador === state.uid && !esCancelado(ev) ? `<button class="btn btn-secundario btn-mini" data-editar="${esc(ev.id)}">Editar</button>` : ''}
         ${state.misPlanes.size > 1 ? `<button class="btn btn-secundario btn-mini" onclick="irAMisEntradas()">Mis entradas (${state.misPlanes.size})</button>` : ''}
       </div>
       <div class="ticket" style="margin-top:16px;">
@@ -6869,7 +6917,7 @@ async function renderTicket(id){
 
       <div style="padding:22px 20px 0;">
         <button class="btn btn-outline" onclick="ir('home')">Volver al inicio</button>
-        ${ev.creador !== state.uid && !esCancelado(ev) && ev.fechaTs > Date.now() - HORA && !asistencia.checkinTs ? `<button class="link-denuncia link-salir" style="margin-top:14px;" data-salir="${esc(ev.id)}|${esc(asistencia.estado)}">↩ Ya no voy · liberar mi lugar</button>` : ''}
+        ${ev.creador !== state.uid && !esCancelado(ev) && ev.fechaTs > Date.now() - HORA && !asistencia.checkinTs ? `<button class="link-denuncia link-salir" style="margin-top:14px;" data-salir="${esc(ev.id)}|${esc(asistencia.estado)}">Ya no voy · liberar mi lugar</button>` : ''}
       </div>
     `;
 
@@ -6944,7 +6992,7 @@ function prepararLugarEvento(){
   if(!inp || inp.dataset.auto) return;
   autocompletarLugar(inp, l => {
     state.ubicacionMapa = { lat: l.lat, lng: l.lng }; state._ubicDeSugerencia = true;
-    const me = document.getElementById('mapa-elegido'); if(me) me.textContent = '📍 Ubicado: ' + l.nombre;
+    const me = document.getElementById('mapa-elegido'); if(me) me.textContent = 'Ubicado: ' + l.nombre;
   }, true);
   inp.addEventListener('input', () => { if(state._ubicDeSugerencia){ state.ubicacionMapa = null; state._ubicDeSugerencia = false; const me = document.getElementById('mapa-elegido'); if(me) me.textContent = ''; } });
 }
@@ -6974,9 +7022,9 @@ function pintarResumenPasos(){
   const partes = [];
   if(n > 1 && !state.editandoId){
     const fecha = fe ? fe.split('-').reverse().slice(0, 2).join('/') : '';
-    partes.push(`<button type="button" class="res-chip" onclick="irAPasoCrear(1)">✏️ ${esc(nom || 'Sin nombre')}${fecha ? ' · ' + esc(fecha) : ''}${ho ? ' ' + esc(ho) : ''}</button>`);
+    partes.push(`<button type="button" class="res-chip" onclick="irAPasoCrear(1)">${esc(nom || 'Sin nombre')}${fecha ? ' · ' + esc(fecha) : ''}${ho ? ' ' + esc(ho) : ''}</button>`);
   }
-  if(n > 2 && !state.editandoId && oc) partes.push(`<button type="button" class="res-chip" onclick="irAPasoCrear(2)">${esc(OCASIONES[oc] || 'Tipo')} ✏️</button>`);
+  if(n > 2 && !state.editandoId && oc) partes.push(`<button type="button" class="res-chip" onclick="irAPasoCrear(2)">${esc(OCASIONES[oc] || 'Tipo')}</button>`);
   el.innerHTML = partes.join('');
 }
 // Botones Continuar / Atrás.
@@ -7026,8 +7074,8 @@ function actualizarCamposPrivacidad(){
   document.getElementById('label-lugar').textContent = priv ? 'Barrio o zona (público)' : 'Lugar';
   document.getElementById('f-lugar').placeholder = priv ? 'Ej: Nueva Córdoba' : 'Dirección o barrio';
   document.getElementById('ayuda-lugar').textContent = priv
-    ? '🔒 Lo ve todo el mundo: poné solo el barrio, sin calle ni número. La dirección exacta va abajo y solo la ven los invitados que apruebes.'
-    : '📍 Sé lo más específico posible: calle y número (o nombre del lugar), barrio y ciudad. Mejor todavía: marcalo en el mapa. Así nadie se confunde.';
+    ? 'Lo ve todo el mundo: poné solo el barrio, sin calle ni número. La dirección exacta va abajo y solo la ven los invitados que apruebes.'
+    : 'Sé lo más específico posible: calle y número (o nombre del lugar), barrio y ciudad. Mejor todavía: marcalo en el mapa. Así nadie se confunde.';
 }
 
 // Al editar y cambiar privada ⇄ pública, acomodamos los campos de lugar
@@ -7036,11 +7084,11 @@ function ajustarLugarPorPrivacidad(){
   const lugar = document.getElementById('f-lugar'), dir = document.getElementById('f-direccion');
   if(esPrivadaEnForm()){
     if(pareceDireccion(lugar.value) && !dir.value.trim()){ dir.value = lugar.value; lugar.value = ''; }
-    toast('🔒 Privada: arriba solo el barrio; la dirección la ven los que apruebes');
+    toast('Privada: arriba solo el barrio; la dirección la ven los que apruebes');
     lugar.focus();
   } else {
     if(dir.value.trim()) lugar.value = dir.value.trim() + (lugar.value.trim() ? ', ' + lugar.value.trim() : '');
-    toast('🌍 Pública: la dirección la va a ver todo el mundo');
+    toast('Pública: la dirección la va a ver todo el mundo');
   }
 }
 // Prende/apaga un interruptor.
@@ -7063,7 +7111,7 @@ function revisarNombrePrevia(){
   if(state.tipoEventoActivo === 'fiesta' && /\bprevia\b/i.test(n) && !state.editandoId && state._avisoPrevia !== n.toLowerCase()){
     state._avisoPrevia = n.toLowerCase();
     elegirTipo('previa'); elegirOcasion('previa'); state.tipoElegido = true;
-    toast('🍾 Lo marcamos como Previa (lo podés cambiar en el paso 2)');
+    toast('Lo marcamos como Previa (lo podés cambiar en el paso 2)');
   }
 }
 // Interruptor de entrada paga (muestra precio y ayuda de capacidad).
@@ -7209,7 +7257,7 @@ function renderCamposTipo(k, valores, cfgEq){
         <div><label for="f-jugadores-equipo">Jugadores por equipo</label><input type="number" id="f-jugadores-equipo" min="1" max="50" inputmode="numeric" placeholder="Ej: 5" value="${esc(jugAnt)}"></div>
         <div><label for="f-max-equipos">Máximo de equipos</label><input type="number" id="f-max-equipos" min="2" max="64" inputmode="numeric" placeholder="Sin límite" value="${esc(maxAnt)}"></div>
       </div>
-      <div class="ayuda">👥 Los que se anotan arman su equipo y los demás se van sumando. Vos ves todos los equipos y quién está en cada uno.</div></div>`;
+      <div class="ayuda">Los que se anotan arman su equipo y los demás se van sumando. Vos ves todos los equipos y quién está en cada uno.</div></div>`;
     return h;
   }).join('');
   actualizarCondicionalesTipo();
@@ -7280,7 +7328,7 @@ async function elegirEquipo(ev){
         return `<button type="button" class="eq-op" data-eq-id="${esc(t.id)}"${lleno ? ' disabled' : ''}><b>${esc(t.nombre)}</b><span>${lleno ? 'Completo' : `${n}${max ? '/' + max : ''} ${n === 1 ? 'jugador' : 'jugadores'}`}</span></button>`; }).join('')}</div>` : ''}
       ${puedeCrear ? `<div class="eq-nuevo"><input type="text" id="eq-nuevo-nombre" maxlength="40" placeholder="Nombre de tu equipo" aria-label="Nombre de tu equipo"><button type="button" class="btn btn-primario btn-mini" id="eq-nuevo-ok">Armar equipo</button></div>`
         : '<p class="hoja-sub">Ya se armaron todos los equipos que entran en el torneo.</p>'}
-      <button type="button" class="eq-mirar" id="eq-sin">👀 Voy a mirar o elijo después</button></div>
+      <button type="button" class="eq-mirar" id="eq-sin">Voy a mirar o elijo después</button></div>
       <div class="acciones"><button class="btn btn-secundario" onclick="cerrarHoja()">Volver</button></div>`);
     document.querySelectorAll('#hoja-contenido [data-eq-id]').forEach(b => b.onclick = () => listo({ tipo: 'unir', id: b.dataset.eqId }));
     document.getElementById('eq-sin').onclick = () => listo({ tipo: 'nada' });
@@ -7463,7 +7511,7 @@ function irAPrevia(){
   elegirTipo('previa');
   const op = document.getElementById('op-previa');
   if(op && op.scrollIntoView) op.scrollIntoView({behavior:'smooth', block:'center'});
-  toast('🍾 Te llevamos a Previa');
+  toast('Te llevamos a Previa');
 }
 // ¿Es una fiesta universitaria (eventos viejos)?
 function esUniversitaria(e){ return e.ocasion === 'universitaria' || e.categoria === 'universitaria'; }
@@ -7722,14 +7770,14 @@ function filasEventoHTML(ev){
   const a = ambienteAuto(ev), dist = distanciaDe(ev);
   const f = (i, t, sub) => `<div class="fila"><span class="i">${i}</span><div>${t}${sub ? `<small>${sub}</small>` : ''}</div></div>`;
   return [
-    f('📅', esc(horarioEvento(ev))),
-    f('📍', esc(lugarPublico(ev)) + (ev.privacidad === 'privada' ? ' · 🔒 dirección al aprobar' : ''), dist ? `a ${esc(dist)} de vos` : ''),
-    ev.musica || ev.categoria ? f('🎵', esc(ev.musica || etiquetaEstilo(ev.categoria, ev))) : '',
-    f('🎟️', esc(precioTxt(ev)), ev.pagoInfo && ev.precio > 0 ? esc(ev.pagoInfo) : ''),
+    f(ico('calendario', 18), esc(horarioEvento(ev))),
+    f(ico('pin', 18), esc(lugarPublico(ev)) + (ev.privacidad === 'privada' ? ' · dirección al aprobar' : ''), dist ? `a ${esc(dist)} de vos` : ''),
+    ev.musica || ev.categoria ? f(ico('musica', 18), esc(ev.musica || etiquetaEstilo(ev.categoria, ev))) : '',
+    f(ico('ticket', 18), esc(precioTxt(ev)), ev.pagoInfo && ev.precio > 0 ? esc(ev.pagoInfo) : ''),
     f(`<span class="punto-ambiente amb-${a.clase}${a.vivo ? ' amb-vivo' : ''}" style="display:inline-block; width:10px; height:10px;"></span>`, esc(a.label), esc(a.desc)),
-    ev.edadMinima !== undefined ? f('🔞', esc(clasificacion(ev)), ev.dresscode && ev.dresscode !== 'Libre' ? 'Dress code: ' + esc(ev.dresscode) : '') : '',
-    ev.tipo !== 'previa' && ev.listaVip ? f('⭐', 'Con lista VIP') : '',
-    ev.tipo === 'previa' && ev.bebida ? f('🍾', 'Cada uno lleva su bebida') : ''
+    ev.edadMinima !== undefined ? f(ico('escudo', 18), esc(clasificacion(ev)), ev.dresscode && ev.dresscode !== 'Libre' ? 'Dress code: ' + esc(ev.dresscode) : '') : '',
+    ev.tipo !== 'previa' && ev.listaVip ? f(ico('estrella', 18), 'Con lista VIP') : '',
+    ev.tipo === 'previa' && ev.bebida ? f(ico('copa', 18), 'Cada uno lleva su bebida') : ''
   ].join('');
 }
 // Abre la hoja de abajo con el contenido dado.
@@ -7763,7 +7811,7 @@ function mostrarVistaPrevia(ev){
     abrirHoja(`
       <div class="titulo-prev">Así se va a ver tu publicación</div>
       <div class="muestra">${tarjetaHTML(prev)}</div>
-      ${ev.imagen ? '' : '<div class="tip">📸 No subiste foto: usamos una portada según el tipo de evento. Una foto real del lugar o de una edición anterior genera más confianza y más confirmaciones.</div>'}
+      ${ev.imagen ? '' : '<div class="tip">No subiste foto: usamos una portada según el tipo de evento. Una foto real del lugar o de una edición anterior genera más confianza y más confirmaciones.</div>'}
       <div class="cuerpo" style="margin-top:0;"><div class="cat">${iconoTipo(prev)}${esc(etiquetaTipo(prev))}</div><h3>${esc(prev.nombre)}</h3><div class="filas">${filasEventoHTML(prev)}</div></div>
       <div class="acciones"><button class="btn btn-secundario" onclick="cerrarHoja(false)">Seguir editando</button><button class="btn btn-primario" id="btn-confirmar-publicar" onclick="cerrarHoja(true)">Publicar</button></div>`);
   });
@@ -7827,7 +7875,7 @@ function renderGente(){
   const cont = document.getElementById('explorar-gente');
   if(!cont) return;
   const lista = l => l.map(u => personaHTML(u, botonRelacion(u.uid))).join('');
-  const invitar = `<div class="fila-botones"><button class="btn btn-secundario" onclick="invitarAmigos()">📨 Invitar amigos a Partazy</button></div>`;
+  const invitar = `<div class="fila-botones"><button class="btn btn-secundario" onclick="invitarAmigos()">Invitar amigos a Partazy</button></div>`;
   if(state.gente){
     cont.innerHTML = state.gente.length
       ? `<div class="subtitulo"><h3 class="titulo-bloque">Resultados</h3></div>${lista(state.gente)}`
@@ -8044,7 +8092,7 @@ function usarLugarElegido(l){
   aplicarUbicacion(coords, true, l.nombre);
   document.getElementById('rango-estado').textContent = `✓ Mostrando eventos cerca de ${l.nombre}.`; pintarTextoRango();
 }
-// Línea chica debajo del buscador cuando no sabemos tu ciudad: "📍 Mostrando todo Córdoba. Elegir zona".
+// Línea chica debajo del buscador cuando no sabemos tu ciudad: "Mostrando todo Córdoba. Elegir zona".
 function pintarLineaUbic(){
   const el = document.getElementById('home-ubic-linea');
   if(!el) return;
@@ -8052,7 +8100,7 @@ function pintarLineaUbic(){
   // "todo Córdoba" solo si de verdad todo lo que se ve es de Córdoba; si no, "todos los eventos"
   const conLugar = eventosVisibles().filter(e => typeof e.lat === 'number');
   const todoCba = conLugar.length && conLugar.every(e => distanciaKm(e.lat, e.lng, CBA_CENTER.lat, CBA_CENTER.lng) < 60);
-  el.innerHTML = `<span aria-hidden="true">📍</span> Mostrando ${todoCba ? 'todo Córdoba' : 'todos los eventos'}. <button type="button" class="link-ciudad" onclick="abrirRango()">Elegir zona</button>`;
+  el.innerHTML = `${ico('pin', 14)} Mostrando ${todoCba ? 'todo Córdoba' : 'todos los eventos'}. <button type="button" class="link-ciudad" onclick="abrirRango()">Elegir zona</button>`;
   el.hidden = false;
 }
 // Aviso si no hay eventos en tu rango (o si no sabemos tu ciudad).
@@ -8060,7 +8108,7 @@ function avisoRangoHTML(total, dentro){
   if(!state.userCoords && state.geoFallo) return '';   // va en la línea chica de debajo del buscador
   if(!state.radioKm || !state.userCoords || !total || dentro) return '';
   const sig = RANGOS.find(r => r > state.radioKm && r) ;
-  return `<div class="aviso-rango">📍 No hay eventos a menos de <b>${state.radioKm} km</b> de ${esc(state.ciudadActual || 'tu ubicación')} todavía. Hay ${total} ${total === 1 ? 'evento' : 'eventos'} más lejos.
+  return `<div class="aviso-rango">No hay eventos a menos de <b>${state.radioKm} km</b> de ${esc(state.ciudadActual || 'tu ubicación')} todavía. Hay ${total} ${total === 1 ? 'evento' : 'eventos'} más lejos.
     <div class="fila">${sig ? `<button class="btn btn-secundario btn-mini" onclick="elegirRango(${sig})">Ampliar a ${sig} km</button>` : ''}<button class="btn btn-primario btn-mini" onclick="elegirRango(0)">Ver todos</button><button class="btn btn-secundario btn-mini" onclick="verMapaEventos()">Ver mapa</button></div></div>`;
 }
 
@@ -8128,7 +8176,7 @@ async function pintarMapaEventos(encuadrar){
       : L.marker([e.lat, e.lng], { icon: L.divIcon({ className: '', html: `<div class="pin-evento ${a.clase}"></div>`, iconSize: [26, 26], iconAnchor: [13, 26], popupAnchor: [0, -24] }) }).addTo(capa);
     const dist = state.userCoords ? ` · ${textoDistancia(e, distanciaKm(centro.lat, centro.lng, e.lat, e.lng))}` : '';
     m.bindPopup(`<div class="popup-ev" data-abrir="${esc(e.id)}"><div class="f" style="background-image:${cssFoto(e)}"></div>
-      <div class="c">${esc(etiquetaEstilo(e.categoria, e))} · ${esc(etiquetaTipo(e))}${e.privacidad === 'privada' ? ' · 🔒 zona aproximada' : ''}</div><b>${esc(e.nombre)}</b>
+      <div class="c">${esc(etiquetaEstilo(e.categoria, e))} · ${esc(etiquetaTipo(e))}${e.privacidad === 'privada' ? ' · zona aproximada' : ''}</div><b>${esc(e.nombre)}</b>
       <span>${esc(fmtFecha(e.fechaTs))}${esc(dist)} · ${esc(precioTxt(e))}</span>
       <button class="btn btn-primario">Ver evento</button></div>`);
     puntos.push([e.lat, e.lng]);
@@ -8442,7 +8490,7 @@ async function guardarEdicion(ev, d){
   if(cambiaPriv) claves.push(privadaAhora ? 'ahora es privada (la dirección la ven solo los aprobados)' : 'ahora es pública');
   const mensaje = claves.length ? {
     uid: state.uid, nombre: (state.perfil.nombre || '').slice(0, 60),
-    texto: ('📢 El organizador actualizó el evento — ' + claves.join(' · ')).slice(0, 500), ts: Date.now()
+    texto: ('El organizador actualizó el evento — ' + claves.join(' · ')).slice(0, 500), ts: Date.now()
   } : null;
 
   const btn = document.getElementById('btn-publicar');
@@ -8506,7 +8554,7 @@ async function renderPerfilVista(){
       <div class="item-simple" role="button" tabindex="0" data-abrir="${esc(e.id)}">
         ${fotoMiniHTML(e)}
         <div class="txt"><h5>${esc(e.nombre)}<span class="badge-org">ORGANIZÁS</span></h5><span>${esc(fmtFecha(e.fechaTs))} hs</span></div>
-        ${esCancelado(e) ? '' : `<button class="btn-editar-mini" data-editar="${esc(e.id)}">✏️ Editar</button>`}
+        ${esCancelado(e) ? '' : `<button class="btn-editar-mini" data-editar="${esc(e.id)}">Editar</button>`}
       </div>` : `
       <div class="item-simple" role="button" tabindex="0" data-ticket="${esc(e.id)}">
         ${fotoMiniHTML(e)}
@@ -8531,7 +8579,7 @@ function pintarMisCompartidos(){
     <div class="item-simple" role="button" tabindex="0" data-abrir="${esc(e.id)}">
       ${fotoMiniHTML(e)}
       <div class="txt"><h5>${esc(e.nombre)}</h5><span>${esc(fmtFecha(e.fechaTs))} hs · lo ven tus amigos</span>${state.misNotas?.[e.id] ? `<span class="nota-mia">${textoConMenciones(state.misNotas[e.id])}</span>` : ''}
-        <span class="mi-nota-acciones"><button class="btn-nota" data-editar-nota="${esc(e.id)}">✏️ ${state.misNotas?.[e.id] ? 'Editar' : 'Comentar'}</button>${state.misNotas?.[e.id] ? `<button class="btn-nota peligro" data-borrar-nota="${esc(e.id)}">🗑 Borrar</button>` : ''}</span></div>
+        <span class="mi-nota-acciones"><button class="btn-nota" data-editar-nota="${esc(e.id)}">${state.misNotas?.[e.id] ? 'Editar' : 'Comentar'}</button>${state.misNotas?.[e.id] ? `<button class="btn-nota peligro" data-borrar-nota="${esc(e.id)}">Borrar</button>` : ''}</span></div>
     </div>`).join('');
 }
 
@@ -8552,7 +8600,7 @@ function abrirMisDatos(){
   document.getElementById('hoja-contenido').innerHTML = `<div class="mis-datos">
     <div class="agarre"></div>
     <h3>Mis datos</h3>
-    <p class="ayuda">🔒 Solo vos ves esta información. Los demás ven tu nombre, @usuario, foto, ciudad y gustos.</p>
+    <p class="ayuda">Solo vos ves esta información. Los demás ven tu nombre, @usuario, foto, ciudad y gustos.</p>
     ${fila(esOrganizacion(p) ? 'Nombre de la organización' : 'Nombre y apellido', p.nombre)}
     ${p.apodo ? fila('Apodo', p.apodo) : ''}
     ${fila('Usuario', p.usuario ? '@' + p.usuario : '')}
@@ -8562,7 +8610,7 @@ function abrirMisDatos(){
     ${fila('Tipo de cuenta', esOrganizacion(p) ? 'Organización' : 'Persona')}
     ${fila('Cómo entrás', login)}
     ${fila('Cuenta creada', alta)}
-    <div class="fila-botones" style="padding:0; margin-top:14px;"><button class="btn btn-secundario" onclick="cerrarHoja(); editarPerfil();">✏️ Editar mis datos</button><button class="btn btn-primario" onclick="cerrarHoja()">Listo</button></div>
+    <div class="fila-botones" style="padding:0; margin-top:14px;"><button class="btn btn-secundario" onclick="cerrarHoja(); editarPerfil();">Editar mis datos</button><button class="btn btn-primario" onclick="cerrarHoja()">Listo</button></div>
   </div>`;
   document.getElementById('hoja-vista').classList.add('show');
   abrirModalHist && abrirModalHist();
@@ -8643,7 +8691,7 @@ async function guardarPerfil(){
     renderPerfilVista();
     renderHome();          // el cartel "¿Qué música te gusta?" se va y aparece "Para vos"
     sincronizarPlanes();
-    if(desdeGustos && misGustos().length){ ir('home'); toast('¡Listo! Ya te mostramos fiestas para vos 🎧'); }
+    if(desdeGustos && misGustos().length){ ir('home'); toast('¡Listo! Ya te mostramos fiestas para vos'); }
     else toast('Perfil actualizado');
   } catch(e){
     console.error(e);

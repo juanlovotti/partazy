@@ -16,12 +16,12 @@ let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
   await sleep(2200); w.renderHome(); await sleep(30);
   const home=$('pantalla-home');
   ok(!$('hoja-cuenta').classList.contains('show'), 'al abrir no sale el cartel "Sumate"');
-  ok(/^Mostrando todo Córdoba\. Elegir zona$/.test(txt($('home-ubic-linea')).replace(/^📍\s*/,'')) && !$('home-ubic-linea').hidden, 'una sola línea chica: "📍 Mostrando todo Córdoba. Elegir zona"');
+  ok(/^Mostrando todo Córdoba\. Elegir zona$/.test(txt($('home-ubic-linea')).trim()) && !$('home-ubic-linea').hidden, 'una sola línea chica: "Mostrando todo Córdoba. Elegir zona"');
   ok(!txt($('home-aviso-rango')) && !w.document.querySelector('.barra-invitado'), 'sin el aviso grande de ubicación ni la barra "Estás mirando sin cuenta"');
   ok(/Elegí tu ciudad ▾/.test(txt(home.querySelector('.ubic-btn'))) && !/km/.test(txt(home.querySelector('.ubic-btn'))), 'el selector dice "Elegí tu ciudad ▾" sin los km');
   // "Hoy" honesto
   ok(home.querySelector('#chips-home .chip.activo')?.textContent==='Hoy' && /Esta semana/.test(txt($('titulo-fila-1'))), 'con "Hoy" marcado y nada hoy, la primera fila es "Esta semana"');
-  ok(/^Hoy no hay nada cargado\. Mirá lo que viene esta semana 👇$/.test(txt($('nota-fila-1'))) && !$('nota-fila-1').hidden, 'y avisa: "Hoy no hay nada cargado. Mirá lo que viene esta semana 👇"');
+  ok(/^Hoy no hay nada cargado\. Mirá lo que viene esta semana$/.test(txt($('nota-fila-1'))) && !$('nota-fila-1').hidden, 'y avisa: "Hoy no hay nada cargado. Mirá lo que viene esta semana"');
   // Una sola vez
   const veces=[...home.querySelectorAll('.tarjeta h3, .tarjeta-h h4')].filter(h=>txt(h)==='Noche del Jueves').length;
   ok(veces===1, 'el único evento aparece una sola vez en Inicio ('+veces+')');

@@ -144,3 +144,17 @@ Antes de escribir código contra una librería, revisar su documentación instal
 - `src/geo.js` junta los 6 pedidos a Nominatim. Sin memoria de resultados (hubiera cambiado cuántos pedidos se hacen y lo vigilan las pruebas); se puede sumar después con su prueba.
 - La capa `datos.*` solo tiene los métodos que van a usar las próximas pantallas (perfil, entradas, social): se agregan a medida que hagan falta, no todo DataService de una.
 - Perfil (u23): diseño elegido por Juan el 12/11 en Superdesign, portada de la variante A con los accesos rápidos de la B.
+
+## 13/11: sin emojis en la app
+- Juan pidió sacar los emojis "en todos lados" porque quedan poco profesionales.
+- Los íconos que hacían falta (notificaciones, menú del perfil, filas de la hoja del evento, perfil de organización, razón de las recomendaciones) ahora son íconos de línea: `ico(nombre, tamaño)` arriba de `src/app.js` (diccionario `ICONOS`; si el nombre es un tipo de evento usa `ICONOS_TIPO`).
+- En títulos, botones, avisos y toasts el emoji se sacó sin reemplazo.
+- Quedan los signos tipográficos que no son emojis: ✓ ✗ ✕ ★ ✦ ☰ ›.
+- La razón de una tarjeta ya no se marca con el emoji del principio: es un objeto `{ ico, texto }` que pinta `razonHTML()`.
+- Las respuestas rápidas del chat quedaron solo con texto. Lo que escribe la gente (bio, mensajes, comentarios) puede seguir teniendo emojis.
+
+## 13/11: menú del perfil A y tutorial B, ya en la app
+- Menú ☰ del perfil: variante A (lista con íconos en cuadraditos y flechita). Es solo CSS más `data-tono` en los botones de `index.html`.
+- Tutorial: variante B (arriba, la app en chiquito dentro de un marco; barritas de progreso; Saltar a la izquierda; atrás redondo y Siguiente con flecha). Se mezcló con las animaciones de antes: logo que se mueve, buscador que escribe solo, dedo que toca, punto que late, rayas del último paso.
+- Los textos del tutorial quedaron en una o dos frases por paso.
+- Falta elegir el cartel de "Necesitás una cuenta" (A o B).

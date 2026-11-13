@@ -403,3 +403,7 @@ html:not(.js) .lz-aviso{opacity:1;}
   .js .lz-rev .lz-pin{transform:translate(-50%, -100%);}
   .lz-aviso{opacity:1;}
 }
+/* Íconos de línea (sin emojis) */
+.tres .ico{display:inline-flex; color:var(--rojo);}
+.lz-tapa span, .lz-ev-tapa, .lz-chat-av{color:#fff;}
+.lz-tapa span{display:flex;}

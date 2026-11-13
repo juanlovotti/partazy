@@ -1767,3 +1767,57 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
 
 /* Crear por pasos (React): en el celu, sin la barra de abajo mientras se completa (en la compu queda la barra lateral) */
 @media (max-width:899px){ .phone.foco-crear .navbar{display:none;} }
+
+/* ---------- Íconos de línea (reemplazan a los emojis, 13/11) ---------- */
+.ico-svg{display:inline-block; vertical-align:-0.15em; flex:0 0 auto;}
+.razon-tarjeta{display:flex; align-items:center; gap:5px;}
+.razon-tarjeta .ico-svg{color:var(--rojo);}
+.amigo-burbuja .ab-emoji .ico-tipo{width:13px; height:13px; margin:0; vertical-align:0; color:var(--hueso);}
+.votar-amb .punto-ambiente{width:12px; height:12px;}
+.hoja .fila .i{color:var(--rojo); display:flex; justify-content:center;}
+.info-fila > span{color:var(--rojo); display:flex;}
+.menu-hoja .btn .mi{display:inline-flex; justify-content:center; color:var(--hueso);}
+.cat-candado{display:inline-flex; margin-left:5px; color:var(--gris); vertical-align:-1px;}
+.ref-ico{display:flex; color:var(--hueso); margin-top:1px;}
+.link-ext .ico-svg{vertical-align:-1px;}
+.vista-ico{display:inline-flex; align-items:center; gap:6px;}
+
+/* ---------- Tutorial, variante B (13/11): la app en chiquito arriba, con las animaciones de siempre ---------- */
+.tuto.tuto-b{padding:0; overflow:hidden auto;}
+.tuto-b .tuto-top{padding:16px 20px 0; margin:0; gap:12px;}
+.tuto-b .tuto-puntos{flex:1; display:flex; gap:5px;}
+.tuto-b .tuto-puntos i{flex:1; width:auto; height:4px; border-radius:4px; background:var(--gris-linea); position:relative; overflow:hidden;}
+.tuto-b .tuto-puntos i.hecho{background:var(--rojo);}
+.tuto-b .tuto-puntos i.on{width:auto; background:var(--gris-linea);}
+.tuto-b .tuto-puntos i.on::after{content:""; position:absolute; inset:0; background:var(--rojo); transform-origin:left; animation:tuto-seg .5s var(--ease) forwards;}
+@keyframes tuto-seg{from{transform:scaleX(0);} to{transform:scaleX(1);}}
+.tuto-b .tuto-paso{font-size:10.5px; flex:none;}
+.tuto-b .tuto-escena{margin:14px 20px 0; min-height:178px; border-radius:18px; border:1px solid var(--gris-linea); background:radial-gradient(120% 90% at 85% 0%, rgba(2,151,222,.14), transparent 60%), radial-gradient(90% 80% at 0% 100%, rgba(252,115,77,.12), transparent 60%), var(--negro); display:flex; align-items:center; justify-content:center; padding:18px; overflow:hidden;}
+.tuto-b .tuto-escena > .tm{margin:0; width:100%; background:var(--negro-2);}
+.tuto-b .tuto-escena.con-logo .tuto-logo-wrap{margin:0;}
+.tuto-b .tuto-escena .tuto-mini{margin:0; width:100%; gap:10px;}
+.tuto-b .tuto-escena .tuto-mini div{font-size:13.5px;}
+.tuto-b .tuto-texto{padding:18px 20px 0;}
+.tuto-b h2{font-size:30px; margin-bottom:8px;}
+.tuto-b .tuto-rayas{margin:2px 0 10px; width:120px;}
+.tuto-b p{font-size:14px; line-height:1.5;}
+.tuto-b .tuto-nota{margin-top:10px;}
+.tuto-b .tuto-pie{padding:18px 20px calc(18px + env(safe-area-inset-bottom)); margin:0;}
+.tuto-b .tuto-saltar{min-height:44px;}
+.tuto-b .tuto-botones{display:flex; gap:8px; align-items:center;}
+.tuto-b #tuto-atras{width:48px; height:48px; padding:0; border-radius:50%; justify-content:center;}
+.tuto-b #tuto-sig{display:inline-flex; align-items:center; gap:8px; padding:13px 22px; color:var(--negro);}
+@media (prefers-reduced-motion: reduce){ .tuto-b .tuto-puntos i.on::after{animation:none; transform:none;} }
+
+/* ---------- Menú del perfil, variante A (13/11): lista con íconos en cuadraditos ---------- */
+.menu-hoja{padding:10px 14px calc(16px + env(safe-area-inset-bottom));}
+.menu-hoja .grupo-menu{font-size:11px; letter-spacing:1.5px; font-weight:700; padding:16px 6px 4px;}
+.menu-hoja .btn{min-height:56px; padding:8px 6px; gap:14px; border-radius:14px; font-size:15px; font-weight:700; color:var(--blanco);}
+.menu-hoja .btn .mi{width:40px; height:40px; border-radius:12px; background:var(--negro-3); color:var(--rojo); align-items:center; justify-content:center;}
+.menu-hoja .btn[data-tono="gris"] .mi{color:var(--gris);}
+.menu-hoja .btn[data-tono="azul"] .mi{color:var(--verde);}
+.menu-hoja .btn::after{content:""; margin-left:auto; flex:none; width:7px; height:7px; border-top:2px solid var(--gris); border-right:2px solid var(--gris); transform:rotate(45deg); margin-right:6px;}
+.menu-hoja .btn.sin-flecha::after{display:none;}
+.menu-hoja .btn .badge-inline{margin-left:6px;}
+.menu-hoja hr{margin:8px 6px;}
+.menu-hoja .link-peligro{min-height:44px; padding:8px 6px; font-size:13px; font-weight:600;}

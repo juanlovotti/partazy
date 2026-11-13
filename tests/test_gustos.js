@@ -25,7 +25,7 @@ let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
   ok($('titulo-paravos').style.display!=='none' && /Porque te gusta Techno y Previas/.test(txt($('titulo-paravos'))), 'aparece la sección "Para vos" con tus gustos');
   ok(nombres.includes('Noche Techno') && nombres.includes('Previa de Juli') && nombres.includes('Noche House') && !nombres.includes('Cachengue Total') && !nombres.includes('Rock en vivo'), '"Para vos" trae lo tuyo y lo parecido, no lo que no te gusta');
   ok(nombres.indexOf('Noche Techno') < nombres.indexOf('Noche House'), 'lo que coincide exacto va antes que lo parecido');
-  ok(/🎧 Porque te gusta Techno/.test(txt(lista)) && /🎧 Parecido a Techno/.test(txt(lista)), 'cada tarjeta dice por qué te la recomendamos');
+  ok(/Porque te gusta Techno/.test(txt(lista)) && /Parecido a Techno/.test(txt(lista)) && !!lista.querySelector('.razon-tarjeta svg'), 'cada tarjeta dice por qué te la recomendamos');
   ok($('chip-paravos').style.display!=='none', 'hay un filtro "Para vos" arriba');
   A.elegirChipHome($('chip-paravos'),'paravos'); await sleep(50);
   ok(/Para vos/.test(txt($('titulo-fila-1'))) && !/Cachengue Total/.test(txt($('lista-esta-noche'))), 'el filtro "Para vos" muestra solo lo que va con tu música');

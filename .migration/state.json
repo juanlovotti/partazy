@@ -193,7 +193,8 @@
         "u08-datos-y-tipos",
         "u07-puente-estado"
       ],
-      "blocked_reason": null
+      "blocked_reason": null,
+      "note": "Diseño elegido 13/11: variante A (por día, con Aceptar/Ahora no y Revisar pago)."
     },
     {
       "id": "u19-ubicacion-y-rango",
@@ -259,7 +260,8 @@
       "depends_on": [
         "u23-perfil-propio"
       ],
-      "blocked_reason": null
+      "blocked_reason": null,
+      "note": "Chats elegido 13/11: variante A (grupos de eventos arriba, personas abajo, no leídos) con la fila \"En línea ahora\" de la B."
     },
     {
       "id": "u25-crear-y-editar",
@@ -284,7 +286,8 @@
         "u21-tarjetas-y-portadas",
         "u24-social"
       ],
-      "blocked_reason": null
+      "blocked_reason": null,
+      "note": "Diseños elegidos 13/11: Inicio A con la tira de días de la B arriba; Explorar A (filtros en botón, vacío con Crear evento y Buscar a 50 km)."
     },
     {
       "id": "u27-detalle",
@@ -308,7 +311,8 @@
         "u26-inicio-y-explorar",
         "u27-detalle"
       ],
-      "blocked_reason": null
+      "blocked_reason": null,
+      "note": "Elegido 13/11. Ingreso: variante E (pulso, logo, campos mínimos) con degradé naranja/azul que se mueve lento (24 s, quieto con reducir movimiento). Pantalla de carga: variante C (el mismo pulso, logo y degradé, \"Cargando tus eventos\"). El cargador vive en index.html antes de que arranque la app: tiene que seguir siendo HTML/CSS puro."
     },
     {
       "id": "u29-armazon",
@@ -345,7 +349,8 @@
         "u27-detalle",
         "u28-cuentas-y-arranque"
       ],
-      "blocked_reason": null
+      "blocked_reason": null,
+      "note": "Barra lateral elegida 13/11: variante B (agrupada: Descubrir, Tu gente, Lo tuyo; recuadro Fundador)."
     },
     {
       "id": "u30-cambio-final",

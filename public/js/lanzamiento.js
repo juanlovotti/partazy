@@ -70,34 +70,36 @@
   var video = document.querySelector('.lz-ciudad video');
   if(video && quieto){ video.removeAttribute('autoplay'); video.pause(); }
 
+  // Íconos de línea por tipo (los mismos de la app)
+  var ICO = {"fiesta": "<svg width=\"40\" height=\"40\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"13\" r=\"7\"/><path d=\"M12 6V2M5.5 10.5h13M5.5 15.5h13M12 6c-2 2.2-2.8 4.6-2.8 7s.8 4.8 2.8 7M12 6c2 2.2 2.8 4.6 2.8 7s-.8 4.8-2.8 7\"/></svg>", "pena": "<svg width=\"40\" height=\"40\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M14 3l4 4-2 2-4-4z\"/><path d=\"M13.5 7.5 9 12\"/><path d=\"M10.5 10.5c-2.5-1-5 0-6 2.5s0 5.5 2.5 6.5 5.5 0 6.5-2.5c.6-1.5.3-3-.5-4.2\"/><circle cx=\"8.5\" cy=\"15.5\" r=\"1.4\"/></svg>", "recital": "<svg width=\"40\" height=\"40\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"6\" y=\"3\" width=\"5\" height=\"10\" rx=\"2.5\"/><path d=\"M3.5 10.5a5 5 0 0 0 10 0M8.5 15.5V20M6 20h5\"/><path d=\"M17 11V4l4-1v6\"/><circle cx=\"16\" cy=\"11.2\" r=\"1.6\"/><circle cx=\"20\" cy=\"9.2\" r=\"1.6\"/></svg>", "futbol": "<svg width=\"40\" height=\"40\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"m12 7 4 3-1.5 4.5h-5L8 10z\"/><path d=\"M12 3v4M21 10l-5 0M17.5 19l-3-4.5M6.5 19l3-4.5M3 10l5 0\"/></svg>", "taller": "<svg width=\"40\" height=\"40\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z\"/></svg>", "feria": "<svg width=\"40\" height=\"40\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M3 9l2-5h14l2 5\"/><path d=\"M3 9c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3\"/><path d=\"M5 12v8h14v-8M10 20v-5h4v5\"/></svg>"};
   // Demo: ¿Qué hacés este sábado?
   var PLANES = {
     fiesta: [
-      { t: 'Noche Vortex', h: 'Hoy, 23:30', l: 'Güemes', i: '🎧', c: ['#0297DE', '#7A8BE0'], a: ['Sofi', 'Ivo'], m: 38 },
-      { t: 'Terraza Ámbar', h: 'Sábado, 00:30', l: 'Nueva Córdoba', i: '🪩', c: ['#FC734D', '#FFA98C'], a: ['Male'], m: 21 }
+      { t: 'Noche Vortex', h: 'Hoy, 23:30', l: 'Güemes', i: ICO.fiesta, c: ['#0297DE', '#7A8BE0'], a: ['Sofi', 'Ivo'], m: 38 },
+      { t: 'Terraza Ámbar', h: 'Sábado, 00:30', l: 'Nueva Córdoba', i: ICO.fiesta, c: ['#FC734D', '#FFA98C'], a: ['Male'], m: 21 }
     ],
     pena: [
-      { t: 'Peña El Patio', h: 'Hoy, 21:00', l: 'Cofico', i: '🎸', c: ['#FC734D', '#E8B411'], a: ['Agus', 'Cami'], m: 54 },
-      { t: 'Guitarreada en la plaza', h: 'Sábado, 19:00', l: 'General Paz', i: '🪕', c: ['#0B6FA8', '#0297DE'], a: ['Ivo'], m: 17 }
+      { t: 'Peña El Patio', h: 'Hoy, 21:00', l: 'Cofico', i: ICO.pena, c: ['#FC734D', '#E8B411'], a: ['Agus', 'Cami'], m: 54 },
+      { t: 'Guitarreada en la plaza', h: 'Sábado, 19:00', l: 'General Paz', i: ICO.pena, c: ['#0B6FA8', '#0297DE'], a: ['Ivo'], m: 17 }
     ],
     recital: [
-      { t: 'Banda Eléctrica en vivo', h: 'Hoy, 22:00', l: 'Centro', i: '🎤', c: ['#7A8BE0', '#FC734D'], a: ['Sofi', 'Male'], m: 120 },
-      { t: 'Acústico en la terraza', h: 'Domingo, 20:30', l: 'Güemes', i: '🎶', c: ['#0297DE', '#6CCBF5'], a: ['Cami'], m: 32 }
+      { t: 'Banda Eléctrica en vivo', h: 'Hoy, 22:00', l: 'Centro', i: ICO.recital, c: ['#7A8BE0', '#FC734D'], a: ['Sofi', 'Male'], m: 120 },
+      { t: 'Acústico en la terraza', h: 'Domingo, 20:30', l: 'Güemes', i: ICO.recital, c: ['#0297DE', '#6CCBF5'], a: ['Cami'], m: 32 }
     ],
     futbol: [
-      { t: 'Torneo Relámpago', h: 'Sábado, 16:00', l: 'Alta Córdoba', i: '⚽', c: ['#2E9B5B', '#6CCBF5'], a: ['Ivo', 'Agus'], m: 9 },
-      { t: 'Picado de los sábados', h: 'Sábado, 18:30', l: 'Cerro de las Rosas', i: '🥅', c: ['#0B6FA8', '#2E9B5B'], a: ['Male'], m: 7 }
+      { t: 'Torneo Relámpago', h: 'Sábado, 16:00', l: 'Alta Córdoba', i: ICO.futbol, c: ['#2E9B5B', '#6CCBF5'], a: ['Ivo', 'Agus'], m: 9 },
+      { t: 'Picado de los sábados', h: 'Sábado, 18:30', l: 'Cerro de las Rosas', i: ICO.futbol, c: ['#0B6FA8', '#2E9B5B'], a: ['Male'], m: 7 }
     ],
     taller: [
-      { t: 'Taller de cerámica', h: 'Sábado, 11:00', l: 'Güemes', i: '🎨', c: ['#FFA98C', '#FC734D'], a: ['Cami'], m: 11 },
-      { t: 'Taller de cócteles', h: 'Viernes, 20:00', l: 'Nueva Córdoba', i: '🍸', c: ['#7A8BE0', '#0297DE'], a: ['Sofi', 'Agus'], m: 14 }
+      { t: 'Taller de cerámica', h: 'Sábado, 11:00', l: 'Güemes', i: ICO.taller, c: ['#FFA98C', '#FC734D'], a: ['Cami'], m: 11 },
+      { t: 'Taller de cócteles', h: 'Viernes, 20:00', l: 'Nueva Córdoba', i: ICO.taller, c: ['#7A8BE0', '#0297DE'], a: ['Sofi', 'Agus'], m: 14 }
     ],
     feria: [
-      { t: 'Feria de diseño', h: 'Sábado, 17:00', l: 'Paseo del Buen Pastor', i: '🛍️', c: ['#E8B411', '#FC734D'], a: ['Male', 'Sofi'], m: 86 },
-      { t: 'Feria vintage', h: 'Domingo, 15:00', l: 'Centro', i: '🧥', c: ['#0297DE', '#FFA98C'], a: ['Ivo'], m: 43 }
+      { t: 'Feria de diseño', h: 'Sábado, 17:00', l: 'Paseo del Buen Pastor', i: ICO.feria, c: ['#E8B411', '#FC734D'], a: ['Male', 'Sofi'], m: 86 },
+      { t: 'Feria vintage', h: 'Domingo, 15:00', l: 'Centro', i: ICO.feria, c: ['#0297DE', '#FFA98C'], a: ['Ivo'], m: 43 }
     ]
   };
-  var COLOR_AMIGO = { Sofi: '#0297DE', Ivo: '#FC734D', Male: '#7A8BE0', Agus: '#2E9B5B', Cami: '#E8B411' };
+  var COLOR_AMIGO = { Sofi: ICO.feria, Ivo: '#FC734D', Male: '#7A8BE0', Agus: '#2E9B5B', Cami: ICO.feria };
   var cartas = document.getElementById('lz-cartas');
   var chips = document.querySelectorAll('.lz-chip');
   function esc(s){ return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }

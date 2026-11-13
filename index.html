@@ -183,7 +183,7 @@
     <div id="home-amigos-cta"></div>
     <div class="chips" id="chips-home">
       <div class="chip activo" onclick="elegirChipHome(this,'hoy')">Hoy</div>
-      <div class="chip" id="chip-paravos" style="display:none;" onclick="elegirChipHome(this,'paravos')">Para vos 🎧</div>
+      <div class="chip" id="chip-paravos" style="display:none;" onclick="elegirChipHome(this,'paravos')">Para vos</div>
       <div class="chip" onclick="elegirChipHome(this,'cerca')">Cerca tuyo</div>
       <div class="chip" onclick="elegirChipHome(this,'fiestas')">Fiestas</div>
       <div class="chip" onclick="elegirChipHome(this,'previas')">Previas</div>
@@ -193,25 +193,25 @@
       <div class="chip" onclick="elegirChipHome(this,'charlas')">Talleres y ferias</div>
       <div class="chip" onclick="elegirChipHome(this,'cultura')">Arte y cultura</div>
       <div class="chip" onclick="elegirChipHome(this,'deportes')">Deportes</div>
-      <div class="chip" onclick="elegirChipHome(this,'privadas')">Con invitación 🔒</div>
+      <div class="chip" onclick="elegirChipHome(this,'privadas')">Con invitación</div>
     </div>
     <div id="home-amigos-fila" style="display:none;"></div>
     <div id="home-aviso-rango"></div>
     <div class="seccion-titulo">
-      <h2 id="titulo-fila-1">Hoy 🔥</h2>
+      <h2 id="titulo-fila-1">Hoy</h2>
       <span onclick="ir('explorar')">Ver todas</span>
     </div>
     <p class="nota-fila" id="nota-fila-1" hidden></p>
     <div class="fila-scroll" id="lista-esta-noche">
       <div class="skeleton sk-card"></div><div class="skeleton sk-card"></div><div class="skeleton sk-card"></div>
     </div>
-    <div class="seccion-titulo" id="titulo-paravos" style="display:none;"><h2>Para vos 🎧<small class="sub-seccion" id="sub-paravos"></small></h2><span onclick="elegirChipHome(document.getElementById('chip-paravos'),'paravos'); document.getElementById('pantalla-home').scrollTo({top:0, behavior:'smooth'})">Ver todas</span></div>
+    <div class="seccion-titulo" id="titulo-paravos" style="display:none;"><h2>Para vos<small class="sub-seccion" id="sub-paravos"></small></h2><span onclick="elegirChipHome(document.getElementById('chip-paravos'),'paravos'); document.getElementById('pantalla-home').scrollTo({top:0, behavior:'smooth'})">Ver todas</span></div>
     <div class="fila-scroll" id="lista-paravos" style="display:none;"></div>
-    <div class="seccion-titulo" id="titulo-sugeridos" style="display:none;"><h2>Tal vez te interese ✨</h2><span onclick="ir('explorar')">Ver más</span></div>
+    <div class="seccion-titulo" id="titulo-sugeridos" style="display:none;"><h2>Tal vez te interese</h2><span onclick="ir('explorar')">Ver más</span></div>
     <div class="fila-scroll" id="lista-sugeridos" style="display:none;"></div>
     <div class="seccion-titulo" id="titulo-compartidos" style="display:none;"><h2>Compartidos por tus amigos</h2><span onclick="verMisCompartidos()">Mis compartidos</span></div>
     <div class="fila-scroll" id="lista-compartidos" style="display:none;"></div>
-    <div class="seccion-titulo" id="titulo-tendencia" style="display:none;"><h2>En tendencia 📈</h2></div>
+    <div class="seccion-titulo" id="titulo-tendencia" style="display:none;"><h2>En tendencia</h2></div>
     <div class="fila-scroll" id="lista-tendencia" style="display:none;"></div>
     <div class="seccion-titulo" id="titulo-semana"><h2>Esta semana</h2><span onclick="ir('explorar')">Ver todas</span></div>
     <div class="fila-scroll" id="lista-semana"></div>
@@ -240,8 +240,8 @@
     </div>
     <div class="seg-explorar" id="seg-explorar" role="tablist" aria-label="Qué explorar">
       <span class="slider" aria-hidden="true"></span>
-      <button class="on" id="seg-eventos" role="tab" onclick="modoExplorar('eventos')">🎉 Eventos</button>
-      <button id="seg-personas" role="tab" onclick="modoExplorar('personas')">👥 Personas</button>
+      <button class="on" id="seg-eventos" role="tab" onclick="modoExplorar('eventos')">Eventos</button>
+      <button id="seg-personas" role="tab" onclick="modoExplorar('personas')">Personas</button>
     </div>
     <div class="buscador" style="margin-top:2px; cursor:text;">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
@@ -250,8 +250,8 @@
     <div class="fila-ubic solo-eventos">
       <button class="ubic-btn" onclick="abrirRango()" aria-label="Cambiar ubicación y distancia"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg><span class="txt-ubic">Ubicando...</span> <span class="flecha" aria-hidden="true">▾</span></button>
       <div class="vista-toggle" role="group" aria-label="Ver como">
-        <button id="vista-lista" class="on" onclick="cambiarVistaExplorar('lista')">☰ Lista</button>
-        <button id="vista-mapa" onclick="cambiarVistaExplorar('mapa')">🗺️ Mapa</button>
+        <button id="vista-lista" class="on" onclick="cambiarVistaExplorar('lista')"><span class="vista-ico"><svg class="ico-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Lista</span></button>
+        <button id="vista-mapa" onclick="cambiarVistaExplorar('mapa')"><span class="vista-ico"><svg class="ico-svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.1 6.2 9.9 4.1a2 2 0 0 0-1.8 0L3.6 6.4A1 1 0 0 0 3 7.3v12.1a1 1 0 0 0 1.4.9l3.7-1.8a2 2 0 0 1 1.8 0l4.2 2.1a2 2 0 0 0 1.8 0l4.5-2.3a1 1 0 0 0 .6-.9V5.3a1 1 0 0 0-1.4-.9l-3.7 1.8a2 2 0 0 1-1.8 0zM15 6v15M9 3v15"/></svg>Mapa</span></button>
       </div>
     </div>
     <div class="chips solo-eventos" id="chips-explorar">
@@ -342,14 +342,14 @@
 <label for="f-lugar" id="label-lugar">Lugar</label>
 <input id="f-lugar" list="lista-barrios" maxlength="120" placeholder="Dirección o barrio" type="text"/>
 <datalist id="lista-barrios"></datalist>
-<div class="ayuda" id="ayuda-lugar">📍 Sé lo más específico posible: calle y número (o nombre del lugar), barrio y ciudad. Mejor todavía: marcalo en el mapa. Así nadie se confunde.</div>
-<button class="btn btn-secundario btn-mini btn-mapa" onclick="abrirMapa()" type="button">📍 Elegir en el mapa</button>
+<div class="ayuda" id="ayuda-lugar">Sé lo más específico posible: calle y número (o nombre del lugar), barrio y ciudad. Mejor todavía: marcalo en el mapa. Así nadie se confunde.</div>
+<button class="btn btn-secundario btn-mini btn-mapa" onclick="abrirMapa()" type="button">Elegir en el mapa</button>
 <div class="mapa-elegido" id="mapa-elegido"></div>
 </div>
         <div class="campo" id="campo-direccion" style="display:none;">
 <label for="f-direccion">Dirección exacta (privada)</label>
 <input id="f-direccion" maxlength="200" placeholder="Calle, número, piso, depto, barrio y ciudad" type="text"/>
-<div class="ayuda">📍 Lo más específica posible (calle, número, piso/depto, timbre, barrio y ciudad) para que nadie se pierda. Solo la ven vos y los invitados que apruebes.</div>
+<div class="ayuda">Lo más específica posible (calle, número, piso/depto, timbre, barrio y ciudad) para que nadie se pierda. Solo la ven vos y los invitados que apruebes.</div>
 </div>
         <div class="switch-row" id="fila-privacidad" style="display:none;">
 <div class="txt">Previa privada<small>La dirección se revela al aprobar</small></div>
@@ -437,7 +437,7 @@ Ivo Paz +1"></textarea>
         <div class="campo" id="campo-insc">
 <label for="f-insc-fecha">Anotarse hasta (opcional)</label>
 <div class="fila-2" style="margin:0;"><input aria-label="Fecha límite para anotarse" id="f-insc-fecha" type="date"/><input aria-label="Hora límite" id="f-insc-hora" placeholder="23:59" type="time"/></div>
-<div class="ayuda">⏳ Después de esa fecha nadie más se puede anotar. Sirve para cerrar la lista de un egreso, una cena o un viaje.</div>
+<div class="ayuda">Después de esa fecha nadie más se puede anotar. Sirve para cerrar la lista de un egreso, una cena o un viaje.</div>
 </div>
         <div class="campo"><label for="f-reglas">Reglas del evento</label><textarea id="f-reglas" maxlength="500" placeholder="Ej: Respetar el lugar, no ingresar con más invitados de los acordados..."></textarea></div>
         <div class="campo" id="campo-faq">
@@ -507,8 +507,8 @@ Ivo Paz +1"></textarea>
         <div class="stat" role="button" tabindex="0" onclick="abrirAmigos()"><div class="num" id="stat-amigos">0</div><div class="lbl">Amigos</div></div>
       </div>
       <div class="fila-botones">
-        <button class="btn btn-primario" onclick="explorarPersonas()">🔍 Buscar amigos</button>
-        <button class="btn btn-secundario" onclick="invitarAmigos()">📨 Invitar</button>
+        <button class="btn btn-primario" onclick="explorarPersonas()">Buscar amigos</button>
+        <button class="btn btn-secundario" onclick="invitarAmigos()">Invitar</button>
       </div>
       <div id="perfil-verificacion" style="padding:0 20px 22px;"></div>
       <div id="perfil-intereses"></div>
@@ -608,7 +608,7 @@ Ivo Paz +1"></textarea>
       <input type="search" id="input-buscar-personas" name="partazy-p" placeholder="Buscar gente o @usuario..." aria-label="Buscar gente" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="search">
     </div>
     <div class="lista-simple" id="resultados-personas" style="min-height:0; padding-bottom:12px;"></div>
-    <div class="fila-botones"><button class="btn btn-secundario" onclick="invitarAmigos()">📨 Invitar amigos a Partazy</button></div>
+    <div class="fila-botones"><button class="btn btn-secundario" onclick="invitarAmigos()">Invitar amigos a Partazy</button></div>
     <div id="bloque-recibidas"></div>
     <div class="subtitulo"><h3 class="titulo-bloque" id="titulo-mis-amigos">Mis amigos</h3></div>
     <div class="lista-simple" id="lista-amigos"></div>
@@ -642,7 +642,7 @@ Ivo Paz +1"></textarea>
     <div class="escribiendo-burbuja" id="dm-escribiendo" aria-label="Está escribiendo"><i></i><i></i><i></i></div>
     <div class="chat-pie">
       <div class="chat-rapidos" id="dm-rapidos">
-        <button data-rapido="🔥">🔥</button><button data-rapido="🙌">🙌</button><button data-rapido="😂">😂</button><button data-rapido="🎉">🎉</button><button data-rapido="🥂">🥂</button><button data-rapido="💃">💃</button><button data-rapido="😍">😍</button><button data-rapido="¿Vamos?">¿Vamos?</button><button data-rapido="Me sumo 🙋">Me sumo 🙋</button><button data-rapido="¿A qué hora arrancamos?">¿A qué hora arrancamos?</button><button data-rapido="¿Hay lista?">¿Hay lista?</button><button data-rapido="¿Cuánto sale la entrada?">¿Cuánto sale la entrada?</button><button data-rapido="¿Quién lleva qué?">¿Quién lleva qué?</button><button data-rapido="Llevo bebida 🍾">Llevo bebida 🍾</button><button data-rapido="Mandame la ubi 📍">Mandame la ubi 📍</button><button data-rapido="Paso a buscarte 🚗">Paso a buscarte 🚗</button><button data-rapido="Ya salgo 🚕">Ya salgo 🚕</button><button data-rapido="Estoy llegando">Estoy llegando</button><button data-rapido="Ya estoy acá 👋">Ya estoy acá 👋</button><button data-rapido="¿Dónde están?">¿Dónde están?</button><button data-rapido="¿Cómo volvemos?">¿Cómo volvemos?</button><button data-rapido="Avisame cuando llegues 🙏">Avisame cuando llegues 🙏</button><button data-rapido="Hoy no puedo 😔">Hoy no puedo 😔</button><button data-rapido="La próxima sí 🤞">La próxima sí 🤞</button>
+        <button data-rapido="¿Vamos?">¿Vamos?</button><button data-rapido="Me sumo">Me sumo</button><button data-rapido="¿A qué hora arrancamos?">¿A qué hora arrancamos?</button><button data-rapido="¿Hay lista?">¿Hay lista?</button><button data-rapido="¿Cuánto sale la entrada?">¿Cuánto sale la entrada?</button><button data-rapido="¿Quién lleva qué?">¿Quién lleva qué?</button><button data-rapido="Llevo bebida">Llevo bebida</button><button data-rapido="Mandame la ubi">Mandame la ubi</button><button data-rapido="Paso a buscarte">Paso a buscarte</button><button data-rapido="Ya salgo">Ya salgo</button><button data-rapido="Estoy llegando">Estoy llegando</button><button data-rapido="Ya estoy acá">Ya estoy acá</button><button data-rapido="¿Dónde están?">¿Dónde están?</button><button data-rapido="¿Cómo volvemos?">¿Cómo volvemos?</button><button data-rapido="Avisame cuando llegues">Avisame cuando llegues</button><button data-rapido="Hoy no puedo">Hoy no puedo</button><button data-rapido="La próxima sí">La próxima sí</button>
       </div>
       <div class="chat-input-mock" id="dm-caja" style="margin-top:0;">
         <input type="text" id="dm-input" maxlength="500" placeholder="Escribí un mensaje..." aria-label="Mensaje" autocomplete="off">
@@ -693,7 +693,7 @@ Ivo Paz +1"></textarea>
     </div>
     <div class="puerta-contador" id="puerta-contador"></div>
     <div id="puerta-camara" class="puerta-camara"></div>
-    <div style="padding:0 20px;"><button class="btn btn-primario" id="btn-escanear">📷 Escanear QR</button></div>
+    <div style="padding:0 20px;"><button class="btn btn-primario" id="btn-escanear">Escanear QR</button></div>
     <div class="form" id="puerta-campo-codigo" style="padding-top:14px;">
       <div class="campo"><label for="puerta-codigo">O escribí el código</label>
         <div class="input-handle" style="padding-right:6px;"><input type="text" id="puerta-codigo" placeholder="PT-XXXXXXXXXX" autocapitalize="characters" autocomplete="off"><button class="btn btn-secundario btn-mini" id="btn-validar">Validar</button></div>
@@ -726,8 +726,8 @@ Ivo Paz +1"></textarea>
       <button class="btn btn-primario" type="submit" id="ct-enviar">Enviar</button>
       <div class="otra-via">
         <span>O si preferís, escribinos directo:</span>
-        <a class="btn btn-wa" id="ct-whatsapp" style="display:none;" target="_blank" rel="noopener noreferrer">💬 Escribir por WhatsApp</a>
-        <a class="btn btn-secundario" id="ct-mail" href="mailto:partazycontacto@gmail.com">✉️ partazycontacto@gmail.com</a>
+        <a class="btn btn-wa" id="ct-whatsapp" style="display:none;" target="_blank" rel="noopener noreferrer">Escribir por WhatsApp</a>
+        <a class="btn btn-secundario" id="ct-mail" href="mailto:partazycontacto@gmail.com">partazycontacto@gmail.com</a>
       </div>
     </form>
     <div style="padding:0 20px 28px;"><button class="btn btn-secundario" onclick="abrirPrivacidad()">Política de privacidad</button></div>
@@ -981,7 +981,7 @@ Ivo Paz +1"></textarea>
   <!-- ============ CUENTA SUSPENDIDA ============ -->
   <div class="screen" id="pantalla-suspendido">
     <div class="auth-wrap" style="text-align:center;">
-      <div style="font-size:46px;">🚫</div>
+      <div style="color:var(--rojo); display:flex; justify-content:center;"><svg class="ico-svg" width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></svg></div>
       <h2 style="font-family:var(--font-display); text-transform:uppercase; font-weight:700; font-size:30px;">Cuenta suspendida</h2>
       <p style="color:var(--gris); font-size:13.5px; line-height:1.6;">Tu cuenta fue suspendida por no cumplir las normas de la comunidad de Partazy. Si creés que es un error, escribile al equipo de Partazy.</p>
       <button class="btn btn-secundario" onclick="verNormas()">Ver las normas</button>
@@ -1052,7 +1052,7 @@ Ivo Paz +1"></textarea>
   <div id="mapa-lienzo"></div>
   <div class="mapa-pie">
     <div class="mapa-dir" id="mapa-dir">Tocá el mapa o mové el pin hasta el lugar exacto.</div>
-    <div class="fila"><button class="btn btn-secundario" onclick="mapaMiUbicacion()">📍 Mi ubicación</button><button class="btn btn-primario" id="mapa-confirmar" onclick="confirmarMapa()" disabled>Usar este lugar</button></div>
+    <div class="fila"><button class="btn btn-secundario" onclick="mapaMiUbicacion()">Mi ubicación</button><button class="btn btn-primario" id="mapa-confirmar" onclick="confirmarMapa()" disabled>Usar este lugar</button></div>
   </div>
 </div>
 <!-- Elegir ciudad y distancia (botón de ubicación del inicio y Explorar) -->
@@ -1061,7 +1061,7 @@ Ivo Paz +1"></textarea>
     <h3 id="rango-titulo">¿Qué eventos querés ver?</h3>
     <p style="margin-bottom:8px;" id="rango-ubic-txt"></p>
     <div class="rango-ops" id="rango-ops"></div>
-    <button class="btn btn-secundario" onclick="usarMiUbicacion()">📍 Usar mi ubicación actual</button>
+    <button class="btn btn-secundario" onclick="usarMiUbicacion()">Usar mi ubicación actual</button>
     <div class="rango-ciudad"><input type="text" id="rango-ciudad" placeholder="O escribí una ciudad o barrio..." autocomplete="off" enterkeyhint="search"><button class="btn btn-primario btn-mini" onclick="buscarCiudadRango()">Ir</button></div>
     <div class="ayuda" id="rango-estado" style="margin-top:8px; font-size:12px; color:var(--gris);"></div>
     <button class="btn btn-primario" style="margin-top:14px;" onclick="cerrarRango()">Listo</button>
@@ -1071,19 +1071,19 @@ Ivo Paz +1"></textarea>
 <div class="hoja-bg" id="menu-perfil" role="dialog" aria-modal="true" aria-label="Menú" onclick="if(event.target===this) cerrarMenuPerfil()"><div class="hoja menu-hoja">
   <div class="agarre"></div>
   <div class="grupo-menu">Tu cuenta</div>
-  <button class="btn btn-secundario" onclick="abrirMisDatos()"><span class="mi">🪪</span>Mis datos</button>
-  <button class="btn btn-secundario" onclick="compartirMiPerfil()"><span class="mi">📤</span>Compartir mi perfil</button>
-  <button class="btn btn-secundario" id="btn-mi-pagina" style="display:none;" onclick="verMiPagina()"><span class="mi">🎪</span>Ver mi página pública</button>
-  <button class="btn btn-secundario" id="btn-moderacion" style="display:none;" onclick="abrirModeracion()"><span class="mi">🛡️</span>Moderación <span class="badge badge-inline" id="badge-moderacion"></span></button>
-  <button class="btn btn-secundario" id="btn-avisos"><span class="mi">🔔</span>Activar notificaciones en este celular</button>
-  <button class="btn btn-secundario" id="btn-instalar" onclick="instalarApp()"><span class="mi">📲</span>Instalar Partazy en el celular</button>
+  <button class="btn btn-secundario" onclick="abrirMisDatos()"><span class="mi"><svg class="ico-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2"/><circle cx="8" cy="11" r="2"/><path d="M14 10h4M14 14h4M5 16c.6-1 1.6-1.5 3-1.5s2.4.5 3 1.5"/></svg></span>Mis datos</button>
+  <button class="btn btn-secundario" onclick="compartirMiPerfil()"><span class="mi"><svg class="ico-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg></span>Compartir mi perfil</button>
+  <button class="btn btn-secundario" id="btn-mi-pagina" style="display:none;" onclick="verMiPagina()"><span class="mi"><svg class="ico-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 9l2-5h14l2 5"/><path d="M3 9c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3"/><path d="M5 12v8h14v-8M10 20v-5h4v5"/></svg></span>Ver mi página pública</button>
+  <button class="btn btn-secundario" data-tono="azul" id="btn-moderacion" style="display:none;" onclick="abrirModeracion()"><span class="mi"><svg class="ico-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.7 9a1 1 0 0 1-.6 0C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.2-2.7a1.2 1.2 0 0 1 1.6 0C14.5 3.8 17 5 19 5a1 1 0 0 1 1 1z"/></svg></span>Moderación <span class="badge badge-inline" id="badge-moderacion"></span></button>
+  <button class="btn btn-secundario" id="btn-avisos"><span class="mi"><svg class="ico-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>Activar notificaciones en este celular</button>
+  <button class="btn btn-secundario" id="btn-instalar" onclick="instalarApp()"><span class="mi"><svg class="ico-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></span>Instalar Partazy en el celular</button>
   <div class="grupo-menu">Ayuda</div>
-  <button class="btn btn-secundario" onclick="abrirAyuda()"><span class="mi">❓</span>Ayuda y preguntas frecuentes</button>
-  <button class="btn btn-secundario" onclick="abrirTutorial()"><span class="mi">🎓</span>Cómo usar Partazy (tutorial)</button>
-  <button class="btn btn-secundario" onclick="verNormas()"><span class="mi">📜</span>Normas de la comunidad</button>
-  <button class="btn btn-secundario" onclick="abrirPrivacidad()"><span class="mi">🔒</span>Privacidad</button>
+  <button class="btn btn-secundario" data-tono="gris" onclick="abrirAyuda()"><span class="mi"><svg class="ico-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></svg></span>Ayuda y preguntas frecuentes</button>
+  <button class="btn btn-secundario" data-tono="gris" onclick="abrirTutorial()"><span class="mi"><svg class="ico-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.4 10.9a1 1 0 0 0 0-1.8l-8.6-3.9a2 2 0 0 0-1.7 0L2.6 9.1a1 1 0 0 0 0 1.8l8.6 3.9a2 2 0 0 0 1.7 0z"/><path d="M22 10v6M6 12.5V16a6 3 0 0 0 12 0v-3.5"/></svg></span>Cómo usar Partazy (tutorial)</button>
+  <button class="btn btn-secundario" data-tono="gris" onclick="verNormas()"><span class="mi"><svg class="ico-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg></span>Normas de la comunidad</button>
+  <button class="btn btn-secundario" data-tono="gris" onclick="abrirPrivacidad()"><span class="mi"><svg class="ico-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>Privacidad</button>
   <hr>
-  <button class="btn btn-secundario" onclick="cerrarSesion()"><span class="mi">↩️</span>Cerrar sesión</button>
+  <button class="btn btn-secundario sin-flecha" data-tono="gris" onclick="cerrarSesion()"><span class="mi"><svg class="ico-svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg></span>Cerrar sesión</button>
   <button class="link-peligro" onclick="eliminarCuenta()">Eliminar mi cuenta</button>
 </div></div>
 <!-- "Sumate / Necesitás una cuenta": modo invitado -->
@@ -1093,7 +1093,7 @@ Ivo Paz +1"></textarea>
   <h3 id="cuenta-titulo">Sumate</h3>
   <p id="cuenta-texto">Creá tu cuenta gratis para anotarte a fiestas, recitales, talleres y todo lo que pasa cerca tuyo, armar tus propios eventos y ver qué hacen tus amigos.</p>
   <p class="aviso-fundador" data-pre-lanzamiento>✦ Si te sumás antes del lanzamiento oficial, quedás como <b>Fundador</b> para siempre.</p>
-  <div class="ventajas"><span>🎟️ Anotate en un toque</span><span>🎧 Planes para vos</span><span>🎉 Armá tu evento</span><span>👥 Mirá qué hacen tus amigos</span><span>💬 Chateá</span></div>
+  <div class="ventajas"><span>Anotate en un toque</span><span>Planes para vos</span><span>Armá tu evento</span><span>Mirá qué hacen tus amigos</span><span>Chateá</span></div>
   <button class="btn btn-primario" onclick="irALogin('crear')">Crear mi cuenta</button>
   <button class="btn btn-secundario" onclick="irALogin('ingresar')">Ya tengo cuenta</button>
   <button class="seguir" onclick="cerrarPedirCuenta()">Seguir mirando</button>
@@ -1110,11 +1110,11 @@ Ivo Paz +1"></textarea>
 </div>
 <!-- Tutorial de 6 pasos (sale solo a cuentas nuevas; después desde Ayuda) -->
 <div class="tuto-bg" id="tutorial" role="dialog" aria-modal="true" aria-label="Cómo usar Partazy">
-  <div class="tuto">
-    <div class="tuto-top"><span class="tuto-paso" id="tuto-paso"></span><button class="tuto-saltar" onclick="cerrarTutorial()">Saltar</button></div>
+  <div class="tuto tuto-b">
+    <div class="tuto-top"><div class="tuto-puntos" id="tuto-puntos" aria-hidden="true"></div><span class="tuto-paso" id="tuto-paso"></span></div>
     <div id="tuto-slide"></div>
-    <div class="tuto-pie"><div class="tuto-puntos" id="tuto-puntos"></div>
-      <div style="display:flex; gap:8px;"><button class="btn btn-secundario" id="tuto-atras" onclick="pasoTutorial(-1)">Atrás</button><button class="btn btn-primario" id="tuto-sig" onclick="pasoTutorial(1)">Siguiente</button></div></div>
+    <div class="tuto-pie"><button class="tuto-saltar" onclick="cerrarTutorial()">Saltar</button>
+      <div class="tuto-botones"><button class="btn btn-secundario" id="tuto-atras" onclick="pasoTutorial(-1)" aria-label="Atrás"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button><button class="btn btn-primario" id="tuto-sig" onclick="pasoTutorial(1)">Siguiente</button></div></div>
   </div>
 </div>
 <!-- Ventana genérica de confirmar / avisar / pedir un texto (confirmar() y pedirTexto() en app.js) -->
