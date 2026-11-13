@@ -132,3 +132,10 @@ Antes de escribir código contra una librería, revisar su documentación instal
   - *Diferencia aceptada:* lo que no aplica al tipo elegido (lista VIP en una peña o charla, dress code en un taller o feria) no se guarda desde React. El de siempre lo guardaba si se había cargado antes de cambiar de tipo, aunque el campo estuviera oculto.
   - *Diferencia aceptada:* el formulario de siempre ahora lee todo al tocar "Publicar" (antes leía algunos campos después de buscar el lugar, que puede tardar unos segundos).
   - *Rareza que se mantiene (igual en los dos):* si marcás la casa en el mapa con la previa privada y después la pasás a pública, el pin queda exacto. En React ahora el texto lo avisa ("Al ser pública, todos ven el punto exacto").
+
+## 12/11 (noche): Crear por pasos prendido para todos
+- Juan dio el OK: `PUBLICADAS = ['crear']`.
+- Para no gastar cupo de Hosting: las pantallas de `CON_CUENTA` (hoy solo `crear`) bajan React recién cuando hay sesión y el navegador está libre. Quien mira sin cuenta no lo baja.
+- Con el sitio traducido (`idiomaActual() !== 'es'`) se usa el formulario de siempre: Google Translate cambia el texto por debajo y puede romper React (u11 sigue pendiente).
+- `?react=0` ahora apaga todo, también lo publicado y también en partazy.com (salida de emergencia; prender sigue sin poder hacerse por link en partazy.com). Las pruebas del formulario de siempre usan `?react=0`.
+- "Charla / Seminario" pasa a llamarse "Seminario" (OK de Juan).

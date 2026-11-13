@@ -9,8 +9,8 @@ put('users/A', { nombre: 'Lu Ferreyra', usuario: 'lu.ferreyra', iniciales: 'LF',
 put('users/A/privado/datos', { nacimiento: '1998-01-01' });
 const F = Date.now() + 5 * 864e5;
 put('events/mio', { creador: 'A', creadorNombre: 'Lu Ferreyra', organizador: 'Lu Ferreyra', nombre: 'Mi Fiesta', tipo: 'fiesta', ocasion: 'fiesta', tipoLugar: 'Fiesta', privacidad: 'publica', hora: '23:00', lugar: 'Güemes 100', lat: -31.42, lng: -64.19, precio: 0, capacidad: 50, confirmadosCount: 1, edadMinima: 18, dresscode: 'Libre', musica: '', imagen: '', descripcion: 'x', reglas: 'x', estado: 'publicado', fechaTs: F });
-const mk = url => new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url, beforeParse(w){
-  w.firebase = makeFirebase(store, () => ({ uid: 'A', email: 'lu@t.com' })); w.navigator.geolocation = undefined;
+const mk = (url, sinCuenta) => new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url, beforeParse(w){
+  w.firebase = makeFirebase(store, () => sinCuenta ? null : ({ uid: 'A', email: 'lu@t.com' })); w.navigator.geolocation = undefined;
   w.addEventListener('error', e => console.log('ERROR JS', e.message)); } }).window;
 const sleep = ms => new Promise(r => setTimeout(r, ms)); const txt = el => (el?.textContent || '').replace(/\s+/g, ' ').trim();
 let f = 0; const ok = (c, m) => { console.log((c ? '✔ ' : '✘ ') + m); if(!c) f++; };
@@ -21,6 +21,20 @@ const escribir = (w, el, valor) => {
 };
 
 (async () => {
+  // ---------- En partazy.com: publicado para todos ----------
+  const inv = mk('https://partazy.com/', true); await sleep(2500);
+  ok(inv.__pantallasReact.has('crear') && !inv.document.querySelector('#pantalla-crear-pasos [data-react]'), 'en partazy.com está publicado, pero quien mira sin cuenta no baja React');
+  const prod = mk('https://partazy.com/'); await sleep(900); await prod.__reactListo; await sleep(50); try{ prod.cerrarTutorial(); } catch(e){}
+  prod.ir('crear'); await sleep(30);
+  ok(!!prod.document.querySelector('#pantalla-crear-pasos > [data-react="crear"]') && prod.NAV.actual === 'crear-pasos', 'con cuenta, en partazy.com "Crear" abre el Crear por pasos');
+  prod.localStorage.setItem('partazy_idioma', JSON.stringify('en')); prod.ir('home'); await sleep(20);
+  prod.ir('crear'); await sleep(30);
+  ok(prod.idiomaActual() === 'en' && prod.NAV.actual === 'crear', 'con el sitio traducido usa el formulario de siempre (el traductor puede romper React)');
+  prod.localStorage.setItem('partazy_idioma', JSON.stringify('es'));
+  const viejo = mk('https://partazy.com/?react=0'); await sleep(1500); try{ viejo.cerrarTutorial(); } catch(e){}
+  viejo.ir('crear'); await sleep(30);
+  ok(!viejo.__pantallasReact.size && viejo.NAV.actual === 'crear', 'salida de emergencia: partazy.com/?react=0 vuelve al formulario de siempre');
+
   // ---------- Sin interruptor: el formulario de siempre ----------
   const v = mk('https://partazy--prueba-abc123.web.app/?react=0'); await sleep(900); try{ v.cerrarTutorial(); } catch(e){}
   v.ir('crear'); await sleep(30);

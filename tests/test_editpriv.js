@@ -10,7 +10,7 @@ put('events/p1',{...base,nombre:'Previa Barrio Medialuna',tipo:'fiesta',tipoLuga
 put('events/p1/attendees/A',{uid:'A',nombre:'UA',estado:'confirmado'});
 put('events/p2',{...base,nombre:'Previa privada',tipo:'previa',tipoLugar:'Previa',ocasion:'previa',privacidad:'privada',lugar:'General Paz',lat:-31.41,lng:-64.17,ubicacionExacta:false,fechaTs:T+30*H});
 put('events/p2/private/data',{direccion:'Sucre 500'}); put('events/p2/attendees/A',{uid:'A',nombre:'UA',estado:'confirmado'});
-const mk=uid=>new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid,email:uid+'@t.com'})); w.navigator.geolocation=undefined; w.addEventListener('error',e=>console.error('ERROR JS',e.message)); }}).window;
+const mk=uid=>new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/?react=0',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid,email:uid+'@t.com'})); w.navigator.geolocation=undefined; w.addEventListener('error',e=>console.error('ERROR JS',e.message)); }}).window;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const txt=el=>(el?.textContent||'').replace(/\s+/g,' ').trim();
 let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
 (async()=>{

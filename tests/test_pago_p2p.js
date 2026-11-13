@@ -21,7 +21,7 @@ put('events/V', { ...base, nombre: 'Noche Vortex', precio: 7000, pagoInfo: 'Tran
 put('events/V/attendees/O', { uid: 'O', nombre: 'Vortex Club', estado: 'confirmado', ticket: 'PT-ORG', ts: 1 });
 put('events/G', { ...base, nombre: 'Previa gratis', precio: 0 });
 function abrir(uid){
-  return new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://partazy.com/',
+  return new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://partazy.com/?react=0',
     beforeParse(w){ w.firebase = makeFirebase(store, () => ({ uid, email: uid + '@t.com' })); w.navigator.geolocation = undefined; } }).window;
 }
 const at = (ev, u) => store.docs.get(`events/${ev}/attendees/${u}`);

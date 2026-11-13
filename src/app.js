@@ -4547,7 +4547,9 @@ function ir(nombre, opts){
 }
 
 // ¿Está prendido el Crear por pasos (React) y ya se dibujó? Si React no llegó a cargar, queda el formulario de siempre.
-function crearPorPasosListo(){ return !!(window.__pantallasReact?.has('crear') && document.querySelector('#pantalla-crear-pasos > [data-react]')); }
+// Con el sitio traducido (inglés o portugués, Google Translate) se usa el de siempre: el traductor cambia el texto
+// por debajo y puede romper una pantalla de React (decisión pendiente en u11).
+function crearPorPasosListo(){ return !!(window.__pantallasReact?.has('crear') && document.querySelector('#pantalla-crear-pasos > [data-react]') && idiomaActual() === 'es'); }
 
 // Eventos a los que voy (confirmado o aprobado) que todavía no pasaron.
 async function proximasEntradas(){
@@ -4988,6 +4990,7 @@ function pasosTutorial(){
   const nv = (nombreVisible(state.perfil) || '').trim();
   const nombre = esOrganizacion(state.perfil) ? nv : nv.split(' ')[0];
   const compu = esCompu();
+  const porPasos = !!window.__pantallasReact?.has('crear') && idiomaActual() === 'es';   // Crear por pasos (React) prendido
   const dedo = '<span class="tm-dedo" aria-hidden="true"></span>';
   return [
     { logo: true, t: nombre ? `¡Hola, ${esc(nombre)}!` : '¡Bienvenido/a!',
@@ -5002,7 +5005,7 @@ function pasosTutorial(){
       p: `Abrí un evento y tocá <b>Confirmar asistencia</b> (o <b>Reservar</b> si es pago: ahí ves a quién pagarle y copiás el alias). Algunos tienen <b>fecha límite</b> para anotarse. Tu entrada queda en <b>Mis entradas</b> 🎟️, ${compu ? 'en el menú de la izquierda' : 'el ícono del ticket arriba'}.`,
       dibujo: `<div class="tm tm-evento">
         <div class="tm-foto"></div>
-        <div class="tm-info"><small>CHARLA · SÁB 18:00</small><b>Charla de prueba</b><span><i class="punto-ambiente amb-verde"></i>Hay lugar</span></div>
+        <div class="tm-info"><small>TALLER, SÁB 18:00</small><b>Taller de cerámica</b><span><i class="punto-ambiente amb-verde"></i>Hay lugar</span></div>
         <div class="tm-boton">Confirmar asistencia${dedo}</div></div>` },
     { t: 'El punto te dice cómo viene', p: 'Todos los eventos tienen un punto de color:',
       extra: `<div class="tuto-mini">
@@ -5016,9 +5019,12 @@ function pasosTutorial(){
         <div class="tm-caras"><i>SG</i><i>IP</i><i>MR</i></div>
         <div class="tm-txt">🎤 <b>Sofía</b> está ahora en un recital</div>
         <div class="tm-nota">¡Vamos a esta! 🔥 <b>@ivo</b> <span>— Sofía</span></div></div>` },
-    { t: 'Publicá en 3 pasos', cierre: true,
-      p: `Tocá el <b>+ naranja</b> ${compu ? '(<b>Crear evento</b>, en el menú de la izquierda)' : 'abajo en el medio'}. Son 3 pasos: <b>lo básico</b>, <b>qué tipo de evento</b> (fiesta, charla, deporte, feria...) y <b>los detalles</b>, que cambian según el tipo. Si es privado, elegís quién entra y la dirección solo la ven los aprobados.`,
-      dibujo: `<div class="tm tm-crear"><div class="tm-mas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>${dedo}</div><div class="tm-crear-txt"><b>Crear evento</b><span>1 Lo básico · 2 Tipo · 3 Detalles</span></div></div>`,
+    porPasos ? { t: 'Publicá paso a paso', cierre: true,
+      p: `Tocá el <b>+ naranja</b> ${compu ? '(<b>Crear evento</b>, en el menú de la izquierda)' : 'abajo en el medio'}. Te preguntamos de a una cosa: <b>qué tipo de evento</b> es (fiesta, taller, deporte, feria...), cómo se llama, cuándo y dónde, la entrada y cuántos entran. Al final ves <b>cómo queda</b> antes de publicar. Si es una previa privada, la dirección solo la ven los aprobados.`,
+      dibujo: `<div class="tm tm-crear"><div class="tm-mas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>${dedo}</div><div class="tm-crear-txt"><b>Crear evento</b><span>Tipo, nombre, cuándo, dónde y listo</span></div></div>`,
+      pie: `¿Te perdiste? Volvé a ver esto desde <b>Perfil → ☰ → Tutorial</b>.` } : { t: 'Publicá en 3 pasos', cierre: true,
+      p: `Tocá el <b>+ naranja</b> ${compu ? '(<b>Crear evento</b>, en el menú de la izquierda)' : 'abajo en el medio'}. Son 3 pasos: <b>lo básico</b>, <b>qué tipo de evento</b> (fiesta, taller, deporte, feria...) y <b>los detalles</b>, que cambian según el tipo. Si es privado, elegís quién entra y la dirección solo la ven los aprobados.`,
+      dibujo: `<div class="tm tm-crear"><div class="tm-mas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>${dedo}</div><div class="tm-crear-txt"><b>Crear evento</b><span>Lo básico, el tipo y los detalles</span></div></div>`,
       pie: `¿Te perdiste? Volvé a ver esto desde <b>Perfil → ☰ → Tutorial</b>.` }
   ];
 }
@@ -7113,7 +7119,7 @@ function actualizarEstiloOtro(){
 }
 // Tipos de evento (los de "universitaria" y "temática" quedan solo para eventos viejos)
 const OCASIONES = { fiesta: 'Fiesta', previa: 'Previa', after: 'After', pena: 'Peña', egresados: 'Egresados', cumple: 'Cumpleaños',
-  musical: 'Música en vivo', gastronomico: 'Gastronomía', charla: 'Charla / Seminario', taller: 'Taller / Curso', cultural: 'Arte y cultura',
+  musical: 'Música en vivo', gastronomico: 'Gastronomía', charla: 'Seminario', taller: 'Taller / Curso', cultural: 'Arte y cultura',
   deportivo: 'Deporte / Aire libre', feria: 'Feria / Mercado', universitaria: 'Fiesta universitaria', tematica: 'Fiesta temática' };
 const TIPOS_NUEVOS = ['fiesta', 'previa', 'after', 'pena', 'egresados', 'cumple', 'musical', 'gastronomico', 'charla', 'taller', 'cultural', 'deportivo', 'feria'];
 // Tipos "de joda" (piden estilo de música y lista VIP). El resto son eventos generales (charlas, ferias, etc.).

@@ -7,7 +7,7 @@ put('users/A',{nombre:'Juan',usuario:'juan',iniciales:'J',ciudad:'Rosario',inter
 const ev=(id,o)=>put('events/'+id,Object.assign({creador:'O',creadorNombre:'X',organizador:'X',categoria:'',tipo:'fiesta',ocasion:'fiesta',privacidad:'publica',hora:'23:00',precio:0,capacidad:100,confirmadosCount:1,edadMinima:18,imagen:'',descripcion:'x',fechaTs:T+30*H},o));
 ev('cba',{nombre:'Fiesta en Córdoba',lugar:'Güemes',lat:-31.42,lng:-64.19});
 ev('ros',{nombre:'Fiesta en Rosario',lugar:'Pichincha',lat:-32.94,lng:-60.65});
-const w=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid:'A',email:'a@t.com'}));
+const w=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/?react=0',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid:'A',email:'a@t.com'}));
   w.navigator.geolocation={ getCurrentPosition:(ok,err)=>setTimeout(()=>err({code:1}),10) };
   w.addEventListener('error',e=>console.error('ERROR JS',e.message)); }}).window;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const $=id=>w.document.getElementById(id); const txt=el=>(el?.textContent||'').replace(/\s+/g,' ').trim();

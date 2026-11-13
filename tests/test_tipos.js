@@ -4,7 +4,7 @@ const { crearStore, makeFirebase } = require('./fakefb.js');
 const html = require('./cargar-html.js')();
 const store = crearStore(); const put=(p,v)=>store.docs.set(p,v); const T=Date.now();
 put('users/A',{nombre:'Juan',usuario:'juan',iniciales:'J',ciudad:'Córdoba',intereses:[],foto:'',nombreBusqueda:'juan',palabras:['juan']}); put('users/A/privado/datos',{nacimiento:'1998-01-01'});
-const w=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid:'A',email:'a@t.com'})); w.navigator.geolocation=undefined; w.addEventListener('error',e=>console.error('ERROR JS',e.message)); }}).window;
+const w=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/?react=0',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid:'A',email:'a@t.com'})); w.navigator.geolocation=undefined; w.addEventListener('error',e=>console.error('ERROR JS',e.message)); }}).window;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const $=id=>w.document.getElementById(id); const txt=el=>(el?.textContent||'').replace(/\s+/g,' ').trim();
 let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
 const publicar=async(nombre, tipoKey, estilo, previa)=>{
@@ -17,7 +17,7 @@ const publicar=async(nombre, tipoKey, estilo, previa)=>{
 (async()=>{
   await sleep(800); w.cerrarTutorial(); w.ir('crear'); await sleep(50);
   const ops=[...w.document.querySelectorAll('#tipos-grid .tipo-op')].map(b=>b.textContent.trim());
-  ok(JSON.stringify(ops)===JSON.stringify(['Fiesta','Previa','After','Peña','Egresados','Cumpleaños','Música en vivo','Gastronomía','Charla / Seminario','Taller / Curso','Arte y cultura','Deporte / Aire libre','Feria / Mercado']), 'los 13 tipos (fiestas y eventos generales) con su ícono: '+ops.join(', '));
+  ok(JSON.stringify(ops)===JSON.stringify(['Fiesta','Previa','After','Peña','Egresados','Cumpleaños','Música en vivo','Gastronomía','Seminario','Taller / Curso','Arte y cultura','Deporte / Aire libre','Feria / Mercado']), 'los 13 tipos (fiestas y eventos generales) con su ícono: '+ops.join(', '));
   ok(w.document.querySelectorAll('#tipos-grid svg').length===13, 'cada tipo tiene su logito');
   ok($('f-ocasion').value==='fiesta' && !w.document.querySelector('#tipos-grid .tipo-op.on'), 'arranca sin tipo marcado: lo elegís en el paso 2 (por dentro queda Fiesta)');
   w.elegirTipo('previa'); ok($('f-ocasion').value==='previa', 'al tocar "Previa" arriba, el tipo pasa a Previa');

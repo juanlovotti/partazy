@@ -8,7 +8,7 @@ perfil('H','Host'); perfil('B','Bruno'); perfil('C','Caro');
 put('events/p1',{creador:'H',creadorNombre:'Host',organizador:'Host',nombre:'F- FEST',categoria:'cachengue',tipoLugar:'Previa',tipo:'previa',privacidad:'privada',hora:'23:00',lugar:'17 de Agosto 458, Villa Zoila',lat:-31.42,lng:-64.19,precio:0,capacidad:20,confirmadosCount:2,edadMinima:18,dresscode:'Libre',musica:'Cachengue',imagen:'',descripcion:'x',reglas:'x',estado:'publicado',fechaTs:T+2*864e5,createdAt:T-864e5});
 put('events/p1/private/data',{direccion:'17 de Agosto 458, Villa Zoila'});
 put('events/p1/attendees/C',{uid:'C',nombre:'Caro',estado:'aprobado',ts:1});
-const abrir=uid=>new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid,email:uid+'@t.com'})); w.navigator.geolocation=undefined; w.addEventListener('error',e=>console.error(uid,'ERROR JS',e.message)); }}).window;
+const abrir=uid=>new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/?react=0',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid,email:uid+'@t.com'})); w.navigator.geolocation=undefined; w.addEventListener('error',e=>console.error(uid,'ERROR JS',e.message)); }}).window;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const txt=el=>(el?.textContent||'').replace(/\s+/g,' ').trim();
 let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
 (async()=>{

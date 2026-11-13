@@ -27,7 +27,7 @@ ev('pronto', { nombre: 'Muy Pronto', fechaTs: Math.min(Date.now() + 10 * 3600e3,
 const usuarios = {};
 const abrir = (uid, hash) => {
   usuarios[uid] = { uid, email: uid + '@t.com', providerData: [], borrado: false, delete: async function(){ this.borrado = true; } };
-  return new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://partazy.web.app/' + (hash || ''),
+  return new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://partazy.web.app/?react=0' + (hash || ''),
     beforeParse(w){ w.firebase = makeFirebase(store, () => usuarios[uid]); w.navigator.geolocation = undefined;
       w.QRCode = function(el){ el.innerHTML = '<img alt="qr">'; }; w.QRCode.CorrectLevel = { M: 0 };
       w.abiertos = []; w.open = (u) => { w.abiertos.push(u); return null; };

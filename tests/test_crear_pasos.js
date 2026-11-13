@@ -6,7 +6,7 @@ const store = crearStore(); const put=(p,v)=>store.docs.set(p,v);
 put('users/A',{nombre:'Juan Lovotti',usuario:'juan',iniciales:'J',ciudad:'Córdoba',intereses:[],foto:'',createdAt:Date.now()-864e5}); put('users/A/privado/datos',{nacimiento:'1998-03-10',email:'juan@mail.com'});
 put('users/B',{nombre:'Sofia Gomez',usuario:'sofi',iniciales:'S',ciudad:'Córdoba',intereses:[],foto:'',ocultarAmigos:true});
 put('friendships/A_B',{users:['A','B'],de:'A',para:'B',estado:'aceptada'});
-const w=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.com/',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid:'A',email:'juan@mail.com'})); w.navigator.geolocation=undefined; w.addEventListener('error',e=>console.error('ERROR JS',e.message)); }}).window;
+const w=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.com/?react=0',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid:'A',email:'juan@mail.com'})); w.navigator.geolocation=undefined; w.addEventListener('error',e=>console.error('ERROR JS',e.message)); }}).window;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const $=id=>w.document.getElementById(id); const txt=el=>(el?.textContent||'').replace(/\s+/g,' ').trim();
 const visible=el=>{ let e=el; while(e && e!==w.document.body){ if(e.style.display==='none' || w.getComputedStyle(e).display==='none') return false; e=e.parentElement; } return !!el; };
 let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};

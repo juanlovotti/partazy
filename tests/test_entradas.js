@@ -16,7 +16,7 @@ put('events/mia/attendees/B',{uid:'B',nombre:'Sofia Gomez',estado:'aprobado',tic
 put('events/mia/attendees/C',{uid:'C',nombre:'Ivo Paz',estado:'solicitado'});
 put('planes/B',{eventos:[],compartidos:['f2'],red:{},ts:1});
 let blobs=[];
-const w=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid:'A',email:'a@t.com'})); w.navigator.geolocation=undefined;
+const w=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/?react=0',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid:'A',email:'a@t.com'})); w.navigator.geolocation=undefined;
   w.URL.createObjectURL=b=>{ blobs.push(b); return 'blob:x'; }; w.URL.revokeObjectURL=()=>{};
   w.addEventListener('error',e=>console.error('ERROR JS',e.message)); }}).window;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const $=id=>w.document.getElementById(id); const txt=el=>(el?.textContent||'').replace(/\s+/g,' ').trim();

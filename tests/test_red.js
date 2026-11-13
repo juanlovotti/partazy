@@ -18,7 +18,7 @@ put('events/E4',{...base,nombre:'Noche House',categoria:'house',musica:'House',f
 put('events/E5',{...base,nombre:'Sin relacion',categoria:'rock',musica:'Rock',fechaTs:f+4*H});
 put('planes/B',{eventos:['E1'],compartidos:['E2'],red:{E3:2},ts:ahora});
 put('planes/C',{eventos:['E1'],compartidos:[],red:{},ts:ahora});
-const w = new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/',
+const w = new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/?react=0',
   beforeParse(w){ w.firebase = makeFirebase(store,()=>({uid:'A',email:'a@t.com'})); w.navigator.geolocation=undefined; w.addEventListener('error',e=>console.error('ERROR JS',e.message)); }}).window;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const $=id=>w.document.getElementById(id); const txt=el=>(el?.textContent||'').replace(/\s+/g,' ').trim();
 let fallas=0; const ok=(c,m)=>{ console.log((c?'✔ ':'✘ ')+m); if(!c) fallas++; };

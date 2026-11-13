@@ -7,7 +7,7 @@ const store = crearStore(); const put=(p,v)=>store.docs.set(p,v); const T=Date.n
 put('users/A',{nombre:'Juan',usuario:'juan',iniciales:'J',ciudad:'Córdoba',intereses:[],foto:'',nombreBusqueda:'juan',palabras:['juan']}); put('users/A/privado/datos',{nacimiento:'1998-01-01'});
 const GRANDE='data:image/jpeg;base64,'+'A'.repeat(300000), MINI='data:image/jpeg;base64,'+'B'.repeat(30000);
 put('events/viejo',{creador:'A',creadorNombre:'Juan',organizador:'Juan',nombre:'Evento viejo',categoria:'techno',tipoLugar:'Fiesta',tipo:'fiesta',privacidad:'publica',hora:'23:00',lugar:'Güemes',lat:-31.42,lng:-64.19,precio:0,capacidad:50,confirmadosCount:1,edadMinima:18,dresscode:'Libre',musica:'Techno',imagen:GRANDE,descripcion:'x',reglas:'x',estado:'publicado',fechaTs:T+2*864e5,createdAt:T-864e5});
-const w=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid:'A',email:'a@t.com'})); w.navigator.geolocation=undefined; w.addEventListener('error',e=>console.error('ERROR JS',e.message)); }}).window;
+const w=new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/?react=0',beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid:'A',email:'a@t.com'})); w.navigator.geolocation=undefined; w.addEventListener('error',e=>console.error('ERROR JS',e.message)); }}).window;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const $=id=>w.document.getElementById(id);
 let f=0; const ok=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) f++;};
 (async()=>{

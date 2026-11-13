@@ -17,7 +17,7 @@ put('events/priv', { nombre: 'Previa Secreta', creador: 'A', creadorNombre: 'Jua
   dresscode: 'Libre', musica: 'House', bebida: true, listaVip: false, ambiente: 'verde', ambienteLabel: 'Recién creado', ambienteDesc: '', imagen: '', descripcion: 'x', reglas: 'y', verificado: false });
 put('events/priv/attendees/A', { uid: 'A', nombre: 'Juan Lovotti', estado: 'confirmado', ts: 1, ticket: 'PT-A' });
 
-const abrir = uid => new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://partazy-5555d.web.app/',
+const abrir = uid => new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://partazy-5555d.web.app/?react=0',
   beforeParse(w){ w.firebase = makeFirebase(store, () => ({ uid, email: uid + '@t.com' })); w.navigator.geolocation = undefined;
     w.addEventListener('error', e => console.error(`[${uid}] ERROR JS`, e.message)); } }).window;
 const sleep = ms => new Promise(r => setTimeout(r, ms));

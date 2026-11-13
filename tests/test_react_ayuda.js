@@ -19,10 +19,10 @@ const escribir = (w, el, valor) => {
 (async () => {
   // Sin interruptor: versión vieja
   const v = mk('https://partazy.com/'); await sleep(900);
-  ok(!v.__pantallasReact.size && !v.document.querySelector('#pantalla-ayuda [data-react]'), 'sin interruptor, Ayuda sigue siendo la versión vieja (React ni se carga)');
+  ok(!v.__pantallasReact.has('ayuda') && !v.document.querySelector('#pantalla-ayuda [data-react]'), 'sin interruptor, Ayuda sigue siendo la versión vieja (solo el Crear por pasos está publicado)');
   // Con interruptor
   const prod = mk('https://partazy.com/?react=ayuda'); await sleep(900);
-  ok(!prod.__pantallasReact.size && prod.localStorage.getItem('partazy_react') === null, 'en partazy.com ?react se ignora (nadie puede prenderle una pantalla a otro con un link)');
+  ok(!prod.__pantallasReact.has('ayuda') && prod.localStorage.getItem('partazy_react') === null, 'en partazy.com ?react se ignora (nadie puede prenderle una pantalla a otro con un link)');
   const PRUEBA = 'https://partazy--prueba-abc123.web.app/';
   const w = mk(PRUEBA + '?react=ayuda'); const $ = id => w.document.getElementById(id);
   await sleep(900); await w.__reactListo; await sleep(50);
@@ -49,8 +49,8 @@ const escribir = (w, el, valor) => {
   ok(![...w.document.querySelectorAll('#lista-ayuda details.faq')].some(d => d.open), 'al volver a entrar, las preguntas arrancan cerradas (como antes)');
   // Apagar
   const z = mk(PRUEBA + '?react=0'); await sleep(900);
-  ok(!z.__pantallasReact.size && z.localStorage.getItem('partazy_react') === null, '?react=0 lo apaga');
+  ok(!z.__pantallasReact.size && z.localStorage.getItem('partazy_react') === '0', '?react=0 apaga todo (también las publicadas) y queda guardado');
   const x = mk(PRUEBA + '?react=cualquiera'); await sleep(900);
-  ok(!x.__pantallasReact.size, 'nombres que no tienen versión React se ignoran');
+  ok(!x.__pantallasReact.has('cualquiera') && [...x.__pantallasReact].join() === 'crear', 'nombres que no tienen versión React se ignoran (queda lo publicado)');
   console.log(f ? '\nFALLAS: ' + f : '\nTODO OK'); process.exit(f ? 1 : 0);
 })();

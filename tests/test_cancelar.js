@@ -7,7 +7,7 @@ put('users/A',{nombre:'Juan Lovotti',iniciales:'JL',ciudad:'Güemes',intereses:[
 put('users/A/privado/datos',{nacimiento:'2000-03-10'});
 put('users/B',{nombre:'Sofía Gómez',iniciales:'SG',ciudad:'Nueva Córdoba',intereses:[],foto:'',nombreBusqueda:'sofia gomez',palabras:['sofia','gomez']});
 put('users/B/privado/datos',{nacimiento:'1999-05-01'});
-const abrir=(uid,hash)=>new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy-5555d.web.app/'+(hash||''),
+const abrir=(uid,hash)=>new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy-5555d.web.app/?react=0'+(hash||''),
   beforeParse(w){ w.firebase=makeFirebase(store,()=>({uid,email:uid+'@t.com'})); w.navigator.geolocation=undefined; w.addEventListener('error',e=>console.error(`[${uid}] ERROR JS`,e.message)); }}).window;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const txt=el=>(el?.textContent||'').replace(/\s+/g,' ').trim();
 let fallos=0; const check=(c,m)=>{console.log((c?'✔ ':'✘ ')+m); if(!c) fallos++;};

@@ -16,7 +16,7 @@ for(const [u, n] of [['C', 'Caro Ruiz'], ['D', 'Dani Sosa'], ['E', 'Eze Molina']
   put(`users/${u}/privado/datos`, { nacimiento: '1998-01-01' });
 }
 
-const abrir = (usuario) => new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://partazy.com/',
+const abrir = (usuario) => new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://partazy.com/?react=0',
   beforeParse(w){ w.firebase = makeFirebase(store, () => usuario); w.navigator.geolocation = undefined;
     w.fetch = async () => ({ json: async () => [] });
     w.addEventListener('error', e => console.error('ERROR JS', e.message)); } }).window;

@@ -5,7 +5,7 @@ const html = require('./cargar-html.js')();
 const store = crearStore();
 store.docs.set('users/A',{nombre:'Juan Lovotti',iniciales:'JL',ciudad:'Güemes',intereses:[],foto:'',nombreBusqueda:'juan lovotti',palabras:['juan','lovotti']});
 store.docs.set('users/A/privado/datos',{nacimiento:'2000-03-10'});
-const w = new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/',
+const w = new JSDOM(html,{runScripts:'dangerously',pretendToBeVisual:true,url:'https://partazy.web.app/?react=0',
   beforeParse(w){ w.firebase = makeFirebase(store,()=>({uid:'A',email:'j@t.com'})); w.navigator.geolocation=undefined; w.addEventListener('error',e=>console.error('ERROR JS',e.message)); }}).window;
 const sleep=ms=>new Promise(r=>setTimeout(r,ms)); const $=id=>w.document.getElementById(id);
 let fallas=0; const ok=(c,m)=>{ console.log((c?'✔ ':'✘ ')+m); if(!c) fallas++; };

@@ -9,7 +9,7 @@ const perfil = (uid, nombre, usuario, extra) => {
 };
 perfil('P', 'Juan Lovotti', 'juan.lovotti');
 perfil('B', 'Sofia Gomez', 'sofi.g');
-const abrir = uid => new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://partazy.web.app/',
+const abrir = uid => new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://partazy.web.app/?react=0',
   beforeParse(w){ w.firebase = makeFirebase(store, () => ({ uid, email: uid + '@t.com' })); w.navigator.geolocation = undefined;
     w.QRCode = function(el){ el.innerHTML = '<img alt="qr">'; }; w.QRCode.CorrectLevel = { M: 0 };
     w.addEventListener('error', e => console.error(`[${uid}] ERROR JS`, e.message)); } }).window;
