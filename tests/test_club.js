@@ -87,8 +87,9 @@ let fallos = 0; const check = (c, m) => { console.log((c ? '✔ ' : '✘ ') + m)
   // Cada evento aparece una sola vez en Inicio (en la fila que le toca: Hoy, En tendencia, Esta semana, Próximos o Lo que viene)
   const home = $B('pantalla-home');
   const veces = n => [...home.querySelectorAll('.tarjeta h3, .tarjeta-h h4')].filter(h => txt(h) === n).length;
-  check(veces('Casi Lleno') === 1 && !txt(home).includes('Últimas entradas'), 'el evento de esta semana aparece una sola vez en Inicio (tarjeta limpia, sin carteles)');
-  check(veces('Agotadisimo') === 1, 'el de más adelante también aparece una sola vez');
+  const tarjetaDe = n => [...home.querySelectorAll('.tarjeta, .tarjeta-h')].find(c => txt(c.querySelector('h3, h4')) === n);
+  check(veces('Casi Lleno') === 1 && /^(Últimos lugares|Últimos)$/.test(txt(tarjetaDe('Casi Lleno')?.querySelector('.pill-cupo, .banda-h'))), 'el evento de esta semana aparece una sola vez en Inicio, con el sello "Últimos lugares" (90 de 100)');
+  check(veces('Agotadisimo') === 1 && /Agotado/.test(txt(tarjetaDe('Agotadisimo')?.querySelector('.banda-agotado, .banda-h'))), 'el de más adelante también aparece una sola vez, con "Agotado"');
   check(veces('Muy Pronto') === 1 && txt($B('lista-esta-noche')).includes('Muy Pronto'), 'lo de esta noche va en la primera fila y no se repite');
 
   // ---------- Control de puerta ----------

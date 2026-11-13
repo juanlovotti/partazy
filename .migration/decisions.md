@@ -109,3 +109,26 @@ Antes de escribir código contra una librería, revisar su documentación instal
 - Alternativas descartadas: un store nuevo con `store.set()` en cada escritura (muchos cambios en app.js, fácil olvidarse uno) y revisar `state` cada tanto (gasta batería y llega tarde).
 - Los avisos se juntan por microtarea: React nunca ve un estado a medio cambiar (por ejemplo, `uid` nuevo con el `perfil` viejo).
 - React navega llamando a las funciones de la app vieja (`navegar.*` en legado.ts) hasta que la navegación pase a React (u29).
+
+## 12/11: Tarjetas nuevas en la app de siempre (adelanto del diseño de u21)
+- Juan eligió en Superdesign la variante 1: fecha sobre la foto, hora grande, lugar con pin, "Últimos N lugares" (azul) y "Agotado" (banda roja en la esquina).
+- Se cambió en `tarjetaHTML` y `tarjetaHorizontalHTML` de `src/app.js`, no en React: el diseño se cambia donde vive hoy. u21 las pasa a React con este aspecto, sin paridad con el diseño anterior.
+- `estadoCupo` ahora dice "Últimos N lugares" (9 o menos), "Último lugar" o "Últimos lugares" (desde el 85 %), y no dice nada con venta externa o sin tope (Partazy no sabe cuántos quedan). La píldora del detalle pasó de amarillo a azul con letra oscura (el amarillo ya significa "Se pone bueno" en el ambiente), y "Agotado" a letra oscura (contraste 3,3 → 6,2).
+- La guía de colores dejó los "·" de los títulos ("Verde: hay lugar").
+
+## 12/11: Crear por pasos en React (primera parte de u25)
+- **No es paridad:** es el diseño "conversacional" (variante B) que Juan eligió en Superdesign: 7 pasos con un tema por pantalla, "Siguiente" fijo y revisión final con la tarjeta.
+- **Pantalla propia** (`#pantalla-crear-pasos`) detrás del interruptor `crear`, y solo para eventos nuevos. Editar sigue en el formulario de siempre hasta que se haga Editar en React: así React no le saca el formulario a la edición. `ir('crear')` abre la de React si el interruptor está prendido y React ya cargó; si no, el de siempre.
+- **Una sola lógica para publicar (branch-by-abstraction):** `publicarEventoUnaVez` se partió en `leerFormCrear()` (lee el DOM) y `publicarEventoUnaVez(datos, ui)` (valida, arma y guarda). El formulario de siempre y React (`aDatos()` en `src/react/crear/borrador.ts`) mandan los mismos datos. React revisa cada paso antes de avanzar con los mismos mensajes; la validación final y el guardado son los de siempre.
+- **Cambio aceptado en el formulario de siempre:** cuando una validación falla, además del aviso se enfoca el campo y se va al paso donde está (antes solo lo hacían algunos errores).
+- **Cosas nuevas del diseño:** casilla "Acepto las normas de la comunidad" antes de publicar; "Otra hora" y botones de horario; aviso de madrugada ("a las 00:30 del sábado es la madrugada de ese día"); mapa chiquito con teselas de OpenStreetMap; "¿Vendés en otra página?" dentro de la entrada paga.
+- **No se pasó** el cambio automático a Previa si el nombre dice "previa" (en el Crear por pasos el tipo se elige primero).
+- `abrirMapa(opts)` acepta `{ inicio, alConfirmar }` para devolverle el punto a React sin tocar el formulario de siempre.
+- En el celu, mientras se completa, se esconde la barra de abajo (`#app.foco-crear`); en la compu queda la barra lateral.
+- **Revisión de paridad (agente, 12/11) y lo que se decidió:**
+  - *Arreglado (alta):* el "vino de una sugerencia" del lugar vivía en el paso y se perdía al ir y volver; editar el lugar después dejaba el pin viejo. Ahora está en el borrador (`ubicacionDeSugerencia`). Prueba en `test_crear_react.js`.
+  - *Arreglado (media):* una respuesta de opciones de otro tipo (ej. "Nivel: Principiante" de Deporte al pasar a Taller) ya no se guarda; los textos libres con la misma clave sí pasan, como en el de siempre.
+  - *Arreglado (media):* la tarjeta del paso 7 decía "Agotado" con venta externa sin tope; ahora usa la misma capacidad que se guarda (20.000 y `capacidadDesconocida`).
+  - *Diferencia aceptada:* lo que no aplica al tipo elegido (lista VIP en una peña o charla, dress code en un taller o feria) no se guarda desde React. El de siempre lo guardaba si se había cargado antes de cambiar de tipo, aunque el campo estuviera oculto.
+  - *Diferencia aceptada:* el formulario de siempre ahora lee todo al tocar "Publicar" (antes leía algunos campos después de buscar el lugar, que puede tardar unos segundos).
+  - *Rareza que se mantiene (igual en los dos):* si marcás la casa en el mapa con la previa privada y después la pasás a pública, el pin queda exacto. En React ahora el texto lo avisa ("Al ser pública, todos ven el punto exacto").

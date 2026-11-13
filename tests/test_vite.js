@@ -17,7 +17,7 @@ const lista = d => { const r = []; (function rec(x){ for(const n of fs.readdirSy
 const pub = lista(PUB), dist = lista(DIST);
 ok(pub.every(p => dist.includes(p) && fs.readFileSync(path.join(PUB, p)).equals(fs.readFileSync(path.join(DIST, p)))), 'todo lo de public/ llega igual a dist/ (' + pub.length + ' archivos)');
 const html = fs.readFileSync(path.join(DIST, 'index.html'), 'utf8');
-ok(new Set(html.match(/id="pantalla-[a-z-]+"/g) || []).size === 21, 'dist/index.html tiene las 21 pantallas');
+ok(new Set(html.match(/id="pantalla-[a-z-]+"/g) || []).size === 22, 'dist/index.html tiene las 22 pantallas (21 + la del Crear por pasos en React)');
 ok(/<script type="module" crossorigin src="\/assets\/[^"]+\.js"><\/script>/.test(html) && /<link rel="stylesheet" crossorigin href="\/assets\/[^"]+\.css">/.test(html), 'la app y sus estilos salen empaquetados y con hash en assets/');
 ok(!/\/src\//.test(html), 'dist/index.html no apunta a src/ (todo quedó empaquetado)');
 const js = dist.filter(p => /^assets[\\/].+\.js$/.test(p)).map(p => fs.readFileSync(path.join(DIST, p), 'utf8')).join('');

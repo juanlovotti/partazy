@@ -5,3 +5,7 @@ node_modules/
 Thumbs.db
 dist/
 tests/.paquete/
+
+# Superdesign (contexto y temporales del diseño)
+.superdesign/tmp/
+.superdesign/refs/

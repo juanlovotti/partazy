@@ -1,0 +1,121 @@
+{
+  "schemaVersion": 1,
+  "targets": {
+    "#/crear": {
+      "targetKind": "existing-ui",
+      "projectId": "825dc3b4-54bd-4b0d-a167-d2c103476dc7",
+      "baselineDraftId": "567fac26-6716-4584-8480-609a33820588",
+      "activeDraftId": "586187dc-7f0f-4a0e-a0d3-d2ccc4ac708a",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [
+        "c29e870d-05b6-4d18-acbc-d1fad8c285de",
+        "bf5f1a9e-338a-417a-9938-398197d20156",
+        "d8b15624-8d8f-477e-9b68-2edfef7b1b3e",
+        "35d8f015-5eb3-44b7-bd1c-1007433bcaa2"
+      ],
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md",
+        ".superdesign/context/crear.css",
+        ".superdesign/context/crear.html"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "27ea4694b81d7c071a3708519644f62cdd8ba8a0e45602a05e3c34fc6fc2a194",
+        ".superdesign/init/theme.md": "387a49bff329f48f5d21af845da60bb869ad0bf24a3ed153e63911bfed36fadc",
+        ".superdesign/context/crear.css": "0527fe31f19d271f3f85bc2d8609174d6c693b432222f226e583600d26d60ae4",
+        ".superdesign/context/crear.html": "6d12bd0fcd09f590ae800d143b1c70dd023def7a84b3ee8cefa515905d40000c"
+      },
+      "components": [],
+      "drafts": {
+        "567fac26-6716-4584-8480-609a33820588": {
+          "title": "Crear evento HOY (paso 3)",
+          "visualDirection": "reproducción del actual",
+          "currentVersion": 1
+        },
+        "64c8e87f-07c0-4ce5-907d-6577832ecc89": {
+          "title": "Variante A: asistente con encabezado grande (paso 5 Entradas y cobro, 7 pasos)",
+          "visualDirection": "wizard estilo Passline",
+          "parentDraftId": "567fac26-6716-4584-8480-609a33820588",
+          "currentVersion": 1
+        },
+        "586187dc-7f0f-4a0e-a0d3-d2ccc4ac708a": {
+          "title": "Variante B: una pregunta por pantalla",
+          "visualDirection": "conversacional con opciones grandes",
+          "parentDraftId": "567fac26-6716-4584-8480-609a33820588",
+          "currentVersion": 3
+        },
+        "5317b0f3-09e7-4d8e-9081-2f2ab778517c": {
+          "title": "Variante C: lista de secciones con estado",
+          "visualDirection": "hub con hojas",
+          "parentDraftId": "567fac26-6716-4584-8480-609a33820588",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-11-12T22:39:57Z",
+      "chosen": {
+        "variante": "B conversacional",
+        "fecha": "2026-11-12",
+        "por": "Juan"
+      },
+      "flowPages": {
+        "1 Tipo": "064cf76e-2196-49ae-b982-1a1e61dcb160",
+        "2 Nombre y foto": "d8539abe-8215-4a78-82bb-e4e8ccaac5eb",
+        "3 Cuándo": "9a53e0fa-3f78-4112-a4fc-45b83c1ca341",
+        "4 Dónde": "b5c07f6f-6964-42d6-a343-9e1109db08e4",
+        "5 Entrada": "586187dc-7f0f-4a0e-a0d3-d2ccc4ac708a",
+        "6 Lugares y detalles": "c075379e-a3ad-45ec-85c6-4ef03eeb286d",
+        "7 Revisar y publicar": "d5fb3c27-604a-4763-965d-9d44bcdce122"
+      }
+    },
+    "tarjetas-inicio": {
+      "targetKind": "existing-ui",
+      "projectId": "825dc3b4-54bd-4b0d-a167-d2c103476dc7",
+      "baselineDraftId": "2cd1cbbe-2f78-482f-b3b4-c40de7bfacc4",
+      "activeDraftId": "6ce2be18-95f8-493d-bd45-403c509d1fda",
+      "designSystemPath": ".superdesign/design-system.md",
+      "referenceIds": [
+        "650796b7-2b85-4058-b5c0-1c589186ea57",
+        "2dc7bbc1-22db-47be-ac0d-4e0e3591dbd6"
+      ],
+      "contentAssets": {
+        "partazy-ciudad-noche": "https://vgbujcuwptvheqijyjbe.supabase.co/storage/v1/object/public/hmac-uploads/projects/825dc3b4-54bd-4b0d-a167-d2c103476dc7/content-assets/partazy-ciudad-noche/ciudad.jpg"
+      },
+      "contextFiles": [
+        ".superdesign/design-system.md",
+        ".superdesign/init/theme.md",
+        ".superdesign/context/tarjeta.md"
+      ],
+      "fingerprints": {
+        ".superdesign/design-system.md": "27ea4694b81d7c071a3708519644f62cdd8ba8a0e45602a05e3c34fc6fc2a194",
+        ".superdesign/init/theme.md": "387a49bff329f48f5d21af845da60bb869ad0bf24a3ed153e63911bfed36fadc",
+        ".superdesign/context/tarjeta.md": "f715163f7ddd8b4b0c4a682a3e21630dfdda96dbccdaceccd5909711c5a0511d"
+      },
+      "components": [],
+      "drafts": {
+        "2cd1cbbe-2f78-482f-b3b4-c40de7bfacc4": {
+          "title": "Tarjetas HOY",
+          "visualDirection": "reproducción del actual",
+          "currentVersion": 1
+        },
+        "6ce2be18-95f8-493d-bd45-403c509d1fda": {
+          "title": "Tarjetas variante 1: fecha en la foto",
+          "visualDirection": "importada (Claude), sin créditos",
+          "parentDraftId": "2cd1cbbe-2f78-482f-b3b4-c40de7bfacc4",
+          "currentVersion": 1
+        },
+        "238cfbcc-b9b6-484b-9822-f26a9d13c041": {
+          "title": "Tarjetas variante 2: fecha y hora grandes",
+          "visualDirection": "importada (Claude), sin créditos",
+          "parentDraftId": "2cd1cbbe-2f78-482f-b3b4-c40de7bfacc4",
+          "currentVersion": 1
+        }
+      },
+      "updatedAt": "2026-11-12T22:39:57Z",
+      "chosen": {
+        "variante": "1 fecha en la foto",
+        "fecha": "2026-11-12",
+        "por": "Juan"
+      }
+    }
+  }
+}

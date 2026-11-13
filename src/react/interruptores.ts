@@ -8,7 +8,7 @@
 //   - Para todos: agregá el nombre a PUBLICADAS (y publicá). Sacarlo de la lista vuelve a la versión vieja.
 // Si no hay ninguna pantalla prendida, React ni se descarga: la app pesa lo mismo que antes.
 export const PUBLICADAS: string[] = [];          // ej.: ['ayuda'] cuando Juan dé el OK para partazy.com
-export const DISPONIBLES = ['ayuda'];  // pantallas que ya tienen versión React
+export const DISPONIBLES = ['ayuda', 'crear'];  // pantallas que ya tienen versión React ("crear" = Crear por pasos, solo eventos nuevos)
 
 const CLAVE = 'partazy_react';
 const ES_PRODUCCION = location.hostname === 'partazy.com' || location.hostname === 'www.partazy.com';

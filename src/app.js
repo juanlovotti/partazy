@@ -2995,12 +2995,15 @@ function lineupItems(texto){
     return m ? { hora: m[1].replace('.', ':'), nombre: m[2] } : { hora: '', nombre: l };
   });
 }
-// "Últimas entradas" desde el 85 % del cupo; "Agotado" al llenarse
+// "Últimos lugares" desde el 85 % del cupo ("Últimos 3 lugares" si quedan 9 o menos); "Agotado" al llenarse.
+// Si el cupo lo maneja una venta externa (o no tiene tope), Partazy no sabe cuántos quedan: no dice nada.
 function estadoCupo(ev){
-  if(esCancelado(ev)) return null;
-  const cupo = ev.confirmadosCount || 0, cap = Math.max(1, ev.capacidad || 1);
-  if(cupo >= cap) return { clase: 'agotado', texto: 'Agotado' };
-  if(cupo / cap >= 0.85) return { clase: 'ultimas', texto: 'Últimas entradas' };
+  if(!ev || esCancelado(ev) || ev.capacidadDesconocida || (ev.linkEntradas && ev.privacidad !== 'privada')) return null;
+  const cupo = ev.confirmadosCount || 0, cap = Math.max(1, ev.capacidad || 1), quedan = cap - cupo;
+  if(quedan <= 0) return { clase: 'agotado', texto: 'Agotado', corto: 'Agotado' };
+  if(cupo / cap >= 0.85) return quedan === 1 ? { clase: 'ultimas', texto: 'Último lugar', corto: 'Queda 1' }
+    : quedan <= 9 ? { clase: 'ultimas', texto: `Últimos ${quedan} lugares`, corto: `Quedan ${quedan}` }
+    : { clase: 'ultimas', texto: 'Últimos lugares', corto: 'Últimos' };
   return null;
 }
 // "ATP (todo público)" o "+18 años".
@@ -4447,7 +4450,7 @@ const NAV = observar('nav', { pila: [], actual: null, clave: null, abrir: null, 
 function abrirModalHist(){ if(NAV.modalHist) return; try{ history.pushState({ partazyModal: 1 }, '', location.href); NAV.modalHist = true; } catch(e){} }
 // Saca del historial el paso que agregó un panel al abrirse.
 function soltarModalHist(){ if(!NAV.modalHist) return; NAV.modalHist = false; NAV.ignorarPop = true; try{ history.back(); } catch(e){ NAV.ignorarPop = false; } }
-const SIN_HISTORIAL = ['bienvenida', 'registro', 'suspendido', 'confirmacion', 'crear'];
+const SIN_HISTORIAL = ['bienvenida', 'registro', 'suspendido', 'confirmacion', 'crear', 'crear-pasos'];
 // Botón Volver: usa el historial del navegador (o un destino por defecto).
 function volver(fallback){
   if(NAV.pila.length){
@@ -4496,6 +4499,12 @@ const PANTALLAS_INVITADO = ['home', 'explorar', 'detalle', 'ayuda', 'privacidad'
 // Cambia de pantalla. En modo invitado, las pantallas que piden cuenta abren el aviso.
 function ir(nombre, opts){
   if(state.invitado && !PANTALLAS_INVITADO.includes(nombre)){ pedirCuenta(MOTIVOS_PANTALLA[nombre]); return; }
+  // Crear un evento nuevo con el Crear por pasos (React), si está prendido. Editar sigue en el formulario de siempre.
+  if(nombre === 'crear' && !state.abriendoEdicion && crearPorPasosListo()){
+    if(state.editandoId) resetFormularioCrear();
+    nombre = 'crear-pasos';
+    document.dispatchEvent(new CustomEvent('partazy:abrir-pantalla', { detail: 'crear' }));
+  }
   const clave = opts?.clave || nombre;
   if(!NAV.volviendo && NAV.actual && NAV.clave !== clave && !SIN_HISTORIAL.includes(NAV.actual)){
     NAV.pila.push(NAV.abrir || (n => () => ir(n))(NAV.actual));
@@ -4515,7 +4524,7 @@ function ir(nombre, opts){
     clearTimeout(destino._tEntrada); destino._tEntrada = setTimeout(() => destino.classList.remove('entrando'), 1100);
   }
   document.querySelectorAll('.nav-item').forEach(n => { n.classList.remove('activo'); n.removeAttribute('aria-current'); });
-  const navMap = {home:'home', explorar:'explorar', crear:'crear', ticket:'perfil', perfil:'perfil', detalle:'explorar', confirmacion:'crear',
+  const navMap = {home:'home', explorar:'explorar', crear:'crear', 'crear-pasos':'crear', ticket:'perfil', perfil:'perfil', detalle:'explorar', confirmacion:'crear',
                   chats:'chats', chat:'chats', amigos:'perfil', usuario:'perfil', moderacion:'perfil', notificaciones:'home', verificacion:'perfil', puerta:'explorar', ayuda:'perfil', privacidad:'perfil', bienvenida:null, registro:null, suspendido:null};
   const activo = document.querySelector('[data-nav="'+ (navMap[nombre] || nombre) +'"]');
   if(activo){ activo.classList.add('activo'); activo.setAttribute('aria-current','page'); }
@@ -4531,9 +4540,14 @@ function ir(nombre, opts){
   if(nombre !== 'chat' && state.dmUnsub){ state.dmUnsub(); state.dmUnsub = null; state.dmActual = null; }
   // Sin barra inferior en el ingreso y dentro de una conversación
   document.getElementById('app').classList.toggle('sin-nav', ['bienvenida','registro','chat','suspendido'].includes(nombre));
+  // Crear por pasos: en el celu se esconde la barra de abajo (el botón "Siguiente" va fijo abajo)
+  document.getElementById('app').classList.toggle('foco-crear', nombre === 'crear-pasos');
   // El link de la barra de direcciones solo apunta a eventos o perfiles
   if(nombre !== 'detalle' && nombre !== 'usuario') fijarRuta('');
 }
+
+// ¿Está prendido el Crear por pasos (React) y ya se dibujó? Si React no llegó a cargar, queda el formulario de siempre.
+function crearPorPasosListo(){ return !!(window.__pantallasReact?.has('crear') && document.querySelector('#pantalla-crear-pasos > [data-react]')); }
 
 // Eventos a los que voy (confirmado o aprobado) que todavía no pasaron.
 async function proximasEntradas(){
@@ -4940,18 +4954,18 @@ function abrirReferencias(){
   const f = (clase, titulo, texto, vivo) => `<div class="ref-fila"><span class="punto-ambiente amb-${clase}${vivo ? ' amb-vivo' : ''}"></span><div><b>${titulo}</b><span>${texto}</span></div></div>`;
   document.getElementById('ref-contenido').innerHTML = `
     <div class="ref-sub">Antes del evento</div>
-    ${f('verde', 'Verde · Hay lugar', 'Podés anotarte tranquilo. "Recién creado" significa que se publicó hace menos de un día.')}
-    ${f('amarillo', 'Amarillo · Se está llenando', 'Ya está más de la mitad ocupado. "Últimos lugares": queda menos del 15%.')}
-    ${f('rojo', 'Rojo · Lleno o cancelado', 'No quedan lugares (podés sumarte a la lista de espera) o el evento se canceló.')}
+    ${f('verde', 'Verde: hay lugar', 'Podés anotarte tranquilo. "Recién creado" significa que se publicó hace menos de un día.')}
+    ${f('amarillo', 'Amarillo: se está llenando', 'Ya está más de la mitad ocupado. "Últimos lugares": queda menos del 15%.')}
+    ${f('rojo', 'Rojo: lleno o cancelado', 'No quedan lugares (podés sumarte a la lista de espera) o el evento se canceló.')}
     <div class="ref-sub">Mientras pasa</div>
-    ${f('verde', 'Punto que late · En vivo', 'El evento está pasando ahora. La gente que está ahí vota cómo está:', true)}
+    ${f('verde', 'Punto que late: en vivo', 'El evento está pasando ahora. La gente que está ahí vota cómo está:', true)}
     ${f('verde', '😌 Tranqui', 'Buena para charlar, poca gente.', true)}
     ${f('amarillo', '🔥 Se pone bueno', 'Arrancó la joda.', true)}
     ${f('rojo', '🤯 Explotado', 'A full, mucha gente.', true)}
     <div class="ref-sub">Después</div>
-    ${f('gris', 'Gris · Terminó', 'El evento ya pasó.')}
+    ${f('gris', 'Gris: terminó', 'El evento ya pasó.')}
     <div class="ref-sub">Otras marcas</div>
-    <div class="ref-fila"><span class="pill-cupo ultimas">Últimas entradas</span><div><span>Quedan muy pocos lugares.</span></div></div>
+    <div class="ref-fila"><span class="pill-cupo ultimas">Últimos lugares</span><div><span>Quedan muy pocos lugares (si son 9 o menos, te dice cuántos).</span></div></div>
     <div class="ref-fila"><span class="pill-cupo agotado">Agotado</span><div><span>No hay más lugares.</span></div></div>
     <div class="ref-fila"><span style="font-size:15px;">🔒</span><div><b>Previa privada</b><span>Pedís unirte y quien organiza te aprueba. Ahí ves la dirección.</span></div></div>
     <div class="ref-fila"><span style="color:var(--verde); font-weight:800;">✓</span><div><b>Verificado</b><span>Organización revisada por Partazy.</span></div></div>`;
@@ -5063,7 +5077,7 @@ function precioTxt(ev){
   return money(ev.precio);
 }
 
-// Tarjetas con poca info: tipo de evento, nombre y distancia (+ fecha corta)
+// Fecha corta para textos chicos ("Hoy · 23:30", "Mañana", "sáb 15 nov").
 function fechaCorta(ts){
   const d = new Date(ts);
   if(esMismoDia(ts, Date.now())) return 'Hoy · ' + horaCorta(ts);
@@ -5075,25 +5089,56 @@ function distanciaDe(ev){
   if(!state.userCoords || typeof ev.lat !== 'number') return null;
   return textoDistancia(ev, distanciaKm(state.userCoords.lat, state.userCoords.lng, ev.lat, ev.lng));
 }
-// Línea de la tarjeta: distancia · fecha (o "Cancelado").
-function lineaMetaHTML(ev){
-  const dist = distanciaDe(ev);
-  const cuando = esCancelado(ev) ? '<span class="cancelado-txt">Cancelado</span>' : `<span>${esc(fechaCorta(ev.fechaTs))}</span>`;
-  return `<div class="meta-limpia">${dist ? `<span class="dist">${PIN_MINI}${esc(dist)}</span>` : ''}${cuando}</div>`;
+// Tarjetas con la fecha en la foto (diseño elegido en Superdesign, variante 1):
+// arriba a la izquierda el día grande y el mes; abajo la hora grande y el lugar con el pin.
+const MESES_CORTOS = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
+function fechaFotoHTML(ev){
+  if(typeof ev.fechaTs !== 'number') return '';
+  const d = new Date(ev.fechaTs);
+  return `<div class="fecha-foto" aria-hidden="true"><b>${d.getDate()}</b><span>${esMismoDia(ev.fechaTs, Date.now()) ? 'HOY' : MESES_CORTOS[d.getMonth()]}</span></div>`;
+}
+// Hora grande + lugar (nunca la dirección de una previa privada) + distancia si sabemos dónde estás.
+function lineaTarjetaHTML(ev){
+  const dist = distanciaDe(ev), lugar = lugarPublico(ev);
+  const cuando = esCancelado(ev) ? '<span class="cancelado-txt">Cancelado</span>'
+    : typeof ev.fechaTs === 'number' ? `<span class="hora-grande">${esc(horaCorta(ev.fechaTs))}</span>` : '';
+  const donde = lugar || dist ? `<span class="lugar-mini">${PIN_MINI}${lugar ? `<span class="lugar-txt">${esc(lugar)}</span>` : ''}${dist ? `<span class="dist-txt">${esc(dist)}</span>` : ''}</span>` : '';
+  return `<div class="meta-tarjeta">${cuando}${donde}</div>`;
+}
+// Lo que lee un lector de pantalla al llegar a la tarjeta: "Noche Vortex, sábado 15 de noviembre, 23:30, Güemes, últimos 3 lugares".
+function etiquetaTarjeta(ev){
+  const partes = [ev.nombre];
+  if(typeof ev.fechaTs === 'number'){
+    partes.push(esMismoDia(ev.fechaTs, Date.now()) ? 'hoy' : esMismoDia(ev.fechaTs, Date.now() + 864e5) ? 'mañana'
+      : new Date(ev.fechaTs).toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' }).replace(',', ''));
+    if(!esCancelado(ev)) partes.push(horaCorta(ev.fechaTs));
+  }
+  const lugar = lugarPublico(ev); if(lugar) partes.push(lugar);
+  const dist = distanciaDe(ev); if(dist) partes.push('a ' + dist);
+  if(esCancelado(ev)) partes.push('cancelado');
+  const c = estadoCupo(ev); if(c) partes.push(c.texto.toLowerCase());
+  if(ev.privacidad === 'privada') partes.push('previa privada');
+  return partes.filter(Boolean).join(', ');
+}
+// Sello de cupo sobre la foto: píldora azul "Últimos 3 lugares" o banda roja "Agotado" en la esquina.
+function selloCupoHTML(ev){
+  const c = estadoCupo(ev);
+  if(!c) return '';
+  return c.clase === 'agotado' ? '<div class="banda-agotado" aria-hidden="true">Agotado</div>' : `<span class="pill-cupo ultimas" aria-hidden="true">${esc(c.texto)}</span>`;
 }
 const PIN_MINI = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/></svg>';
 // Tarjeta de evento (vertical) para las filas del inicio.
 function tarjetaHTML(ev, _dist, razon){
   const amigos = amigosVanHTML(ev, false);
   const candado = ev.privacidad==='privada' ? `<div class="candado-badge">${svgLock}</div>` : '';
+  const agotado = estadoCupo(ev)?.clase === 'agotado';
   return `
-   <div class="tarjeta" role="button" tabindex="0" data-abrir="${esc(ev.id)}" aria-label="${esc(ev.nombre)}">
-     ${candado}
-     <div class="foto"><div class="foto-img" style="background-image:${cssFoto(ev)}"></div></div>
+   <div class="tarjeta${agotado ? ' agotada' : ''}${esCancelado(ev) ? ' cancelada' : ''}" role="button" tabindex="0" data-abrir="${esc(ev.id)}" aria-label="${esc(etiquetaTarjeta(ev))}">
+     <div class="foto"><div class="foto-img" style="background-image:${cssFoto(ev)}"></div>${fechaFotoHTML(ev)}${selloCupoHTML(ev)}${candado}</div>
      <div class="info">
        <div class="cat">${iconoTipo(ev)}${esc(etiquetaTipo(ev))}</div>
        <h3>${esc(ev.nombre)}</h3>
-       ${lineaMetaHTML(ev)}
+       ${lineaTarjetaHTML(ev)}
        ${amigos || (razon && /^[🎧👥📈]/u.test(razon) ? `<div class="razon-tarjeta">${esc(razon)}</div>` : '')}
      </div>
    </div>`;
@@ -5104,13 +5149,14 @@ function tarjetaHorizontalHTML(ev, razon){
   const amigos = amigosVanHTML(ev, false);
   if(!(razon && /^[🎧👥📈]/u.test(razon)) && afinidad(ev).puntos === 2) razon = `🎧 ${afinidad(ev).motivo}`;   // en Explorar también se ve si va con tu música
   const candado = ev.privacidad==='privada' ? ' 🔒' : '';
+  const c = estadoCupo(ev);
   return `
-   <div class="tarjeta-h" role="button" tabindex="0" data-abrir="${esc(ev.id)}" aria-label="${esc(ev.nombre)}">
-     <div class="foto-h"><div class="foto-img" style="background-image:${cssFoto(ev)}"></div></div>
+   <div class="tarjeta-h${c?.clase === 'agotado' ? ' agotada' : ''}${esCancelado(ev) ? ' cancelada' : ''}" role="button" tabindex="0" data-abrir="${esc(ev.id)}" aria-label="${esc(etiquetaTarjeta(ev))}">
+     <div class="foto-h"><div class="foto-img" style="background-image:${cssFoto(ev)}"></div>${fechaFotoHTML(ev)}${c ? `<span class="banda-h ${c.clase}" aria-hidden="true">${esc(c.corto)}</span>` : ''}</div>
      <div class="info-h">
        <div class="cat">${iconoTipo(ev)}${esc(etiquetaTipo(ev))}${candado}</div>
        <h4>${esc(ev.nombre)}</h4>
-       ${lineaMetaHTML(ev)}
+       ${lineaTarjetaHTML(ev)}
        ${amigos || (razon && /^[🎧👥📈]/u.test(razon) ? `<div class="razon-tarjeta">${esc(razon)}</div>` : '')}
      </div>
    </div>`;
@@ -7417,109 +7463,157 @@ function irAPrevia(){
 // ¿Es una fiesta universitaria (eventos viejos)?
 function esUniversitaria(e){ return e.ocasion === 'universitaria' || e.categoria === 'universitaria'; }
 
-// Valida el formulario y crea el evento (o guarda la edición). Muestra la vista previa antes.
+// Crear un evento se hace en dos partes, para que lo usen el formulario de siempre y el Crear por pasos (React):
+//   1. leerFormCrear(): lee el formulario de siempre y devuelve los datos tal cual están escritos.
+//   2. publicarEventoUnaVez(datos, ui): valida, arma el evento y lo guarda (o guarda la edición).
+//      `ui` es la pantalla que pregunta: enfocar(campo) cuando algo falta, ocupado(sí/no) mientras guarda,
+//      listo() al terminar, y vistaPrevia (false si la pantalla ya mostró cómo queda).
+// Los nombres de campo de los errores son los ids del formulario de siempre ('f-nombre', 'f-lugar'...).
+
+// Paso del formulario de siempre en el que está cada campo (el resto está en el 3).
+const PASO_CAMPO_CREAR = { 'f-nombre': 1, 'f-fecha': 1, 'f-hora': 1, 'f-hora-fin': 1, 'f-descripcion': 1 };
+const UI_CREAR_FORM = {
+  vistaPrevia: true,
+  enfocar(campo){
+    const paso = PASO_CAMPO_CREAR[campo] || 3;
+    if(!state.editandoId && state.pasoCrear !== paso) irAPasoCrear(paso);
+    document.getElementById(campo)?.focus();
+  },
+  ocupado(on){ const b = document.getElementById('btn-publicar'); if(b){ b.disabled = on; b.textContent = on ? 'Publicando...' : 'Publicar evento'; } },
+  listo(){ resetFormularioCrear(); }
+};
+// Lee el formulario de siempre (sin validar nada).
+function leerFormCrear(){
+  const val = id => document.getElementById(id).value.trim();
+  const on = id => document.getElementById(id).classList.contains('on');
+  const evEdit = state.editandoId ? state.editandoEv : null;
+  return {
+    tipo: state.tipoEventoActivo, privada: esPrivadaEnForm(), ocasion: val('f-ocasion'),
+    nombre: val('f-nombre'), descripcion: val('f-descripcion'),
+    lugar: val('f-lugar'), direccion: val('f-direccion'), ubicacionMapa: state.ubicacionMapa,
+    fecha: val('f-fecha'), hora: val('f-hora'), horaFin: val('f-hora-fin'), inscFecha: val('f-insc-fecha'), inscHora: val('f-insc-hora'),
+    capacidad: val('f-capacidad'), edad: val('f-edad'),
+    pago: on('switch-pago'), precio: val('f-precio'), pagoInfo: val('f-pago-info'), cobraOtro: quienCobra() === 'otro', pagoTitular: val('f-pago-titular'),
+    linkEntradas: val('f-link-entradas'), comprobante: on('switch-comprobante'),
+    estilo: val('f-estilo'), estiloOtro: val('f-estilo-otro'),
+    // El texto libre de música solo vale en una previa (o si un evento viejo ya lo tenía y no cambió el estilo)
+    musica: document.getElementById('campo-musica').style.display !== 'none' || evEdit ? val('f-musica') : '',
+    lineup: val('f-lineup'), dresscode: val('f-dresscode'), reglas: val('f-reglas'),
+    faq: leerFaq(), equipos: leerConfigEquipos(), extras: leerExtras(),
+    vipOn: on('switch-vip'), vip: leerVip(), bebida: on('switch-bebida'), qr: on('switch-qr'),
+    imagenNueva: state.imagenNueva, imagenMini: state.imagenMini,
+    editando: evEdit
+  };
+}
+
+// Valida y crea el evento (o guarda la edición). Muestra la vista previa antes.
 // Un solo envío a la vez (doble toque, o volver y tocar "Publicar" de nuevo, no crean dos eventos).
-async function publicarEvento(){
+async function publicarEvento(){ return publicarConDatos(leerFormCrear, UI_CREAR_FORM); }
+// Lo mismo, para el Crear por pasos (React): recibe los datos ya armados y su propia `ui`.
+async function publicarConDatos(datos, ui){
   if(state._publicando) return;
   state._publicando = true;
-  try{ return await publicarEventoUnaVez(); } finally { state._publicando = false; }
+  try{ return await publicarEventoUnaVez(typeof datos === 'function' ? datos() : datos, ui); } finally { state._publicando = false; }
 }
-async function publicarEventoUnaVez(){
-  const val = id => document.getElementById(id).value.trim();
-  const tipo = state.tipoEventoActivo;
-  const privada = esPrivadaEnForm();
+async function publicarEventoUnaVez(d = leerFormCrear(), ui = UI_CREAR_FORM){
+  const falla = (msj, campo) => { toast(msj); if(campo) ui.enfocar?.(campo); };
+  const tipo = d.tipo === 'previa' ? 'previa' : 'fiesta';
+  const privada = tipo === 'previa' && !!d.privada;
+  const evEdit = d.editando || null;
 
-  const nombre = val('f-nombre');
-  if(!nombre){ toast('Ponele un nombre al evento'); return; }
+  const nombre = d.nombre;
+  if(!nombre) return falla('Ponele un nombre al evento', 'f-nombre');
 
-  const lugar = val('f-lugar');
-  const direccion = val('f-direccion');
-  if(!lugar){ toast(privada ? 'Indicá el barrio o zona' : 'Indicá el lugar'); return; }
-  if(privada && !direccion){ toast('Indicá la dirección exacta (solo la ven los aprobados)'); return; }
+  const lugar = d.lugar;
+  const direccion = d.direccion;
+  if(!lugar) return falla(privada ? 'Indicá el barrio o zona' : 'Indicá el lugar', 'f-lugar');
+  if(privada && !direccion) return falla('Indicá la dirección exacta (solo la ven los aprobados)', 'f-direccion');
   if(privada && pareceDireccion(lugar)){
     await confirmar('Ojo con la dirección', 'En una previa privada, "Barrio o zona" lo ve todo el mundo: poné solo el barrio (por ejemplo "Nueva Córdoba"). La calle y el número van en "Dirección exacta", que solo ven los invitados que apruebes.', 'Entendido');
-    document.getElementById('f-lugar').focus();
+    ui.enfocar?.('f-lugar');
     return;
   }
 
-  const fechaStr = val('f-fecha');
-  const horaStr  = val('f-hora') || '22:00';
-  if(!fechaStr){ toast('Elegí una fecha'); return; }
-  const [y,m,d] = fechaStr.split('-').map(Number);
+  const fechaStr = d.fecha;
+  const horaStr  = d.hora || '22:00';
+  if(!fechaStr) return falla('Elegí una fecha', 'f-fecha');
+  const [y,m,dd] = fechaStr.split('-').map(Number);
   const [hh,mm] = horaStr.split(':').map(Number);
-  const fechaTs = new Date(y, m-1, d, hh, mm, 0, 0).getTime();
-  const evEdit = state.editandoId ? state.editandoEv : null;
-  if(isNaN(fechaTs) || (fechaTs < Date.now() - 60000 && !(evEdit && fechaTs === evEdit.fechaTs))){ toast('La fecha ya pasó'); return; }
+  const fechaTs = new Date(y, m-1, dd, hh, mm, 0, 0).getTime();
+  if(isNaN(fechaTs) || (fechaTs < Date.now() - 60000 && !(evEdit && fechaTs === evEdit.fechaTs))) return falla('La fecha ya pasó', 'f-fecha');
 
   // Fecha límite para anotarse (opcional): tiene que ser antes del evento
   let inscripcionHasta = null;
-  const inscF = val('f-insc-fecha');
+  const inscF = d.inscFecha;
   if(inscF){
-    const [iy, im, id] = inscF.split('-').map(Number), [ih, imi] = (val('f-insc-hora') || '23:59').split(':').map(Number);
+    const [iy, im, id] = inscF.split('-').map(Number), [ih, imi] = (d.inscHora || '23:59').split(':').map(Number);
     inscripcionHasta = new Date(iy, im - 1, id, ih, imi, 0, 0).getTime();
-    if(isNaN(inscripcionHasta) || inscripcionHasta > fechaTs){ toast('La fecha límite para anotarse tiene que ser antes del evento'); return; }
+    if(isNaN(inscripcionHasta) || inscripcionHasta > fechaTs) return falla('La fecha límite para anotarse tiene que ser antes del evento', 'f-insc-fecha');
   }
-  const capStr = val('f-capacidad');
-  const sinTope = !capStr && document.getElementById('switch-pago').classList.contains('on') && !!val('f-link-entradas');
+  const pago = !!d.pago;
+  const capStr = String(d.capacidad ?? '').trim();
+  const sinTope = !capStr && pago && !!d.linkEntradas;
   const capacidad = sinTope ? 20000 : parseInt(capStr, 10);
-  if(!sinTope && (!capacidad || capacidad < 2 || capacidad > 20000)){ toast(document.getElementById('switch-pago').classList.contains('on') ? 'Capacidad entre 2 y 20.000 (si vendés por otra página y no sabés el tope, poné el link y dejala vacía)' : 'Capacidad entre 2 y 20.000 personas'); return; }
-  if(evEdit && capacidad < (evEdit.confirmadosCount || 0)){ toast(`Ya hay ${evEdit.confirmadosCount} confirmados: la capacidad no puede ser menor`); return; }
+  if(!sinTope && (!capacidad || capacidad < 2 || capacidad > 20000)) return falla(pago ? 'Capacidad entre 2 y 20.000 (si vendés por otra página y no sabés el tope, poné el link y dejala vacía)' : 'Capacidad entre 2 y 20.000 personas', 'f-capacidad');
+  if(evEdit && capacidad < (evEdit.confirmadosCount || 0)) return falla(`Ya hay ${evEdit.confirmadosCount} confirmados: la capacidad no puede ser menor`, 'f-capacidad');
 
-  const edadStr = val('f-edad');
+  const edadStr = String(d.edad ?? '').trim();
   const edadMinima = edadStr === '' ? 18 : parseInt(edadStr, 10);
-  if(isNaN(edadMinima) || edadMinima < 0 || edadMinima > 99){ toast('Edad mínima inválida'); return; }
+  if(isNaN(edadMinima) || edadMinima < 0 || edadMinima > 99) return falla('Edad mínima inválida', 'f-edad');
 
-  const pago = document.getElementById('switch-pago').classList.contains('on');
-  const precio = pago ? parseInt(val('f-precio'), 10) : 0;
-  if(pago && (!precio || precio < 1)){ toast('Ingresá un precio válido'); return; }
-  const pagoInfo = pago ? val('f-pago-info') : '';
-  const pagoTitular = pago && quienCobra() === 'otro' ? val('f-pago-titular').slice(0, 60) : '';
-  if(pago && quienCobra() === 'otro' && !pagoTitular){ toast('Poné el nombre del titular de la cuenta'); irAPasoCrear(3); document.getElementById('f-pago-titular').focus(); return; }
-  const horaFin = val('f-hora-fin');
-  if(horaFin && !/^\d{2}:\d{2}$/.test(horaFin)){ toast('Hora de cierre inválida'); return; }
-  const lineup = val('f-lineup').slice(0, 600);
-  const linkTexto = pago ? val('f-link-entradas') : '';
+  const precio = pago ? parseInt(d.precio, 10) : 0;
+  if(pago && (!precio || precio < 1)) return falla('Ingresá un precio válido', 'f-precio');
+  const pagoInfo = pago ? d.pagoInfo : '';
+  const pagoTitular = pago && d.cobraOtro ? String(d.pagoTitular || '').slice(0, 60) : '';
+  if(pago && d.cobraOtro && !pagoTitular) return falla('Poné el nombre del titular de la cuenta', 'f-pago-titular');
+  const horaFin = d.horaFin;
+  if(horaFin && !/^\d{2}:\d{2}$/.test(horaFin)) return falla('Hora de cierre inválida', 'f-hora-fin');
+  const lineup = String(d.lineup || '').slice(0, 600);
+  const linkTexto = pago ? d.linkEntradas : '';
   const linkVenta = linkTexto ? linkWeb(linkTexto, true) : null;
-  if(linkTexto && !linkVenta){ toast('El link de venta tiene que ser una dirección https://'); return; }
+  if(linkTexto && !linkVenta) return falla('El link de venta tiene que ser una dirección https://', 'f-link-entradas');
   // Cobrar con comprobante (P2P): hace falta el alias o CBU para que la gente sepa a dónde transferir
-  const cobroComprobante = pago && !linkVenta && document.getElementById('switch-comprobante').classList.contains('on');
-  if(cobroComprobante && !datoPago(pagoInfo)){ toast('Para cobrar con comprobante, poné tu alias o CBU en "Cómo se paga"'); irAPasoCrear(3); document.getElementById('f-pago-info').focus(); return; }
+  const cobroComprobante = pago && !linkVenta && !!d.comprobante;
+  if(cobroComprobante && !datoPago(pagoInfo)) return falla('Para cobrar con comprobante, poné tu alias o CBU en "Cómo se paga"', 'f-pago-info');
 
   // El estilo de música es opcional (y en una previa no se pide)
-  const sinMusica = ['charla', 'taller'].includes(val('f-ocasion'));
-  const estilo = tipo === 'previa' || sinMusica || !ESTILOS[val('f-estilo')] ? '' : val('f-estilo');
-  const estiloOtro = estilo === 'otro' ? val('f-estilo-otro').replace(/\s+/g, ' ').slice(0, 30) : '';
-  if(estilo === 'otro' && !estiloOtro){ toast('Escribí qué estilo de música va a sonar'); irAPasoCrear(3); document.getElementById('f-estilo-otro').focus(); return; }
-  // El texto libre de música solo vale en una previa (o si un evento viejo ya lo tenía y no cambió el estilo)
-  const musicaLibre = document.getElementById('campo-musica').style.display !== 'none' || evEdit ? val('f-musica') : '';
+  const ocasion = OCASIONES[d.ocasion] ? d.ocasion : '';
+  const sinMusica = ['charla', 'taller'].includes(d.ocasion);
+  const estilo = tipo === 'previa' || sinMusica || !ESTILOS[d.estilo] ? '' : d.estilo;
+  const estiloOtro = estilo === 'otro' ? String(d.estiloOtro || '').replace(/\s+/g, ' ').slice(0, 30) : '';
+  if(estilo === 'otro' && !estiloOtro) return falla('Escribí qué estilo de música va a sonar', 'f-estilo-otro');
+  const musicaLibre = d.musica || '';
   const musica = sinMusica ? '' : (musicaLibre || (estilo === 'otro' ? estiloOtro : ESTILOS[estilo]) || '').slice(0, 80);
   // Preguntas frecuentes del evento y equipos (torneos)
-  const faq = leerFaq();
-  const eqCfg = leerConfigEquipos();
-  if(eqCfg.error){ toast(eqCfg.error); irAPasoCrear(3); document.getElementById(eqCfg.foco)?.focus(); return; }
+  const faq = d.faq || [];
+  const eqCfg = d.equipos || { porEquipos: false };
+  if(eqCfg.error) return falla(eqCfg.error, eqCfg.foco);
   const equiposCampos = eqCfg.porEquipos ? { porEquipos: true, ...(eqCfg.jugadoresPorEquipo ? { jugadoresPorEquipo: eqCfg.jugadoresPorEquipo } : {}), ...(eqCfg.maxEquipos ? { maxEquipos: eqCfg.maxEquipos } : {}) } : {};
-  const conVip = tipo !== 'previa' && document.getElementById('switch-vip').classList.contains('on');
-  const vip = conVip ? leerVip() : [];
-  const reglas = val('f-reglas');
+  const conVip = tipo !== 'previa' && !!d.vipOn;
+  const vip = conVip ? (d.vip || []) : [];
+  const extras = d.extras || {};
+  const reglas = d.reglas;
+  const ubicacionMapa = d.ubicacionMapa || null;
   // Dirección poco precisa: avisamos antes de publicar (se puede seguir igual)
   const dirVisible = privada ? direccion : lugar;
-  if(!state.ubicacionMapa && !/\d/.test(dirVisible) && !(evEdit && dirVisible === (privada ? state._dirIni : state._lugarIni))){
+  if(!ubicacionMapa && !/\d/.test(dirVisible) && !(evEdit && dirVisible === (privada ? state._dirIni : state._lugarIni))){
     const seguir = await confirmar('¿La dirección está completa?',
       `"${dirVisible}" puede confundir. Para que nadie se pierda, poné calle y número (o el nombre exacto del lugar), barrio y ciudad, o marcalo en el mapa.`, 'Publicar igual');
-    if(!seguir){ document.getElementById(privada ? 'f-direccion' : 'f-lugar').focus(); return; }
+    if(!seguir){ ui.enfocar?.(privada ? 'f-direccion' : 'f-lugar'); return; }
   }
-  const coords = state.ubicacionMapa || await ubicarLugar(lugar);
+  const coords = ubicacionMapa || await ubicarLugar(lugar);
   const jitter = () => (Math.random() - 0.5) * (privada ? 0.008 : 0.004); // previa privada: ~±450 m, nunca marca la casa
-  const exacta = !!state.ubicacionMapa && !privada;  // en previas privadas el pin público siempre es aproximado
+  const exacta = !!ubicacionMapa && !privada;  // en previas privadas el pin público siempre es aproximado
+  const imagenMini = d.imagenMini || null, imagenNueva = d.imagenNueva || null;
   if(evEdit) return guardarEdicion(evEdit, {
     nombre, lugar, direccion: privada ? direccion : null, fechaTs, hora: horaStr, horaFin, capacidad, capacidadDesconocida: sinTope, edadMinima,
     precio, pagoInfo, pagoTitular, cobroComprobante, linkEntradas: linkVenta ? linkVenta.url.slice(0, 300) : '', lineup,
-    categoria: estilo, estiloOtro, musica, faq, eqCfg, dresscode: val('f-dresscode') || 'Libre', ocasion: OCASIONES[val('f-ocasion')] ? val('f-ocasion') : '', vip,
-    bebida: tipo === 'previa' && document.getElementById('switch-bebida').classList.contains('on'),
+    categoria: estilo, estiloOtro, musica, faq, eqCfg, dresscode: d.dresscode || 'Libre', ocasion, vip,
+    bebida: tipo === 'previa' && !!d.bebida,
     tipo, privacidad: privada ? 'privada' : 'publica',
-    listaVip: conVip, inscripcionHasta, extras: leerExtras(),
-    imagen: state.imagenMini || state.imagenNueva || '', imagenGrande: state.imagenMini ? state.imagenNueva : null,
-    descripcion: val('f-descripcion') || 'Evento creado desde Partazy.',
+    listaVip: conVip, inscripcionHasta, extras,
+    imagen: imagenMini || imagenNueva || '', imagenGrande: imagenMini ? imagenNueva : null,
+    descripcion: d.descripcion || 'Evento creado desde Partazy.',
     reglas: reglas || 'Respetar el lugar y a los demás asistentes.'
   });
   // (la vista previa avisa si no hay foto)
@@ -7528,7 +7622,7 @@ async function publicarEventoUnaVez(){
   const nuevo = {
     nombre, creador: state.uid, creadorNombre: state.perfil.nombre,
     organizador: state.perfil.nombre, verificado: !!state.perfil.verificado,
-    categoria: estilo, ...(estiloOtro ? { estiloOtro } : {}), tipoLugar: tipo==='previa' ? 'Previa' : 'Fiesta', tipo, ocasion: OCASIONES[val('f-ocasion')] ? val('f-ocasion') : '',
+    categoria: estilo, ...(estiloOtro ? { estiloOtro } : {}), tipoLugar: tipo==='previa' ? 'Previa' : 'Fiesta', tipo, ocasion,
     ...(faq.length ? { faq } : {}), ...equiposCampos,
     privacidad: privada ? 'privada' : 'publica',
     fechaTs, hora: horaStr,
@@ -7537,28 +7631,26 @@ async function publicarEventoUnaVez(){
     precio, pagoInfo, estado: 'publicado', ...(pagoTitular ? { pagoTitular } : {}), ...(cobroComprobante ? { cobroComprobante: true } : {}),
     horaFin, lineup, linkEntradas: linkVenta ? linkVenta.url.slice(0, 300) : '',
     deOrganizacion: esOrganizacion(state.perfil),
-    conQR: esOrganizacion(state.perfil) && document.getElementById('switch-qr').classList.contains('on'),
+    conQR: esOrganizacion(state.perfil) && !!d.qr,
     capacidad, capacidadDesconocida: sinTope, confirmadosCount: 1, edadMinima, vistasCount: 0,
     ...(inscripcionHasta ? { inscripcionHasta } : {}),
-    ...(Object.keys(leerExtras()).length ? { extras: leerExtras() } : {}),
-    dresscode: val('f-dresscode') || 'Libre', musica,
-    bebida: tipo === 'previa' && document.getElementById('switch-bebida').classList.contains('on'),
+    ...(Object.keys(extras).length ? { extras } : {}),
+    dresscode: d.dresscode || 'Libre', musica,
+    bebida: tipo === 'previa' && !!d.bebida,
     listaVip: conVip,
     ambiente:'verde', ambienteLabel:'Recién creado', ambienteDesc:'Todavía no hay reportes de ambiente',
-    imagen: state.imagenMini || state.imagenNueva || '', fotoGrande: !!state.imagenMini,
-    descripcion: val('f-descripcion') || 'Evento creado desde Partazy.',
+    imagen: imagenMini || imagenNueva || '', fotoGrande: !!imagenMini,
+    descripcion: d.descripcion || 'Evento creado desde Partazy.',
     reglas: reglas || 'Respetar el lugar y a los demás asistentes.',
     createdAt: Date.now()
   };
-  if(!(await mostrarVistaPrevia(nuevo))) return;
+  if(ui.vistaPrevia !== false && !(await mostrarVistaPrevia(nuevo))) return;
 
-  const btn = document.getElementById('btn-publicar');
-  btn.disabled = true; btn.textContent = 'Publicando...';
-
+  ui.ocupado?.(true);
   try{
-    if(state.imagenMini) fotosGrandes.set(nuevoId, state.imagenNueva);
+    if(imagenMini) fotosGrandes.set(nuevoId, imagenNueva);
     state.vipPendiente = conVip ? vip : null;
-    await DataService.crearEvento(nuevoId, nuevo, privada ? direccion : null, state.imagenMini ? state.imagenNueva : null, {
+    await DataService.crearEvento(nuevoId, nuevo, privada ? direccion : null, imagenMini ? imagenNueva : null, {
       uid: state.uid, nombre: state.perfil.nombre, estado: 'confirmado', ts: Date.now(), ticket: ticketCode()
     });
     // La escucha en vivo puede haberlo sumado antes de que termine de guardarse: no duplicarlo
@@ -7569,14 +7661,15 @@ async function publicarEventoUnaVez(){
     else avisarAmigosEvento(nuevoId, nombre);
     state.misPlanes.add(nuevoId);
 
-    resetFormularioCrear();
+    ui.listo?.(nuevoId);
     renderHome(); renderExplorar(); renderPerfilVista();
     ir('confirmacion');
+    return nuevoId;
   } catch(e){
     console.error(e);
     toast('No se pudo publicar el evento');
   } finally {
-    btn.disabled = false; btn.textContent = 'Publicar evento';
+    ui.ocupado?.(false);
   }
 }
 
@@ -8051,7 +8144,7 @@ function encuadrarMapa(eventos, centro){
 // =========================================================
 //  MAPA: elegir la ubicación del evento tocando el mapa
 // =========================================================
-const MAPA = { mapa: null, pin: null, punto: null, dir: null, cargando: null, tRev: null };
+const MAPA = { mapa: null, pin: null, punto: null, dir: null, cargando: null, tRev: null, alConfirmar: null, inicio: null };
 // Carga la librería de mapas solo cuando hace falta.
 // Carga la librería del QR recién cuando se abre una entrada con QR.
 let _cargandoQR = null;
@@ -8081,15 +8174,19 @@ function cargarLeaflet(){
   return MAPA.cargando;
 }
 // Mapa para elegir dónde es el evento.
-async function abrirMapa(){
+// opts (del Crear por pasos): { inicio: {lat, lng}, alConfirmar(punto, dir) }. Sin opts, completa el formulario de siempre.
+async function abrirMapa(opts){
+  MAPA.alConfirmar = typeof opts?.alConfirmar === 'function' ? opts.alConfirmar : null;
+  MAPA.inicio = opts?.inicio || null;
   document.getElementById('modal-mapa').classList.add('show');
   abrirModalHist();
   document.getElementById('mapa-resultados').innerHTML = '';
   try{ await cargarLeaflet(); }
   catch(e){ document.getElementById('mapa-dir').textContent = 'No se pudo cargar el mapa. Revisá tu conexión y probá de nuevo.'; return; }
-  const inicio = state.ubicacionMapa || state.userCoords || { lat: -34.6, lng: -63.6 };
+  const marcado = MAPA.alConfirmar ? MAPA.inicio : state.ubicacionMapa;
+  const inicio = marcado || state.userCoords || { lat: -34.6, lng: -63.6 };
   if(!MAPA.mapa){
-    MAPA.mapa = L.map('mapa-lienzo', { zoomControl: true, attributionControl: true }).setView([inicio.lat, inicio.lng], (state.ubicacionMapa || state.userCoords) ? 15 : 5);
+    MAPA.mapa = L.map('mapa-lienzo', { zoomControl: true, attributionControl: true }).setView([inicio.lat, inicio.lng], (marcado || state.userCoords) ? 15 : 5);
     // OpenStreetMap: gratis y sin clave. Lo oscurecemos con CSS para que combine con la app.
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19, className: 'tiles-oscuros',
@@ -8106,7 +8203,7 @@ async function abrirMapa(){
     MAPA.pin.setLatLng([inicio.lat, inicio.lng]);
   }
   setTimeout(() => MAPA.mapa.invalidateSize(), 60);
-  if(state.ubicacionMapa) marcarPunto(inicio.lat, inicio.lng, true);
+  if(marcado) marcarPunto(inicio.lat, inicio.lng, true);
 }
 // Cierra el mapa para elegir lugar.
 function cerrarMapa(){ document.getElementById('modal-mapa').classList.remove('show'); soltarModalHist(); }
@@ -8175,6 +8272,7 @@ function mapaMiUbicacion(){
 // Usa el punto elegido como lugar del evento.
 function confirmarMapa(){
   if(!MAPA.punto) return;
+  if(MAPA.alConfirmar){ const fn = MAPA.alConfirmar; MAPA.alConfirmar = null; fn({ ...MAPA.punto }, { ...(MAPA.dir || {}) }); cerrarMapa(); return; }
   state.ubicacionMapa = { ...MAPA.punto };
   const dir = MAPA.dir || {};
   const privada = esPrivadaEnForm();

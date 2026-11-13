@@ -10,13 +10,17 @@ import { StrictMode } from 'react';
 import type { ComponentType } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import Ayuda from './pantallas/Ayuda';
+import CrearPasos from './pantallas/CrearPasos';
 
-const PANTALLAS: Record<string, ComponentType> = { ayuda: Ayuda };
+const PANTALLAS: Record<string, ComponentType> = { ayuda: Ayuda, crear: CrearPasos };
+// Dónde se dibuja cada una, si no es en su pantalla de siempre (pantalla-<nombre>).
+// "crear" tiene pantalla propia: editar un evento sigue usando el formulario de siempre.
+const CONTENEDOR: Record<string, string> = { crear: 'pantalla-crear-pasos' };
 const raices = new Map<string, Root>();
 
 export function arrancar(nombres: string[]){
   for(const n of nombres){
-    const el = document.getElementById('pantalla-' + n);
+    const el = document.getElementById(CONTENEDOR[n] || 'pantalla-' + n);
     if(!PANTALLAS[n] || !el || raices.has(n)) continue;
     if(el.classList.contains('activa')) esperarQueSeCierre(el, () => montar(n, el));
     else montar(n, el);

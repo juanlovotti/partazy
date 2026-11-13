@@ -53,7 +53,7 @@ const get=id=>({id,...store.docs.get('events/'+id)});
   w.abrirDetalle('hay'); await sleep(200);
   ok(!$('bloque-ambiente').querySelector('[data-votar]'), 'antes de empezar no se vota');
   $('bloque-ambiente').querySelector('.link-ref').click(); await sleep(20);
-  ok($('modal-referencias').classList.contains('show') && /Se está llenando/.test($('ref-contenido').textContent) && /Terminó/.test($('ref-contenido').textContent), '"¿Qué significa?" abre la referencia de colores');
+  ok($('modal-referencias').classList.contains('show') && /se está llenando/i.test($('ref-contenido').textContent) && /terminó/i.test($('ref-contenido').textContent), '"¿Qué significa?" abre la referencia de colores');
   w.cerrarReferencias();
   w.abrirAyuda(); await sleep(20);
   ok(/Colores y etiquetas/.test($('lista-ayuda').textContent), 'la ayuda tiene la sección de colores');

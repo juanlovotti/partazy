@@ -4,12 +4,17 @@
 
 | Nivel | Qué | Cuánto | Dónde corre |
 |---|---|---|---|
-| Unidad (componentes React) | Vitest + Testing Library: Ayuda y el montaje con interruptores | 7 pruebas | `npm run test:react` |
+| Unidad (componentes React) | Vitest + Testing Library: Ayuda, el montaje con interruptores, el puente de estado y el Crear por pasos (`src/react/crear/borrador.test.ts` y `CrearPasos.test.tsx`) | 38 pruebas | `npm run test:react` |
 | Tipos | TypeScript estricto en `src/react` | 1 chequeo | `npm run test:react` |
-| Integración (la app entera en memoria) | jsdom con la app empaquetada igual que en el sitio y Firebase falso (`tests/fakefb.js`) | 51 archivos, más de 600 comprobaciones | `npm test` |
+| Integración (la app entera en memoria) | jsdom con la app empaquetada igual que en el sitio y Firebase falso (`tests/fakefb.js`) | 51 archivos, más de 650 comprobaciones | `npm test` |
 | Armado y publicación | `test_vite.js` (dist/, hashes, puente), `test_redireccion_hosting.js`, `test_paginas.js` | 3 archivos | `npm test` |
 | Navegador real (capturas antes y después, axe, teclado) | Playwright + axe-core | Se corrió a mano en cada paso, **no está en el repo** | (scripts en la sesión de Claude) |
 | Reglas de Firestore | — | **0** | bloqueado: el emulador no se puede descargar desde acá |
+
+**Sumadas el 12/11:**
+- `tests/test_tarjetas.js` (29): fecha sobre la foto, hora, lugar, sellos "Últimos N lugares" y "Agotado", venta externa sin sello, previas privadas sin dirección (ni en la etiqueta para lectores de pantalla), tarjeta horizontal y guía de colores.
+- `tests/test_crear_react.js` (44): el Crear por pasos con la app completa. Sin interruptor sigue el de siempre; cada paso frena con su mensaje y lleva el foco al campo; previa privada (la dirección va aparte, nunca en el evento público); fiesta paga con comprobante, estilo y VIP; un error que encuentra la app vieja al publicar vuelve al paso justo; un lugar elegido de las sugerencias se borra si después escribís otro (aunque vayas y vuelvas de paso); editar sigue en el formulario de siempre.
+- Recorrido en Chromium real con capturas y axe-core en los 7 pasos, a 390 y 1280 px: 0 problemas de accesibilidad.
 
 **Lo fuerte:** los recorridos de negocio tienen pruebas de punta a punta en memoria:
 - anotarse, reservar y pagar con comprobante (P2P), pasar la entrada a un amigo;

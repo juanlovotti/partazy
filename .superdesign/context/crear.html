@@ -1,0 +1,213 @@
+<!-- Partazy: pantalla Crear evento (index.html 293-459) + barra de navegación (990-1033). Markup real de la app vieja. -->
+  <div class="screen" id="pantalla-crear">
+    <div class="topbar">
+      <div class="logo" style="font-size:24px;" id="crear-titulo">Crear</div>
+      <div class="icon-btn" onclick="cerrarCrear()" aria-label="Cerrar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </div>
+    </div>
+    <div class="crear-cab">
+      <div class="pasos-barra" id="pasos-barra" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="resumen-pasos" id="resumen-pasos"></div>
+      <p style="font-size:12.5px; color:var(--gris);" id="crear-intro">Fiestas, previas, recitales, charlas, ferias, talleres, partidos… cualquier evento donde vaya gente.</p>
+    </div>
+    <div class="toggle-tipo" id="crear-tipo" hidden style="display:none;">
+      <div class="op activo" id="op-fiesta" onclick="elegirTipo('fiesta')">Evento</div>
+      <div class="op" id="op-previa" onclick="elegirTipo('previa')">Previa</div>
+    </div>
+    <div class="form form-pasos" id="form-crear">
+      <section class="paso" data-paso="1">
+        <div class="paso-cab"><span class="paso-num">1</span><div><h3>Lo básico</h3><small>Nombre, cuándo es y una foto</small></div></div>
+        <div class="campo"><label for="f-nombre">Nombre del evento</label><input id="f-nombre" maxlength="80" placeholder="Ej: Charla de emprendedores, Noche Techno, Torneo de pádel" type="text"/></div>
+        <div class="fila-2">
+<div class="campo"><label for="f-fecha">Fecha</label><input id="f-fecha" type="date"/></div>
+<div class="campo"><label for="f-hora">Horario</label><input id="f-hora" type="time"/></div>
+</div>
+        <div class="campo"><label for="f-hora-fin">Hora de cierre (opcional)</label><input id="f-hora-fin" type="time"/></div>
+        <div class="campo">
+<label>Foto del evento</label>
+<input accept="image/*" id="f-imagen" onchange="onImagenSeleccionada(this)" style="display:none" type="file"/>
+<label class="upload-foto" for="f-imagen" id="upload-label" role="button" tabindex="0">
+<svg fill="none" height="26" stroke="currentColor" stroke-width="1.6" viewbox="0 0 24 24" width="26"><rect height="18" rx="3" width="18" x="3" y="3"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-5-5L5 21"></path></svg>
+<div id="upload-label-txt">Tocá para subir una foto</div>
+<span class="tip-foto">Usá una foto <b>real</b>: el lugar, la barra o una edición anterior. Las fotos reales generan más confianza y más confirmaciones que un flyer genérico.</span>
+</label>
+<img alt="Vista previa" class="preview-img" id="preview-imagen"/>
+</div>
+        <div class="campo"><label for="f-descripcion">¿De qué se trata?</label><textarea id="f-descripcion" maxlength="800" placeholder="Contá de qué se trata, qué va a haber, para quién es..."></textarea></div>
+      </section>
+      <section class="paso" data-paso="2">
+        <div class="paso-cab"><span class="paso-num">2</span><div><h3>¿Qué tipo de evento es?</h3><small>Así te mostramos las preguntas justas</small></div></div>
+        <div class="campo" id="campo-tipos">
+<label>Tipo de evento</label>
+<input id="f-ocasion" type="hidden" value=""/>
+<div class="tipos-grid" id="tipos-grid"><button aria-pressed="false" class="tipo-op" data-ocasion="fiesta" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="13" r="7"></circle><path d="M12 6V2M5.5 10.5h13M5.5 15.5h13M12 6c-2 2.2-2.8 4.6-2.8 7s.8 4.8 2.8 7M12 6c2 2.2 2.8 4.6 2.8 7s-.8 4.8-2.8 7"></path></svg><span>Fiesta</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="previa" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M6.5 2h3v2h-3zM7 4v3c0 1.3-3 2-3 4.5V21h8v-9.5C12 9 9 8.3 9 7V4"></path><path d="M13 12.5l1-.8 1 .8 1-.8 1 .8 1-.8 1 .8V21h-6z"></path><path d="M13 15.5h6"></path></svg><span>Previa</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="after" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 18h18M5 21h14"></path><path d="M7 18a5 5 0 0 1 10 0"></path><path d="M12 7V4M5.6 10.6 3.8 8.8M18.4 10.6l1.8-1.8"></path></svg><span>After</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="pena" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M14 3l4 4-2 2-4-4z"></path><path d="M13.5 7.5 9 12"></path><path d="M10.5 10.5c-2.5-1-5 0-6 2.5s0 5.5 2.5 6.5 5.5 0 6.5-2.5c.6-1.5.3-3-.5-4.2"></path><circle cx="8.5" cy="15.5" r="1.4"></circle></svg><span>Peña</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="egresados" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M2 9l10-5 10 5-10 5z"></path><path d="M6 11v5c3.5 2.5 8.5 2.5 12 0v-5"></path><path d="M22 9v6"></path></svg><span>Egresados</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="cumple" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M4 21h16v-8H4z"></path><path d="M4 16c2 1.5 4 1.5 6 0s4-1.5 6 0 3 1.5 4 0"></path><path d="M8 13V9M12 13V9M16 13V9"></path><path d="M8 6.5c0-1 .8-1.5.8-2.5M12 6.5c0-1 .8-1.5.8-2.5M16 6.5c0-1 .8-1.5.8-2.5"></path></svg><span>Cumpleaños</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="musical" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><rect height="10" rx="2.5" width="5" x="6" y="3"></rect><path d="M3.5 10.5a5 5 0 0 0 10 0M8.5 15.5V20M6 20h5"></path><path d="M17 11V4l4-1v6"></path><circle cx="16" cy="11.2" r="1.6"></circle><circle cx="20" cy="9.2" r="1.6"></circle></svg><span>Música en vivo</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="gastronomico" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="13" r="6"></circle><circle cx="12" cy="13" r="3"></circle><path d="M3 3v6a2 2 0 0 0 2 2v10M5 3v4M21 3c-1.5 1-2 3-2 6h2v12"></path></svg><span>Gastronomía</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="charla" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M4 5h16v10H9l-5 4z"></path><path d="M8 9h8M8 12h5"></path></svg><span>Charla / Seminario</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="taller" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"></path></svg><span>Taller / Curso</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="cultural" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M4 7c5-3 11-3 16 0-1 8-4 12-8 12s-7-4-8-12z"></path><circle cx="9" cy="10.5" r="1"></circle><circle cx="15" cy="10.5" r="1"></circle><path d="M9 14.5c2 1.5 4 1.5 6 0"></path></svg><span>Arte y cultura</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="deportivo" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><circle cx="12" cy="12" r="9"></circle><path d="m12 7 4 3-1.5 4.5h-5L8 10z"></path></svg><span>Deporte / Aire libre</span></button><button aria-pressed="false" class="tipo-op" data-ocasion="feria" type="button"><svg aria-hidden="true" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" viewbox="0 0 24 24"><path d="M3 9l2-5h14l2 5"></path><path d="M3 9c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3c0 1.7 1.3 3 3 3s3-1.3 3-3"></path><path d="M5 12v8h14v-8M10 20v-5h4v5"></path></svg><span>Feria / Mercado</span></button></div>
+<div class="ayuda">Si no subís foto, la portada se arma sola con el diseño de este tipo.</div>
+</div>
+      </section>
+      <section class="paso" data-paso="3">
+        <div class="paso-cab"><span class="paso-num">3</span><div><h3>Dónde y detalles</h3><small>Lo que la gente necesita saber</small></div></div>
+        <div class="campo">
+<label for="f-lugar" id="label-lugar">Lugar</label>
+<input id="f-lugar" list="lista-barrios" maxlength="120" placeholder="Dirección o barrio" type="text"/>
+<datalist id="lista-barrios"></datalist>
+<div class="ayuda" id="ayuda-lugar">📍 Sé lo más específico posible: calle y número (o nombre del lugar), barrio y ciudad. Mejor todavía: marcalo en el mapa. Así nadie se confunde.</div>
+<button class="btn btn-secundario btn-mini btn-mapa" onclick="abrirMapa()" type="button">📍 Elegir en el mapa</button>
+<div class="mapa-elegido" id="mapa-elegido"></div>
+</div>
+        <div class="campo" id="campo-direccion" style="display:none;">
+<label for="f-direccion">Dirección exacta (privada)</label>
+<input id="f-direccion" maxlength="200" placeholder="Calle, número, piso, depto, barrio y ciudad" type="text"/>
+<div class="ayuda">📍 Lo más específica posible (calle, número, piso/depto, timbre, barrio y ciudad) para que nadie se pierda. Solo la ven vos y los invitados que apruebes.</div>
+</div>
+        <div class="switch-row" id="fila-privacidad" style="display:none;">
+<div class="txt">Previa privada<small>La dirección se revela al aprobar</small></div>
+<div aria-checked="true" aria-label="Previa privada" class="switch on" id="switch-privacidad" onclick="toggleSwitch(this); actualizarCamposPrivacidad(); ajustarLugarPorPrivacidad();" role="switch" tabindex="0"><div class="bola"></div></div>
+</div>
+        <div id="campos-tipo" class="campos-tipo"></div>
+        <div class="fila-2">
+<div class="campo"><label for="f-capacidad">Capacidad</label><input id="f-capacidad" max="20000" min="2" placeholder="Ej: 40" type="number"/><div class="ayuda" id="ayuda-capacidad" style="display:none;">Si vendés por otra página y no sabés el tope, dejalo vacío.</div></div>
+<div class="campo"><label for="f-edad">Edad mínima</label><input id="f-edad" max="99" min="0" placeholder="18 · 0 = ATP" type="number"/></div>
+</div>
+        <div class="campo" id="campo-dresscode"><label for="f-dresscode">Dress code</label><input id="f-dresscode" maxlength="60" placeholder="Ej: Negro, libre, temática..." type="text"/></div>
+        <div class="campo" id="campo-estilo">
+<label for="f-estilo">Estilo de música (opcional)</label>
+<select id="f-estilo" onchange="actualizarEstiloOtro(); if(document.getElementById('campo-musica').style.display === 'none') document.getElementById('f-musica').value = '';">
+<option value="">Sin especificar</option>
+<option value="electronica">Electrónica</option>
+<option value="techno">Techno</option>
+<option value="house">House</option>
+<option value="cachengue">Cachengue</option>
+<option value="cuarteto">Cuarteto</option>
+<option value="reggaeton">Reggaetón</option>
+<option value="cumbia">Cumbia</option>
+<option value="trap">Trap</option>
+<option value="rock">Rock</option>
+<option value="pop">Pop</option>
+<option value="rnb">R&amp;B</option>
+<option value="folklore">Folklore</option>
+<option value="tango">Tango</option>
+<option value="variado">Variado</option>
+<option value="otro">Otro…</option>
+</select>
+<input id="f-estilo-otro" maxlength="30" placeholder="¿Cuál? Ej: jazz, salsa, metal" type="text" aria-label="Otro estilo de música" style="display:none; margin-top:10px;"/>
+<div class="ayuda">Si lo elegís, tu evento le aparece a quien busca ese estilo: llega a más gente.</div>
+</div>
+        <div class="campo" id="campo-musica" style="display:none;"><label for="f-musica">Música (opcional)</label><input id="f-musica" maxlength="80" placeholder="Ej: cumbia, cachengue, lo que pinte" type="text"/></div>
+        <div class="campo" id="campo-lineup"><label for="f-lineup" id="label-lineup">Line-up (opcional)</label><textarea id="f-lineup" maxlength="600" placeholder="Un artista por renglón. Podés poner la hora:
+23:30 DJ Invitado
+01:00 Banda principal"></textarea></div>
+        <div class="switch-row" id="fila-bebida" style="display:none;">
+<div class="txt">Llevar bebida<small>Cada invitado trae la suya</small></div>
+<div aria-checked="true" aria-label="Llevar bebida" class="switch on" id="switch-bebida" onclick="toggleSwitch(this)" role="switch" tabindex="0"><div class="bola"></div></div>
+</div>
+        <div class="switch-row" id="fila-pago">
+<div class="txt">Entrada paga<small>Si está apagado, es gratuita</small></div>
+<div aria-checked="false" aria-label="Entrada paga" class="switch" id="switch-pago" onclick="toggleSwitchPago(this)" role="switch" tabindex="0"><div class="bola"></div></div>
+</div>
+        <div class="campo" id="campo-precio" style="display:none;">
+<label for="f-precio">Precio de la entrada ($)</label>
+<input id="f-precio" min="1" placeholder="Ej: 5000" type="number"/>
+<label style="margin-top:14px;">¿Quién recibe la plata?</label>
+<div class="toggle-tipo" id="pago-quien" style="margin:0;">
+<div class="op activo" data-quien="yo" role="button" tabindex="0" onclick="elegirQuienCobra('yo')">Yo / mi organización</div>
+<div class="op" data-quien="otro" role="button" tabindex="0" onclick="elegirQuienCobra('otro')">Otra persona</div>
+</div>
+<div id="campo-titular" style="display:none;">
+<label for="f-pago-titular" style="margin-top:14px;">Titular de la cuenta</label>
+<input id="f-pago-titular" maxlength="60" placeholder="Nombre y apellido de quien recibe la plata" type="text"/>
+<div class="ayuda">Para cuando publicás el evento de otra persona: los asistentes ven a quién le pagan y que el evento lo publicaste vos.</div>
+</div>
+<label for="f-pago-info" style="margin-top:14px;">Cómo se paga</label>
+<input id="f-pago-info" maxlength="200" placeholder="Ej: transferencia al alias mi.fiesta, o efectivo en puerta" type="text"/>
+<div class="switch-row fila-comprobante" id="fila-comprobante">
+<div class="txt">Cobrar con comprobante<small>Cada persona reserva, te transfiere y te manda la captura. Vos confirmás que te llegó y recién ahí recibe su entrada. Le guardamos el lugar 30 minutos.</small></div>
+<div aria-checked="true" aria-label="Cobrar con comprobante" class="switch on" id="switch-comprobante" onclick="toggleSwitch(this)" role="switch" tabindex="0"><div class="bola"></div></div>
+</div>
+<label for="f-link-entradas" style="margin-top:14px;">Link de venta en otra plataforma (opcional)</label>
+<input autocapitalize="none" id="f-link-entradas" maxlength="300" placeholder="https://alpogo.com/... o https://passline.com/..." type="text"/>
+<div class="ayuda">El dinero va directo a vos. Partazy no cobra ni devuelve dinero: si cancelás el evento, las devoluciones las coordinás vos con cada persona. Estamos trabajando en un sistema seguro para devoluciones de dinero.</div>
+</div>
+        <div class="switch-row" id="fila-qr" style="display:none;">
+<div class="txt">Entradas con QR<small>Cada asistente recibe un código QR para mostrar en la puerta</small></div>
+<div aria-checked="true" aria-label="Entradas con QR" class="switch on" id="switch-qr" onclick="toggleSwitch(this)" role="switch" tabindex="0"><div class="bola"></div></div>
+</div>
+        <div class="switch-row" id="fila-vip">
+<div class="txt">Lista VIP<small>Acceso prioritario para invitados</small></div>
+<div aria-checked="false" aria-label="Lista VIP" class="switch" id="switch-vip" onclick="toggleSwitch(this); actualizarCampoVip();" role="switch" tabindex="0"><div class="bola"></div></div>
+</div>
+        <div class="campo" id="campo-vip" style="display:none;">
+<label for="f-vip">¿Quiénes están en la lista VIP?</label>
+<textarea id="f-vip" maxlength="6000" placeholder="Un nombre por renglón:
+Sofía Gómez
+Ivo Paz +1"></textarea>
+<div class="ayuda">Uno por renglón. Solo la ves vos, desde la página del evento.</div>
+</div>
+        <div class="campo" id="campo-insc">
+<label for="f-insc-fecha">Anotarse hasta (opcional)</label>
+<div class="fila-2" style="margin:0;"><input aria-label="Fecha límite para anotarse" id="f-insc-fecha" type="date"/><input aria-label="Hora límite" id="f-insc-hora" placeholder="23:59" type="time"/></div>
+<div class="ayuda">⏳ Después de esa fecha nadie más se puede anotar. Sirve para cerrar la lista de un egreso, una cena o un viaje.</div>
+</div>
+        <div class="campo"><label for="f-reglas">Reglas del evento</label><textarea id="f-reglas" maxlength="500" placeholder="Ej: Respetar el lugar, no ingresar con más invitados de los acordados..."></textarea></div>
+        <div class="campo" id="campo-faq">
+<label>Preguntas frecuentes (opcional)</label>
+<div class="ayuda" style="margin:0 0 10px;">Lo que siempre te preguntan sobre este evento. Hasta 5, aparecen en la página del evento.</div>
+<div id="f-faq"></div>
+<div class="faq-sug" id="faq-sug"></div>
+<button type="button" class="btn btn-secundario btn-mini" id="btn-faq-mas" onclick="agregarFaq()">+ Escribir otra pregunta</button>
+</div>
+      </section>
+      <div class="nav-pasos" id="nav-pasos">
+        <button type="button" class="btn btn-secundario" id="btn-paso-atras" onclick="pasoCrear(-1)">Atrás</button>
+        <button type="button" class="btn btn-primario" id="btn-paso-sig" onclick="pasoCrear(1)">Continuar</button>
+      </div>
+      <button class="btn btn-primario" id="btn-publicar" onclick="publicarEvento()" style="margin-top:6px;">Publicar evento</button>
+    </div>
+  </div>
+
+  <!-- ============ CONFIRMACION ============ -->
+
+  <nav class="navbar" aria-label="Navegación principal">
+    <div class="nav-marca solo-escritorio" role="button" tabindex="0" onclick="ir('home')" aria-label="Partazy, Inicio"><span class="lv lv-nav"><svg class="lv-ico" viewBox="17.5 10.5 31 43" aria-hidden="true"><g clip-path="url(#ptz-p)"><rect width="64" height="64" fill="url(#ptz-base)"/><g filter="url(#ptz-blur)"><circle class="lv-b b1" cx="24" cy="14" r="11" fill="#0297DE"/><circle class="lv-b b2" cx="24" cy="48" r="11" fill="#FFA98C"/><circle class="lv-b b3" cx="44" cy="26" r="9" fill="#FC734D"/></g></g></svg><span class="lv-txt notranslate" translate="no"><i style="--i:0">a</i><i style="--i:1">r</i><i style="--i:2">t</i><i style="--i:3">a</i><i style="--i:4">z</i><i style="--i:5">y</i></span><svg class="lv-punto" viewBox="0 0 20 20" aria-hidden="true"><g clip-path="url(#ptz-c)"><rect width="20" height="20" fill="#0297DE"/><g filter="url(#ptz-blur2)"><circle class="lv-q q1" cx="15" cy="15" r="6" fill="#FC734D" opacity=".75"/><circle class="lv-q q2" cx="4" cy="5" r="6" fill="#6CCBF5"/><circle cx="12" cy="4" r="4" fill="#FFA98C" opacity=".6"/></g></g></svg></span></div>
+    <button class="nav-toggle solo-escritorio" id="nav-toggle" onclick="alternarNav()" aria-label="Achicar el menú" title="Achicar el menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+    <button class="nav-item activo" data-nav="home" onclick="ir('home')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      Inicio
+    </button>
+    <button class="nav-item" data-nav="explorar" onclick="ir('explorar')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      Explorar
+    </button>
+    <button class="nav-item crear" data-nav="crear" onclick="ir('crear')">
+      <div class="circulo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      </div>
+      <span class="txt-crear">Crear</span>
+    </button>
+    <button class="nav-item" data-nav="chats" onclick="abrirChats()">
+      <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z"/></svg><span class="badge" id="badge-chats"></span></span>
+      Chats
+    </button>
+    <button class="nav-item solo-escritorio" data-nav-esc="notificaciones" onclick="abrirNotificaciones()">
+      <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="badge" id="badge-notif-side"></span></span>
+      Notificaciones
+    </button>
+    <button class="nav-item solo-escritorio" data-nav-esc="amigos" onclick="abrirAmigos()">
+      <span class="nav-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6"/></svg><span class="badge" id="badge-amigos-side"></span></span>
+      Amigos
+    </button>
+    <button class="nav-item solo-escritorio" data-nav-esc="ticket" onclick="irAMisEntradas()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 8a2 2 0 0 0 2-2h14a2 2 0 0 0 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 0-2 2H5a2 2 0 0 0-2-2v-2a2 2 0 0 0 0-4z"/><path d="M13 6v12" stroke-dasharray="2 2"/></svg>
+      Mis entradas
+    </button>
+    <button class="nav-item" data-nav="perfil" onclick="ir('perfil')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M20 21a8 8 0 1 0-16 0"/><circle cx="12" cy="7" r="4"/></svg>
+      Perfil
+    </button>
+    <div class="nav-pie solo-escritorio">
+      <div class="pie-redes"><a class="pie-ig" href="https://www.instagram.com/partazy/" target="_blank" rel="noopener noreferrer" aria-label="Partazy en Instagram"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg><span class="notranslate" translate="no">@partazy</span></a><a class="pie-ig pie-fb" href="https://www.facebook.com/share/1EkgZmHUXT/" target="_blank" rel="noopener noreferrer" aria-label="Partazy en Facebook"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13.5 21v-7.5h2.6l.4-3h-3V8.6c0-.9.3-1.5 1.5-1.5h1.6V4.4c-.3 0-1.2-.1-2.3-.1-2.3 0-3.8 1.4-3.8 3.9v2.3H7.9v3h2.6V21z"/></svg><span>Facebook</span></a></div>
+      <div class="links"><button onclick="abrirTutorial()">Tutorial</button><button onclick="abrirAyuda()">Ayuda</button><button onclick="abrirTerminos()">Términos</button><a href="/organizadores">Organizadores</a><button onclick="abrirPrivacidad()">Privacidad</button></div>
+      <div class="idiomas notranslate" translate="no" role="group" aria-label="Idioma"><button data-idioma="es">ES</button><button data-idioma="en">EN</button><button data-idioma="pt">PT</button></div>
+      <div>© <span class="anio-actual">2026</span> Partazy. Todos los derechos reservados</div>
+    </div>
+  </nav>

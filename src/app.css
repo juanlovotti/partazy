@@ -350,9 +350,8 @@
   .lineup-item .hora{font-family:var(--font-mono); font-size:11px; color:var(--rojo); min-width:42px;}
   .fila-links{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:12px;}
   .pill-cupo{display:inline-block; padding:4px 9px; border-radius:var(--radius-pill); font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.5px;}
-  .pill-cupo.ultimas{background:var(--amarillo); color:#1a1300;}
-  .pill-cupo.agotado{background:var(--peligro); color:#fff;}
-  .tarjeta .foto .pill-cupo{position:absolute; top:10px; left:10px; z-index:2;}
+  .pill-cupo.ultimas{background:var(--azul); color:var(--negro);}
+  .pill-cupo.agotado{background:var(--peligro); color:var(--negro);}
 
   /* Control de puerta */
   .puerta-contador{margin:0 20px 14px; background:var(--negro-2); border:1px solid var(--gris-linea); border-radius:16px; padding:14px; display:flex; align-items:baseline; gap:8px;}
@@ -920,14 +919,34 @@
   .tarjeta .info{padding:12px 14px 14px;}
   .tarjeta .info h3{font-size:20px; margin-top:4px;}
   .tarjeta .cat, .tarjeta-h .cat{display:flex; align-items:center;}
-  .meta-limpia{display:flex; align-items:center; gap:10px; margin-top:8px; font-size:12px; color:var(--gris);}
-  .meta-limpia .dist{display:inline-flex; align-items:center; gap:4px; color:var(--hueso); font-weight:700;}
-  .meta-limpia .dist svg{width:12px; height:12px; color:var(--rojo);}
-  .meta-limpia span + span::before{content:"·"; margin-right:10px; color:var(--gris-linea);}
-  .meta-limpia .dist + span::before{content:"·"; margin-right:10px; color:#4F5B64;}
   .cancelado-txt{color:var(--peligro); font-weight:700;}
   .tarjeta-h h4{margin-top:4px;}
-  .tarjeta-h .meta-limpia{margin-top:6px;}
+
+  /* Tarjeta con la fecha en la foto (variante 1 de Superdesign, nov 2026) */
+  .fecha-foto{position:absolute; top:10px; left:10px; z-index:2; display:flex; flex-direction:column; align-items:center; min-width:46px; padding:6px 9px 5px; border-radius:12px; background:rgba(2,7,10,.85); backdrop-filter:blur(4px); -webkit-backdrop-filter:blur(4px); border:1px solid rgba(255,255,255,.1); line-height:1; pointer-events:none;}
+  .fecha-foto b{font-family:var(--font-display); font-weight:800; font-size:30px; line-height:.95; color:var(--hueso); font-variant-numeric:tabular-nums;}
+  .fecha-foto span{margin-top:3px; font-family:var(--font-mono); font-weight:700; font-size:12px; letter-spacing:1.5px; color:var(--rojo);}
+  .tarjeta .info h3{font-size:21px;}
+  .meta-tarjeta{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-top:10px; min-height:24px;}
+  .meta-tarjeta .hora-grande{flex:0 0 auto; font-family:var(--font-display); font-weight:800; font-size:24px; line-height:1; color:var(--hueso); font-variant-numeric:tabular-nums;}
+  .meta-tarjeta .cancelado-txt{font-size:14px;}
+  .meta-tarjeta .lugar-mini{display:flex; align-items:center; gap:4px; min-width:0; font-size:12px; color:var(--gris);}
+  .meta-tarjeta .lugar-mini svg{width:13px; height:13px; flex:0 0 auto;}
+  .meta-tarjeta .lugar-txt{min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .meta-tarjeta .dist-txt{flex:0 0 auto; margin-left:4px; color:var(--hueso); font-weight:700;}
+  /* Sellos de cupo sobre la foto */
+  .tarjeta .foto .pill-cupo{position:absolute; top:10px; right:10px; left:auto; z-index:2; font-family:var(--font-mono); font-weight:700; font-size:12px; letter-spacing:0; padding:6px 8px; white-space:nowrap;}
+  .banda-agotado{position:absolute; top:20px; right:-46px; z-index:2; width:164px; transform:rotate(45deg); padding:6px 0; text-align:center; background:var(--peligro); color:var(--negro); font-family:var(--font-mono); font-weight:700; font-size:12px; letter-spacing:2px; text-transform:uppercase; box-shadow:0 6px 20px rgba(0,0,0,.38); pointer-events:none;}
+  .tarjeta.agotada .foto-img,.tarjeta-h.agotada .foto-img,.tarjeta.cancelada .foto-img,.tarjeta-h.cancelada .foto-img{filter:grayscale(.45);}
+  .tarjeta .foto .candado-badge{top:auto; bottom:10px; right:10px;}
+  /* La misma idea en la tarjeta horizontal (Explorar y "Lo que viene") */
+  .tarjeta-h .fecha-foto{top:5px; left:5px; min-width:0; padding:4px 6px 3px; border-radius:9px;}
+  .tarjeta-h .fecha-foto b{font-size:20px;}
+  .tarjeta-h .fecha-foto span{margin-top:2px; letter-spacing:1px;}
+  .tarjeta-h .meta-tarjeta{margin-top:6px; justify-content:flex-start; gap:12px;}
+  .tarjeta-h .meta-tarjeta .hora-grande{font-size:20px;}
+  .banda-h{position:absolute; left:0; right:0; bottom:0; z-index:2; padding:4px 0 3px; text-align:center; font-family:var(--font-mono); font-weight:700; font-size:12px; letter-spacing:.5px; text-transform:uppercase; color:var(--negro); pointer-events:none;}
+  .banda-h.ultimas{background:var(--azul);} .banda-h.agotado{background:var(--peligro);}
   .fila-scroll{align-items:flex-start;}
   @media (min-width:900px){ .fila-scroll{align-items:start;} }
 
@@ -1744,3 +1763,6 @@ input[type=date]::-webkit-date-and-time-value, input[type=time]::-webkit-date-an
   content:""; position:absolute; left:50%; top:50%; width:max(100%, 44px); height:max(100%, 44px); transform:translate(-50%, -50%);}
 /* (menos el link de las normas, que está pegado a la casilla de aceptarlas) */
 .check-normas .link-btn{position:static;} .check-normas .link-btn::after{content:none;}
+
+/* Crear por pasos (React): en el celu, sin la barra de abajo mientras se completa (en la compu queda la barra lateral) */
+@media (max-width:899px){ .phone.foco-crear .navbar{display:none;} }

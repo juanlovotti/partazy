@@ -224,7 +224,8 @@
         "u09-sistema-de-diseno",
         "u07-puente-estado"
       ],
-      "blocked_reason": null
+      "blocked_reason": null,
+      "note": "12/11: diseño nuevo de las tarjetas (variante 1) aplicado en la app de siempre; se migra a React con este aspecto."
     },
     {
       "id": "u22-entradas-y-pagos",
@@ -262,12 +263,13 @@
       "id": "u25-crear-y-editar",
       "title": "Crear en 3 pasos, editar, filtro de fotos, mapa de elección, vista previa y confirmación.",
       "size": "XL",
-      "status": "pending",
+      "status": "in-progress",
       "depends_on": [
         "u20-mapas",
         "u21-tarjetas-y-portadas"
       ],
-      "blocked_reason": null
+      "blocked_reason": null,
+      "note": "12/11: Crear por pasos en React hecho (interruptor crear, apagado en producción). Falta Editar en React y el OK de Juan."
     },
     {
       "id": "u26-inicio-y-explorar",
